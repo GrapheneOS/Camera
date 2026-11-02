@@ -25,8 +25,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
@@ -113,7 +111,7 @@ class ViewfinderRecordingFlowTest {
             outputCreated.complete(Unit)
 
             assertEquals(0, recordingSession.startCount)
-            assertFalse(viewModel.uiState.value.isRecordingActive)
+            assertFalse(viewModel.uiState.value.recording.isActive)
             assertTrue(effects.none { it is PlayStartSound })
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
@@ -143,14 +141,14 @@ class ViewfinderRecordingFlowTest {
 
             viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
-            assertFalse(viewModel.uiState.value.isRecordingActive)
+            assertFalse(viewModel.uiState.value.recording.isActive)
             recordingSession.emit(
                 RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten),
             )
             finishStartSound(viewModel = viewModel, effects = effects)
 
             assertEquals(1, recordingSession.stopCount)
-            assertFalse(viewModel.uiState.value.isRecordingActive)
+            assertFalse(viewModel.uiState.value.recording.isActive)
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
     }
@@ -230,10 +228,8 @@ class ViewfinderRecordingFlowTest {
                 entryPoint = entryPoint,
                 resolveAvailableModes = mockk(relaxed = true),
                 resolveDroppedVideoQuality = mockk(relaxed = true),
-                playCameraSound = mockk(relaxed = true),
-                nextZoomStopMapper = NextZoomStopMapperImpl(),
-                mainDispatcher = mainDispatcher,
             ),
+            cameraControlsDelegate = mockk(relaxed = true),
             captureDelegate = ViewfinderCaptureDelegateImpl(
                 captureImage = mockk(relaxed = true),
                 capturePreviewImage = mockk(relaxed = true),
@@ -256,10 +252,9 @@ class ViewfinderRecordingFlowTest {
             galleryDelegate = mockk(relaxed = true),
             dialogDelegate = mockk(relaxed = true),
             gestureDelegate = mockk(relaxed = true),
+            previewControlsDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
-            uiStateMapper = ViewfinderUiStateMapperImpl(
-                captureUiStateMapper = CaptureUiStateMapperImpl(),
-            ),
+            uiStateMapper = ViewfinderUiStateMapperImpl(),
             zoomUiStateMapper = ZoomUiStateMapperImpl(),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
             volumeKeyActionMapper = VolumeKeyActionMapperImpl(),

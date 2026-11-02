@@ -113,9 +113,9 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 effects,
             )
             verifyOrder {
-                cameraDelegate.hideExposurePanel()
+                previewControlsDelegate.hideExposurePanel()
                 cameraDelegate.bindCamera(any())
-                cameraDelegate.hideZoomPanel()
+                previewControlsDelegate.hideZoomPanel()
             }
         }
     }
@@ -146,13 +146,52 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewTapped_focusesThere() {
+    fun previewTapped_focusesThereAndShowsThePanels() {
         runTest {
             val viewModel = createViewModel()
 
             viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
 
-            verify(exactly = 1) { cameraDelegate.focusAt(x = 10f, y = 20f) }
+            verify(exactly = 1) { cameraControlsDelegate.focusAt(x = 10f, y = 20f) }
+            verify(exactly = 1) { previewControlsDelegate.showFocusPanels() }
+        }
+    }
+
+    @Test
+    fun previewTapped_inQrMode_neitherFocusesNorShowsThePanels() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+
+            viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
+
+            verify(exactly = 0) { cameraControlsDelegate.focusAt(x = any(), y = any()) }
+            verify(exactly = 0) { previewControlsDelegate.showFocusPanels() }
+        }
+    }
+
+    @Test
+    fun exposureSliderDragged_appliesItAndKeepsThePanelShown() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(CameraAction.ExposureSliderDragged(compensationIndex = 2))
+
+            verifyOrder {
+                cameraControlsDelegate.setExposureCompensation(2)
+                previewControlsDelegate.showExposurePanel()
+            }
+        }
+    }
+
+    @Test
+    fun zoomChanged_showsTheZoomPanel() {
+        runTest {
+            createViewModel()
+
+            zoomChanges.emit(Unit)
+
+            verify(exactly = 1) { previewControlsDelegate.showZoomPanel() }
         }
     }
 
@@ -165,8 +204,8 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.ZoomOutKeyPressed)
 
             verifyOrder {
-                cameraDelegate.stepZoom(1f)
-                cameraDelegate.stepZoom(-1f)
+                cameraControlsDelegate.stepZoom(1f)
+                cameraControlsDelegate.stepZoom(-1f)
             }
         }
     }

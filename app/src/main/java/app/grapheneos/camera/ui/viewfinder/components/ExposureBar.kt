@@ -21,14 +21,14 @@ class ExposureBar : AppCompatSeekBar {
 
     private var renderedExposure: ExposureUiState? = null
 
-    fun render(exposure: ExposureUiState?) {
+    fun render(exposure: ExposureUiState) {
         if (exposure == renderedExposure) return
         renderedExposure = exposure
 
-        if (exposure == null) return
+        val range = exposure.range ?: return
 
-        max = exposure.max
-        min = exposure.min
+        max = range.last
+        min = range.first
         progress = exposure.progress
 
         onSizeChanged(width, height, 0, 0)

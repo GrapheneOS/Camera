@@ -1,7 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
@@ -106,24 +104,16 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun flipCameraClicked_towardsAnUnavailableLens_saysSoAndDoesNotRebind() {
+    fun flipCameraClicked_towardsAnUnavailableLens_doesNotRebind() {
         runTest {
             val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
-            every { cameraDelegate.lensFacing } returns LensFacing.BACK
-            every { cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any()) }
-                .returns(false)
+            every { cameraDelegate.switchLens(extensionMode = any()) } returns false
 
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.AnimateLensSwitch,
-                    ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable),
-                ),
-                effects,
-            )
+            assertEquals(listOf(ViewfinderScreenEffect.AnimateLensSwitch), effects)
         }
     }
 
@@ -137,9 +127,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 1) { settingsDelegate.toggleScanAllCodes() }
-            verify(exactly = 0) {
-                cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any())
-            }
+            verify(exactly = 0) { cameraDelegate.switchLens(extensionMode = any()) }
             assertTrue(effects.isEmpty())
         }
     }
@@ -156,9 +144,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 1) { recordingDelegate.setPaused(paused = true) }
-            verify(exactly = 0) {
-                cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any())
-            }
+            verify(exactly = 0) { cameraDelegate.switchLens(extensionMode = any()) }
             assertTrue(effects.isEmpty())
         }
     }
@@ -220,7 +206,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.Preview.Tapped(x = 1f, y = 2f))
 
             verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
-            verify(exactly = 0) { cameraDelegate.focusAt(x = any(), y = any()) }
+            verify(exactly = 0) { cameraControlsDelegate.focusAt(x = any(), y = any()) }
         }
     }
 

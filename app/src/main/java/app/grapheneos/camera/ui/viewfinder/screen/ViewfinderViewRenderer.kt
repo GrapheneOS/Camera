@@ -21,7 +21,16 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
+import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.FlipCameraUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.PreviewUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.QrUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.RotationUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.SelfTimerUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ThirdOptionUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import com.google.android.material.color.MaterialColors
@@ -45,62 +54,28 @@ internal class ViewfinderViewRenderer(
     private var renderedThumbnail: Bitmap? = null
 
     fun render(state: ViewfinderUiState) {
-        activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
-        activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
-        activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
-        activity.cancelButtonView.visibility = visibleOrInvisible(state.cancelButtonVisible)
-        activity.tabLayout.visibility = visibleOrInvisible(state.modeTabsVisible)
-
-        activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
-        activity.muteToggle.visibility = visibleOrGone(state.muteToggleVisible)
-        activity.setMuteToggleState(muted = state.isRecordingMuted)
-        activity.timerView.visibility = visibleOrGone(state.recordingTimerVisible)
-        activity.timerView.text = state.recordingTimerText
-
-        activity.previewView.visibility = visibleOrInvisible(state.cameraPreviewVisible)
-        (activity as? CaptureActivity)?.renderCapturedPreview(state.capturedPreviewVisible)
-
-        activity.captureButton.render(state.captureButton)
-        activity.setThirdCircleIcon(
-            icon = state.thirdCircleIcon,
-            description = state.thirdCircleDescription,
-        )
-        activity.flipCameraCircle.visibility = visibleOrInvisible(state.flipCameraVisible)
-        activity.setFlipCameraIcon(
-            icon = state.flipCameraIcon,
-            description = state.flipCameraDescription,
-        )
-
-        activity.previewGrid.gridType = state.gridType
-        activity.cbText.text = state.selfTimerBadge
-        activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
-        activity.cdTimer.visibility = visibleOrGone(state.selfTimerRemaining != null)
-        activity.cdTimer.render(state.selfTimerRemaining)
-        activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
-
-        activity.exposureBar.render(state.exposure)
-        renderPanel(
-            panel = activity.zoomBarPanel,
-            visible = state.zoomPanelVisible,
-            fadeTarget = R.id.zoom_bar_panel,
-        )
-        renderPanel(
-            panel = activity.exposureBarPanel,
-            visible = state.exposurePanelVisible,
-            fadeTarget = R.id.exposure_bar,
-        )
-
+        renderPreview(state)
+        renderQr(state.qr)
+        renderModeTabs(state)
+        renderCancelButton(state.cancelButtonVisible)
+        renderCaptureButton(state.captureButton)
+        renderFlipCamera(state.flipCamera)
+        renderThirdOption(state.thirdOption)
+        renderSelfTimer(state.selfTimer)
+        renderRecording(state.recording)
+        renderExposure(state.exposure)
         renderKeepScreenOn(state.keepScreenOn)
         renderSelfIllumination(state.isSelfIlluminating)
-        renderThumbnailLoader(state.thumbnailLoaderVisible)
-        renderThumbnail(state.thumbnail)
-        renderModeTabs(state)
-        renderBoundPreview(state)
-        renderRotation(state)
+        renderRotation(state.rotation)
     }
 
     fun renderZoom(zoom: ZoomUiState) {
         activity.zoomBar.render(zoom)
+        renderPanel(
+            panel = activity.zoomBarPanel,
+            visible = zoom.panelVisible,
+            fadeTarget = R.id.zoom_bar_panel,
+        )
     }
 
     fun renderLevel(level: LevelUiState) {
@@ -108,6 +83,73 @@ internal class ViewfinderViewRenderer(
 
         renderTilt(level.tiltDegrees)
         renderHorizon(level.horizonDegrees)
+    }
+
+    private fun renderPreview(state: ViewfinderUiState) {
+        activity.previewView.visibility = visibleOrInvisible(!state.capturedPreviewVisible)
+        (activity as? CaptureActivity)?.renderCapturedPreview(state.capturedPreviewVisible)
+        activity.previewGrid.gridType = state.preview.gridType
+
+        renderBoundPreview(state.preview)
+    }
+
+    private fun renderQr(qr: QrUiState) {
+        activity.qrOverlay.visibility = visibleOrInvisible(qr.overlayVisible)
+        activity.qrScanToggles.visibility = visibleOrGone(qr.scanTogglesVisible)
+    }
+
+    private fun renderCancelButton(visible: Boolean) {
+        activity.cancelButtonView.visibility = visibleOrInvisible(visible)
+    }
+
+    private fun renderCaptureButton(captureButton: CaptureButtonUiState) {
+        activity.captureButton.render(captureButton)
+    }
+
+    private fun renderFlipCamera(flipCamera: FlipCameraUiState) {
+        activity.flipCameraCircle.visibility = visibleOrInvisible(flipCamera.visible)
+        activity.setFlipCameraIcon(
+            icon = flipCamera.icon,
+            description = flipCamera.description,
+        )
+    }
+
+    private fun renderThirdOption(thirdOption: ThirdOptionUiState) {
+        activity.thirdOption.visibility = visibleOrInvisible(thirdOption.visible)
+        activity.setThirdCircleIcon(
+            icon = thirdOption.icon,
+            description = thirdOption.description,
+        )
+
+        renderThumbnailLoader(thirdOption.thumbnailLoaderVisible)
+        renderThumbnail(thirdOption.thumbnail)
+    }
+
+    private fun renderSelfTimer(selfTimer: SelfTimerUiState) {
+        val isRunning = selfTimer.remaining != null
+
+        activity.cbText.text = selfTimer.badge
+        activity.cbText.visibility = visibleOrInvisible(selfTimer.badgeVisible)
+        activity.cdTimer.visibility = visibleOrGone(isRunning)
+        activity.cdTimer.render(selfTimer.remaining)
+        activity.cbCross.visibility = visibleOrInvisible(isRunning)
+    }
+
+    private fun renderRecording(recording: RecordingUiState) {
+        activity.micOffIcon.visibility = visibleOrGone(recording.micOffIconVisible)
+        activity.muteToggle.visibility = visibleOrGone(recording.muteToggleVisible)
+        activity.setMuteToggleState(muted = recording.isMuted)
+        activity.timerView.visibility = visibleOrGone(recording.timerVisible)
+        activity.timerView.text = recording.timerText
+    }
+
+    private fun renderExposure(exposure: ExposureUiState) {
+        activity.exposureBar.render(exposure)
+        renderPanel(
+            panel = activity.exposureBarPanel,
+            visible = exposure.panelVisible,
+            fadeTarget = R.id.exposure_bar,
+        )
     }
 
     private fun renderPanel(
@@ -229,47 +271,50 @@ internal class ViewfinderViewRenderer(
     }
 
     private fun renderModeTabs(state: ViewfinderUiState) {
-        if (state.availableModes == renderedModes) return
-        renderedModes = state.availableModes
+        activity.tabLayout.visibility = visibleOrInvisible(state.modeTabs.visible)
+
+        val availableModes = state.modeTabs.availableModes
+        if (availableModes == renderedModes) return
+        renderedModes = availableModes
 
         activity.tabLayout.setModes(
-            modes = state.availableModes,
+            modes = availableModes,
             currentMode = state.mode,
             onTabTouched = activity::finalizeMode,
         )
     }
 
-    private fun renderBoundPreview(state: ViewfinderUiState) {
-        val sensorOrientationDegrees = state.sensorOrientationDegrees ?: return
+    private fun renderBoundPreview(preview: PreviewUiState) {
+        val sensorOrientationDegrees = preview.sensorOrientationDegrees ?: return
 
         activity.previewView.setOnTouchListener(activity.gestureHandler)
 
-        if (state.aspectRatio != renderedAspectRatio ||
+        if (preview.aspectRatio != renderedAspectRatio ||
             sensorOrientationDegrees != renderedSensorOrientationDegrees
         ) {
-            renderedAspectRatio = state.aspectRatio
+            renderedAspectRatio = preview.aspectRatio
             renderedSensorOrientationDegrees = sensorOrientationDegrees
 
             activity.previewView.applyPreviewRatio(
-                aspectRatio = state.aspectRatio,
+                aspectRatio = preview.aspectRatio,
                 sensorOrientationDegrees = sensorOrientationDegrees,
             )
         }
     }
 
-    private fun renderRotation(state: ViewfinderUiState) {
-        if (state.iconRotationDegrees != renderedIconRotation) {
-            renderedIconRotation = state.iconRotationDegrees
+    private fun renderRotation(rotation: RotationUiState) {
+        if (rotation.iconDegrees != renderedIconRotation) {
+            renderedIconRotation = rotation.iconDegrees
 
             rotatingIcons().forEach { icon ->
-                rotate(icon, state.iconRotationDegrees)
+                rotate(icon, rotation.iconDegrees)
             }
         }
 
-        if (state.levelFrameRotationDegrees != renderedLevelFrameRotation) {
-            renderedLevelFrameRotation = state.levelFrameRotationDegrees
+        if (rotation.levelFrameDegrees != renderedLevelFrameRotation) {
+            renderedLevelFrameRotation = rotation.levelFrameDegrees
 
-            rotate(activity.gCircleFrame, state.levelFrameRotationDegrees)
+            rotate(activity.gCircleFrame, rotation.levelFrameDegrees)
         }
     }
 

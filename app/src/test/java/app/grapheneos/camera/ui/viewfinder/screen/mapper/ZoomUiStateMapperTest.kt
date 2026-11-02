@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderPreviewControlsState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
@@ -32,6 +33,18 @@ class ZoomUiStateMapperTest {
     @Test
     fun zoom_beforeTheCameraIsBound_isTheDefault() {
         assertEquals(ZoomUiState(), mapper.map(stateWith(zoom = null)))
+    }
+
+    @Test
+    fun zoomPanel_followsItsStateWithOrWithoutAZoom() {
+        assertEquals(
+            ZoomUiState(panelVisible = true),
+            mapper.map(
+                stateWith(zoom = null).copy(
+                    previewControls = ViewfinderPreviewControlsState(isZoomPanelShown = true),
+                ),
+            ),
+        )
     }
 
     private fun stateWith(zoom: CameraZoom?): ViewfinderState {

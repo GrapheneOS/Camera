@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.util.Log
+import androidx.annotation.StringRes
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
@@ -11,28 +12,17 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
-import app.grapheneos.camera.data.sound.model.CameraSound
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -49,10 +39,7 @@ interface ViewfinderCameraDelegate {
     val isCameraReady: Boolean
     val canRecord: Boolean
 
-    fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    )
+    fun bind(stateHolder: ViewfinderStateHolder)
 
     suspend fun trackSession()
 
@@ -66,23 +53,11 @@ interface ViewfinderCameraDelegate {
     fun announceBind()
     fun unbindCamera()
 
-    fun switchLensFacing(lensFacing: LensFacing, extensionMode: ExtensionMode?): Boolean
+    fun switchLens(extensionMode: ExtensionMode?): Boolean
     fun setPreviewRotation(rotation: Int)
 
     fun applyFlashMode(value: FlashMode)
     fun toggleTorch()
-
-    fun stepZoom(step: Float)
-    fun startZoomStepping(direction: ZoomDirection)
-    fun stopZoomStepping()
-    fun scaleZoom(scaleFactor: Float)
-    fun setLinearZoom(linearZoom: Float)
-    fun setExposureCompensation(compensationIndex: Int)
-    fun hideZoomPanel()
-    fun hideExposurePanel()
-
-    fun focusAt(x: Float, y: Float)
-    fun cancelFocus()
 
     fun dismissQrResult()
 
@@ -95,19 +70,11 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
-    private val playCameraSound: PlayCameraSound,
-    private val nextZoomStopMapper: NextZoomStopMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCameraDelegate {
-
-    private lateinit var scope: CoroutineScope
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
     private var host: ViewfinderHost? = null
-    private var zoomStepping: Job? = null
-    private var zoomPanelTimeout: Job? = null
-    private var exposurePanelTimeout: Job? = null
 
     private val _cameraEvents = Channel<ViewfinderCameraEvent>(capacity = Channel.BUFFERED)
     override val cameraEvents: Flow<ViewfinderCameraEvent> = _cameraEvents.receiveAsFlow()
@@ -132,11 +99,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return session.camera != null && session.videoCapture != null
         }
 
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    ) {
-        this.scope = scope
+    override fun bind(stateHolder: ViewfinderStateHolder) {
         this.stateHolder = stateHolder
     }
 
@@ -254,17 +217,16 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         session.unbind()
     }
 
-    override fun switchLensFacing(
-        lensFacing: LensFacing,
-        extensionMode: ExtensionMode?,
-    ): Boolean {
+    override fun switchLens(extensionMode: ExtensionMode?): Boolean {
+        val lensFacing = session.lensFacing.opposite()
         val isSupported = session.isLensFacingSupported(
             lensFacing = lensFacing,
             extensionMode = extensionMode,
         )
 
-        if (isSupported) {
-            session.lensFacing = lensFacing
+        when {
+            isSupported -> session.lensFacing = lensFacing
+            else -> postEffect(Effect.ShowMessage(lensUnavailableMessage(lensFacing)))
         }
 
         return isSupported
@@ -289,106 +251,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
     }
 
-    override fun stepZoom(step: Float) {
-        val state = stateHolder.state.value
-        if (state.isQrMode()) return
-
-        val zoom = session.zoom ?: return
-        val requested = zoom.zoomRatio + step
-
-        val zoomRatio = when {
-            requested > zoom.maxZoomRatio -> zoom.maxZoomRatio
-            requested < zoom.minZoomRatio -> zoom.minZoomRatio
-            // smoothly transition between wide angle camera to primary one
-            zoom.zoomRatio < 1f && requested > 1f -> 1f
-            else -> requested
-        }
-
-        session.setZoomRatio(zoomRatio)
-    }
-
-    override fun startZoomStepping(direction: ZoomDirection) {
-        stopZoomStepping()
-
-        zoomStepping = scope.launch(mainDispatcher) {
-            while (stepToNextZoomStop(direction)) {
-                delay(ZOOM_STOP_INTERVAL)
-            }
-        }
-    }
-
-    override fun stopZoomStepping() {
-        zoomStepping?.cancel()
-    }
-
-    override fun scaleZoom(scaleFactor: Float) {
-        val zoomRatio = session.zoom?.let { it.zoomRatio * scaleFactor } ?: 1f
-
-        session.setZoomRatio(zoomRatio)
-    }
-
-    override fun setLinearZoom(linearZoom: Float) {
-        session.setLinearZoom(linearZoom)
-    }
-
-    override fun setExposureCompensation(compensationIndex: Int) {
-        session.setExposureCompensationIndex(compensationIndex)
-
-        stateHolder.update {
-            val exposure = it.session.exposure?.copy(compensationIndex = compensationIndex)
-
-            it.copy(session = it.session.copy(exposure = exposure))
-        }
-
-        showExposurePanel()
-    }
-
-    override fun hideZoomPanel() {
-        zoomPanelTimeout?.cancel()
-        stateHolder.update { it.copy(isZoomPanelShown = false) }
-    }
-
-    override fun hideExposurePanel() {
-        exposurePanelTimeout?.cancel()
-        stateHolder.update { it.copy(isExposurePanelShown = false) }
-    }
-
-    override fun focusAt(
-        x: Float,
-        y: Float,
-    ) {
-        val state = stateHolder.state.value
-        if (state.isQrMode()) return
-
-        session.startFocusAndMetering(
-            x = x,
-            y = y,
-            autoCancelSeconds = state.settings.focusTimeoutSeconds,
-        )
-        postEffect(
-            Effect.Preview.ShowFocus(
-                x = x,
-                y = y,
-            ),
-        )
-        showExposurePanel()
-        showZoomPanel()
-
-        if (!state.isVideoMode()) {
-            scope.launch(mainDispatcher) {
-                playCameraSound(CameraSound.FOCUS_START)
-            }
-        }
-    }
-
-    override fun cancelFocus() {
-        if (stateHolder.state.value.isQrMode()) return
-
-        // cancel any manual focus
-        // CameraX will start the continuous autofocus (if supported) automatically
-        session.cancelFocusAndMetering()
-    }
-
     override fun dismissQrResult() {
         stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = false)) }
     }
@@ -397,39 +259,13 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         return session.capabilities()
     }
 
-    private fun showZoomPanel() {
-        stateHolder.update { it.copy(isZoomPanelShown = true) }
-
-        zoomPanelTimeout?.cancel()
-        zoomPanelTimeout = scope.launch(mainDispatcher) {
-            delay(PANEL_VISIBILITY_DURATION)
-            stateHolder.update { it.copy(isZoomPanelShown = false) }
-        }
-    }
-
-    private fun showExposurePanel() {
-        stateHolder.update { it.copy(isExposurePanelShown = true) }
-
-        exposurePanelTimeout?.cancel()
-        exposurePanelTimeout = scope.launch(mainDispatcher) {
-            delay(PANEL_VISIBILITY_DURATION)
-            stateHolder.update { it.copy(isExposurePanelShown = false) }
-        }
-    }
-
     private fun onSessionEvent(event: CameraSessionEvent) {
         when (event) {
-            is CameraSessionEvent.ZoomStateLoaded -> refreshZoom()
             is CameraSessionEvent.FeaturesSelected -> onFeaturesSelected(event)
             is CameraSessionEvent.QrCodeScanned -> showQrResult(event.text)
 
             is CameraSessionEvent.ProviderReady -> {
                 _cameraEvents.trySend(ViewfinderCameraEvent.ProviderReady(forced = event.forced))
-            }
-
-            is CameraSessionEvent.ZoomStateChanged -> {
-                refreshZoom()
-                showZoomPanel()
             }
 
             is CameraSessionEvent.CameraProviderUnavailable -> {
@@ -455,20 +291,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         ) ?: return
 
         postEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
-    }
-
-    private fun refreshZoom() {
-        stateHolder.update {
-            it.copy(session = it.session.copy(zoom = session.zoom))
-        }
-    }
-
-    private fun stepToNextZoomStop(direction: ZoomDirection): Boolean {
-        val zoom = session.zoom.takeUnless { stateHolder.state.value.isQrMode() }
-        val stop = zoom?.let { nextZoomStopMapper.map(zoom = it, direction = direction) }
-
-        stop?.let(session::setZoomRatio)
-        return stop != null
     }
 
     private fun showQrResult(text: String) {
@@ -506,6 +328,14 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
     }
 
+    @StringRes
+    private fun lensUnavailableMessage(lensFacing: LensFacing): Int {
+        return when (lensFacing) {
+            LensFacing.BACK -> R.string.rear_camera_unavailable
+            LensFacing.FRONT -> R.string.front_camera_unavailable
+        }
+    }
+
     private fun loadTabs() {
         if (!entryPoint.showsCameraModeTabs) {
             return
@@ -534,8 +364,5 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     private companion object {
         private const val TAG = "ViewfinderCamera"
-
-        private val ZOOM_STOP_INTERVAL = 500.milliseconds
-        private val PANEL_VISIBILITY_DURATION = 2.seconds
     }
 }
