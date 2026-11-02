@@ -1,6 +1,5 @@
 package app.grapheneos.camera.analyzer
 
-import android.util.Log
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -15,13 +14,6 @@ import java.util.EnumMap
 import kotlin.math.roundToInt
 
 class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
-    companion object {
-        private const val TAG = "QRCodeImageAnalyzer"
-    }
-
-    private var frameCounter = 0
-    private var lastFpsTimestamp = System.nanoTime()
-
     private val reader = MultiFormatReader()
     private var imageData = ByteArray(0)
 
@@ -35,8 +27,6 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         val supportedHints: MutableMap<DecodeHintType, Any> = EnumMap(
             DecodeHintType::class.java
         )
-
-        Log.i(TAG, "allowedFormats: ${camConfig.allowedFormats}")
 
         supportedHints[DecodeHintType.POSSIBLE_FORMATS] =
             if (camConfig.scanAllCodes) {
@@ -104,17 +94,6 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
                 }
             } catch (e: ReaderException) {
             }
-        }
-
-        // Compute the FPS of the entire pipeline
-        val frameCount = 10
-        if (++frameCounter % frameCount == 0) {
-            frameCounter = 0
-            val now = System.nanoTime()
-            val delta = now - lastFpsTimestamp
-            val fps = 1_000_000_000 * frameCount.toFloat() / delta
-            Log.d(TAG, "Analysis FPS: ${"%.02f".format(fps)}")
-            lastFpsTimestamp = now
         }
 
         image.close()

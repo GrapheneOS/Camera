@@ -5,7 +5,6 @@ import java.util.TimeZone
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 
 
 private val exifAttributes = arrayOf(
@@ -14,7 +13,6 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_BITS_PER_SAMPLE,
     ExifInterface.TAG_COMPRESSION,
     ExifInterface.TAG_PHOTOMETRIC_INTERPRETATION,
-    //ExifInterface.TAG_ORIENTATION,
     ExifInterface.TAG_SAMPLES_PER_PIXEL,
     ExifInterface.TAG_PLANAR_CONFIGURATION,
     ExifInterface.TAG_Y_CB_CR_SUB_SAMPLING,
@@ -165,11 +163,22 @@ private val exifAttributes = arrayOf(
 )
 
 fun ExifInterface.fixExif(captureTime: Date) {
-    val offsetTime = exifOffsetTime(TimeZone.getDefault().getOffset(captureTime.time))
+    val millis = TimeZone.getDefault().getOffset(captureTime.time)
+
+    val totalMins = (millis / (1000 * 60))
+
+    val hours = (totalMins / 60)
+    var hoursStrRep = hours.toString().padStart(2, '0')
+
+    if (hours >= 0)
+        hoursStrRep = "+${hoursStrRep}"
+
+    val mins = (totalMins % 60).toString().padEnd(2, '0')
+
+    val offsetTime = "$hoursStrRep:$mins"
 
     setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
     setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
-//    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
     val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(captureTime)
 
@@ -177,73 +186,11 @@ fun ExifInterface.fixExif(captureTime: Date) {
     setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
 }
 
-private fun exifOffsetTime(offsetMillis: Int): String {
-    val sign = if (offsetMillis < 0) '-' else '+'
-    val totalMins = abs(offsetMillis) / (1000 * 60)
-    return String.format(Locale.US, "%c%02d:%02d", sign, totalMins / 60, totalMins % 60)
-}
-
 fun ExifInterface.clearExif() {
     for (exifTag in exifAttributes) {
         removeAttribute(exifTag)
     }
 }
-
-// TODO: (Re-)use this code later to implement custom EXIF removal setting
-//fun clearExif(context: Context, uri : Uri) {
-//
-//    val inStream = context.contentResolver.openFileDescriptor(
-//        uri,
-//        "rw"
-//    )!!
-//
-//    val exifInterface = ExifInterface(inStream.fileDescriptor)
-//
-//    // Last modified
-//    exifInterface.removeAttribute(ExifInterface.TAG_DATETIME) // original
-//    exifInterface.removeAttribute(ExifInterface.TAG_DATETIME_DIGITIZED) // digitized
-//    // Created on
-//    exifInterface.removeAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-//
-//    // Camera/Device Make - Manufacturer (for e.g. Google)
-//    exifInterface.removeAttribute(ExifInterface.TAG_MAKE)
-//
-//    // Camera/Device Model - Model (for e.g. Pixel 4a)
-//    exifInterface.removeAttribute(ExifInterface.TAG_MODEL)
-//
-//    // Focal Length
-//    exifInterface.removeAttribute(ExifInterface.TAG_FOCAL_LENGTH)
-//    exifInterface.removeAttribute(ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM)
-//    exifInterface.removeAttribute(ExifInterface.TAG_FOCAL_PLANE_RESOLUTION_UNIT)
-//    exifInterface.removeAttribute(ExifInterface.TAG_FOCAL_PLANE_X_RESOLUTION)
-//    exifInterface.removeAttribute(ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION)
-//
-//    // Exposure Time
-//    exifInterface.removeAttribute(ExifInterface.TAG_EXPOSURE_TIME)
-//
-//    // Aperture
-//    exifInterface.removeAttribute(ExifInterface.TAG_MAX_APERTURE_VALUE)
-//
-//    // White balance
-//    exifInterface.removeAttribute(ExifInterface.TAG_WHITE_BALANCE)
-//
-//    // Metering mode
-//    exifInterface.removeAttribute(ExifInterface.TAG_METERING_MODE)
-//
-//    // ISO equiv.
-//    exifInterface.removeAttribute(ExifInterface.TAG_RW2_ISO)
-//
-//    // Flash used
-//    exifInterface.removeAttribute(ExifInterface.TAG_FLASH)
-//
-//    // Color space
-//    exifInterface.removeAttribute(ExifInterface.TAG_COLOR_SPACE)
-//
-//    // Color space
-//    exifInterface.removeAttribute(ExifInterface.TAG_SCENE_TYPE)
-//
-//    exifInterface.saveAttributes()
-//}
 
 fun ExifInterface.removeAttribute(tag: String) {
     setAttribute(tag, null)

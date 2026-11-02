@@ -22,6 +22,7 @@ import app.grapheneos.camera.util.edit
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.Date
 import kotlin.jvm.Throws
 
 typealias ItemType = Int
@@ -33,7 +34,8 @@ const val VIDEO_NAME_PREFIX = "VID_"
 class CapturedItem(
     val type: ItemType,
     val dateString: String,
-    val uri: Uri
+    val uri: Uri,
+    val displayName: String? = null
 ): Parcelable {
     fun mimeType(): String {
         return if (type == ITEM_TYPE_IMAGE) {
@@ -50,7 +52,7 @@ class CapturedItem(
             VIDEO_NAME_PREFIX
         }
 
-        return "$prefix$dateString"
+        return displayName ?: "$prefix$dateString"
     }
 
     /**
@@ -59,10 +61,7 @@ class CapturedItem(
      * as the Storage Access Framework never does. Null if the name carries no usable timestamp.
      */
     fun captureTime(): Long? {
-        // ImageSaver appends milliseconds to the name and VideoCapturer does not. Both name in
-        // whatever the default time zone was at capture, which nothing records, so the name is read
-        // back in the current one: the wall-clock digits survive a change of zone, the instant does
-        // not. Callers must not present this as a zoned timestamp.
+        // Filename timestamps use the device timezone at capture and cannot recover its offset.
         return parseDateString("yyyyMMdd_HHmmss_SSS") ?: parseDateString("yyyyMMdd_HHmmss")
     }
 
@@ -80,17 +79,18 @@ class CapturedItem(
         dest.writeByte(type.toByte())
         dest.writeString(dateString)
         uri.writeToParcel(dest, 0)
+        dest.writeString(displayName)
     }
 
     override fun hashCode(): Int {
-        return dateString.hashCode()
+        return uri.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
         if (other !is CapturedItem) {
             return false
         }
-        return dateString == other.dateString
+        return uri == other.uri
     }
 
     companion object {
@@ -101,7 +101,7 @@ class CapturedItem(
                 val type = source.readByte().toInt()
                 val dateString = source.readString()!!
                 val uri = Uri.CREATOR.createFromParcel(source)
-                return CapturedItem(type, dateString, uri)
+                return CapturedItem(type, dateString, uri, source.readString())
             }
 
             override fun newArray(size: Int) = arrayOfNulls<CapturedItem>(size)
@@ -111,10 +111,7 @@ class CapturedItem(
     override fun describeContents() = 0
 }
 
-// Some OEM builds grant the shared uri to the target inside startActivity(), which throws a
-// SecurityException when this app has itself lost access to the item (e.g. it was deleted
-// externally, or its persisted uri came from a restored backup). Returns the error message to
-// show, or null on success
+// Some devices throw SecurityException when a media item is no longer accessible.
 @StringRes
 internal fun shareCapturedItem(activity: Activity, item: CapturedItem): Int? {
     val intent = Intent(Intent.ACTION_SEND).apply {
@@ -127,14 +124,12 @@ internal fun shareCapturedItem(activity: Activity, item: CapturedItem): Int? {
         activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.share_image)))
         null
     } catch (e: SecurityException) {
-        Log.e(CapturedItems.TAG, "unable to share ${item.uiName()}", e)
+        Log.e(CapturedItems.TAG, "Unable to share media", e)
         R.string.unable_to_share_media
     }
 }
 
-// The uri grant for a directly started editor is computed inside startActivity() on all Android
-// versions (and inside the chooser start on the OEM builds mentioned above), failing the same way
-// when the item is no longer accessible. Returns the error message to show, or null on success
+// Handle missing media access when launching an external editor.
 @StringRes
 internal fun editCapturedItem(activity: Activity, item: CapturedItem, useDefaultEditor: Boolean): Int? {
     val intent = Intent(Intent.ACTION_EDIT).apply {
@@ -154,38 +149,8 @@ internal fun editCapturedItem(activity: Activity, item: CapturedItem, useDefault
     } catch (e: ActivityNotFoundException) {
         R.string.no_editor_app_error
     } catch (e: SecurityException) {
-        Log.e(CapturedItems.TAG, "unable to edit ${item.uiName()}", e)
+        Log.e(CapturedItems.TAG, "Unable to edit media", e)
         R.string.unable_to_edit_media
-    }
-}
-
-class CapturedItemsListing(
-    /** Every file listed, including those that share a name with one in another folder. */
-    val files: List<CapturedItem>,
-    private val listedMediaStore: Boolean,
-    private val unlistedTrees: List<Uri>,
-) {
-    /** One item per name, as the gallery shows them. */
-    val items = files.distinct()
-
-    private val fileKeys by lazy { files.mapTo(HashSet()) { CapturedItems.fileKey(it.uri) } }
-
-    val isComplete get() = listedMediaStore && unlistedTrees.isEmpty()
-
-    /** Whether [item] is gone, rather than in a location that could not be listed. */
-    fun lacks(item: CapturedItem): Boolean {
-        // Items equal by name, which a file in another folder can share
-        if (CapturedItems.fileKey(item.uri) in fileKeys) {
-            return false
-        }
-        val uri = item.uri
-        if (uri.authority == MediaStore.AUTHORITY) {
-            return listedMediaStore
-        }
-        return !DocumentsContract.isTreeUri(uri) || unlistedTrees.none {
-            it.authority == uri.authority &&
-                DocumentsContract.getTreeDocumentId(it) == DocumentsContract.getTreeDocumentId(uri)
-        }
     }
 }
 
@@ -210,14 +175,9 @@ object CapturedItems {
         releaseUntrackedSafTrees(ctx, prefs)
     }
 
-    // A directory the user picks as the storage location is granted to us persistably, which lasts
-    // until we release it or the app is uninstalled. Trees drop off the tracked list once the user
-    // has picked enough different directories to push one past
-    // MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES, and the grant used to stay behind, leaving the app
-    // with indefinite read/write access to a folder it no longer has any use for. Reconcile the two.
+    // Release persistent SAF grants for folders no longer tracked by the app.
     fun releaseUntrackedSafTrees(ctx: Context, prefs: SharedPreferences) {
-        // A secure session reads a throwaway copy of the preferences, so the tracked list it sees is
-        // not the durable one and must never drive a durable revoke.
+        // Do not revoke durable SAF permissions using a secure session's temporary preferences.
         if (prefs is EphemeralSharedPrefs) {
             return
         }
@@ -238,14 +198,13 @@ object CapturedItems {
                 resolver.releasePersistableUriPermission(uri, flags)
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "unable to release the grant for $uri", e)
+                    Log.d(TAG, "Unable to release a media permission grant", e)
                 }
             }
         }
     }
 
-    // Split out of the loop above so that the decision can be tested: an app cannot construct the
-    // UriPermission the loop reads it from.
+    // Keep URI permission decisions separate from platform permission objects.
     internal fun safTreeFlagsToRelease(
         uri: Uri, isRead: Boolean, isWrite: Boolean, tracked: Collection<Uri>
     ): Int {
@@ -268,102 +227,62 @@ object CapturedItems {
     }
 
     @Throws(InterruptedException::class)
-    fun get(ctx: Context): List<CapturedItem> = list(ctx).items
-
-    @Throws(InterruptedException::class)
-    fun list(ctx: Context): CapturedItemsListing {
+    fun get(ctx: Context): List<CapturedItem> {
         val resolver = ctx.contentResolver
         val list = ArrayList<CapturedItem>()
 
-        val listedMediaStore =
-            collectMediaStoreItems(resolver, MediaStore.VOLUME_EXTERNAL_PRIMARY, list)
+        collectMediaStoreItems(resolver, MediaStore.Images.Media.getContentUri(
+            MediaStore.VOLUME_EXTERNAL_PRIMARY), ITEM_TYPE_IMAGE, list)
+        collectMediaStoreItems(resolver, MediaStore.Video.Media.getContentUri(
+            MediaStore.VOLUME_EXTERNAL_PRIMARY), ITEM_TYPE_VIDEO, list)
 
-        val unlistedTrees = ArrayList<Uri>()
         getSafTrees(ctx.getSharedPreferences(CamConfig.COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)).forEach {
             if (Thread.interrupted()) {
                 // executor is shutting down
                 throw InterruptedException()
             }
-            if (!collectSafItems(resolver, it, list)) {
-                unlistedTrees.add(it)
-            }
+            collectSafItems(resolver, it, list)
         }
 
-        return CapturedItemsListing(list, listedMediaStore, unlistedTrees)
+        return list.distinct()
     }
 
-    /**
-     * Whether [item] can still be found where it was saved. False too when its provider can't
-     * say, which only a listing tells apart from it being gone.
-     */
-    fun isPresent(ctx: Context, item: CapturedItem): Boolean {
-        val uri = item.uri
-        val idColumn = if (uri.authority == MediaStore.AUTHORITY) {
-            BaseColumns._ID
-        } else {
-            DocumentsContract.Document.COLUMN_DOCUMENT_ID
-        }
-
-        return try {
-            ctx.contentResolver.query(uri, arrayOf(idColumn), null, null)?.use {
-                it.count > 0
-            } ?: false
-        } catch (e: Exception) {
-            Log.d(TAG, "unable to look up ${item.uiName()}", e)
-            false
-        }
-    }
-
-    /**
-     * The provider and id of the file [uri] names. A listing names a file by another uri than the
-     * one it was saved under, and two files can share a name, which is all items compare by.
-     */
-    fun fileKey(uri: Uri): Pair<String?, String> {
-        val id = try {
-            if (uri.authority == MediaStore.AUTHORITY) {
-                ContentUris.parseId(uri).toString()
-            } else {
-                DocumentsContract.getDocumentId(uri)
-            }
-        } catch (e: IllegalArgumentException) {
-            uri.toString()
-        }
-        return uri.authority to id
-    }
-
-    // Both return whether they listed every item: a provider that is down gives no cursor
     private fun collectMediaStoreItems(
-        resolver: ContentResolver, volumeName: String, dest: ArrayList<CapturedItem>
-    ): Boolean {
-        val volumeUri = MediaStore.Files.getContentUri(volumeName)
-
-        val columns = arrayOf(BaseColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
-        val idColumn = 0
-        val nameColumn = 1
-
+        resolver: ContentResolver, collection: Uri, type: ItemType, dest: ArrayList<CapturedItem>
+    ) {
+        val columns = arrayOf(
+            BaseColumns._ID,
+            MediaStore.MediaColumns.DISPLAY_NAME,
+            MediaStore.MediaColumns.DATE_ADDED,
+            MediaStore.MediaColumns.DATE_MODIFIED
+        )
         try {
-            resolver.query(volumeUri, columns, null, null)?.use {
-                dest.ensureCapacity(it.count)
-
-                while (it.moveToNext()) {
-                    val name = it.getString(nameColumn)
-                    val uri = ContentUris.withAppendedId(volumeUri, it.getLong(idColumn))
-
-                    parseCapturedItem(name, uri)?.let {
-                        dest.add(it)
+            resolver.query(collection, columns, null, null, null)?.use { cursor ->
+                dest.ensureCapacity(dest.size + cursor.count)
+                val formatter = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
+                while (cursor.moveToNext()) {
+                    if (Thread.interrupted()) throw InterruptedException()
+                    val name = cursor.getString(1) ?: continue
+                    val uri = ContentUris.withAppendedId(collection, cursor.getLong(0))
+                    val captured = parseCapturedItem(name, uri)
+                    if (captured != null && captured.type == type) {
+                        dest.add(captured)
+                    } else {
+                        val timestamp = (cursor.getLong(2).takeIf { it > 0L }
+                            ?: cursor.getLong(3)).coerceAtLeast(0L) * 1000L
+                        val date = formatter.format(Date(timestamp))
+                        dest.add(CapturedItem(type, date, uri, name))
                     }
                 }
-                return true
             }
-        } catch (e: Exception) {
-            Log.d(TAG, "unable to collect MediaStore items, volume $volumeName", e)
+        } catch (error: InterruptedException) {
+            throw error
+        } catch (error: Exception) {
+            Log.d(TAG, "Unable to collect media from $collection", error)
         }
-        return false
     }
 
-    private fun collectSafItems(
-        resolver: ContentResolver, treeUri: Uri, dest: ArrayList<CapturedItem>
-    ): Boolean {
+    private fun collectSafItems(resolver: ContentResolver, treeUri: Uri, dest: ArrayList<CapturedItem>) {
         val treeId = DocumentsContract.getTreeDocumentId(treeUri)
         val childDocumentsUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeId)
 
@@ -384,14 +303,12 @@ object CapturedItems {
                         dest.add(it)
                     }
                 }
-                return true
             }
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) {
-                Log.d(TAG, "unable to collect SAF items, treeUri $treeUri", e)
+                Log.d(TAG, "Unable to collect SAF items", e)
             }
         }
-        return false
     }
 
     fun maybeGetCurentSafTree(prefs: SharedPreferences): Uri? {
@@ -519,17 +436,15 @@ object CapturedItems {
     }
 
     fun parseCapturedItem(fileName: String, uri: Uri): CapturedItem? {
-        val type = if (fileName.startsWith(IMAGE_NAME_PREFIX)) {
-            ITEM_TYPE_IMAGE
-        } else if (fileName.startsWith(VIDEO_NAME_PREFIX)) {
-            ITEM_TYPE_VIDEO
-        } else {
-            return null
+        val prefix = when {
+            fileName.startsWith(IMAGE_NAME_PREFIX) -> IMAGE_NAME_PREFIX
+            fileName.startsWith(VIDEO_NAME_PREFIX) -> VIDEO_NAME_PREFIX
+            fileName.startsWith("SLOMO_") -> "SLOMO_"
+            fileName.startsWith("HYPER_") -> "HYPER_"
+            else -> return null
         }
-
-        check(IMAGE_NAME_PREFIX.length == VIDEO_NAME_PREFIX.length)
-
-        val prefixLen = IMAGE_NAME_PREFIX.length
+        val type = if (prefix == IMAGE_NAME_PREFIX) ITEM_TYPE_IMAGE else ITEM_TYPE_VIDEO
+        val prefixLen = prefix.length
         val end = fileName.indexOf('.', prefixLen)
         if (end < prefixLen + "20220102_030405".length) {
             return null
@@ -544,6 +459,6 @@ object CapturedItems {
         }
 
         val dateString = fileName.substring(prefixLen, end)
-        return CapturedItem(type, dateString, uri)
+        return CapturedItem(type, dateString, uri, fileName.substringBeforeLast('.'))
     }
 }

@@ -35,6 +35,23 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"/>
 
+                <!-- Portrait-only software overlay. Does not bind a second camera stream. -->
+                <ImageView
+                    android:id="@+id/portrait_live_overlay"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    android:scaleType="fitXY"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:importantForAccessibility="no"
+                    app:layout_constraintTop_toTopOf="@id/preview"
+                    app:layout_constraintBottom_toBottomOf="@id/preview"
+                    app:layout_constraintStart_toStartOf="@id/preview"
+                    app:layout_constraintEnd_toEndOf="@id/preview" />
+
+
+
                 <app.grapheneos.camera.ui.QROverlay
                     android:id="@+id/qr_overlay"
                     android:layout_width="0dp"
@@ -215,6 +232,17 @@
 
         </LinearLayout>
 
+        <View
+            android:id="@+id/unfolded_controls_background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignTop="@id/three_buttons"
+            android:layout_alignParentBottom="true"
+            android:background="@android:color/black"
+            android:visibility="gone"
+            android:clickable="false"
+            android:importantForAccessibility="no" />
+
         <LinearLayout
             android:id="@+id/three_buttons"
             android:layout_height="wrap_content"
@@ -294,7 +322,6 @@
                     android:background="@drawable/cbutton_bg"
                     android:contentDescription="@string/confirm"/>
 
-                <!-- Sp usage was ignore because -->
                 <TextView
                     android:id="@+id/capture_button_text"
                     android:layout_height="wrap_content"
@@ -384,6 +411,43 @@
             </FrameLayout>
 
         </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/portrait_blur_controls"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_above="@id/three_buttons"
+            android:layout_centerHorizontal="true"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/portrait_blur_label"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="@string/portrait_blur_strength"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:shadowColor="#CC000000"
+                android:shadowDx="0"
+                android:shadowDy="1.5"
+                android:shadowRadius="4"
+                android:clickable="true"
+                android:focusable="true" />
+            <SeekBar
+                android:id="@+id/portrait_blur_slider"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                android:max="100"
+                android:progress="55"
+                android:progressTint="@android:color/white"
+                android:progressBackgroundTint="#80FFFFFF"
+                android:thumbTint="@android:color/white"
+                android:contentDescription="@string/portrait_blur_strength" />
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/zoom_bar_panel"
@@ -485,6 +549,7 @@
             app:tabIndicatorFullWidth="false"
             app:tabIndicatorAnimationMode="linear"
             app:tabMode="auto"
+            app:tabInlineLabel="true"
             app:tabIndicator="@drawable/mode_indicator"
             android:overScrollMode="never"
             app:tabIndicatorHeight="30dp"
@@ -493,6 +558,48 @@
             android:background="@android:color/transparent"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/mode_editor_selection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="186dp"
+            android:gravity="center"
+            android:text="Scroll to browse modes"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <SeekBar
+            android:id="@+id/mode_editor_scroll_bar"
+            android:layout_width="match_parent"
+            android:layout_height="34dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="22dp"
+            android:layout_marginEnd="22dp"
+            android:layout_marginBottom="145dp"
+            android:contentDescription="@string/mode_tab_navigation"
+            android:max="1000"
+            android:progressTint="@android:color/white"
+            android:thumbTint="@android:color/white"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/mode_editor_save_button"
+            android:layout_width="160dp"
+            android:layout_height="52dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="32dp"
+            android:text="@string/mode_tab_save"
+            android:textAllCaps="true"
+            android:textColor="@android:color/black"
+            android:backgroundTint="@android:color/white"
+            android:visibility="gone"
+            app:cornerRadius="26dp" />
 
         <FrameLayout
             android:layout_height="26dp"

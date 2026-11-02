@@ -38,8 +38,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
-
 // see com.android.externalstorage.ExternalStorageProvider and
 // com.android.internal.content.FileSystemProvider
 const val SAF_URI_HOST_EXTERNAL_STORAGE = "com.android.externalstorage.documents"
@@ -68,6 +66,9 @@ class ImageSaver(
     val removeExifAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
+    val portraitRequested: Boolean = false,
+    val portraitStrength: Int = 55,
+    val fileNamePrefix: String = IMAGE_NAME_PREFIX,
 ) : ImageCapture.OnImageCapturedCallback()
 {
     val captureTime = Date()
@@ -103,7 +104,7 @@ class ImageSaver(
             val imageFormat = image.format
 
             origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
-                withoutTrailingPadding(ImageUtil.jpegImageToJpegByteArray(image))
+                ImageUtil.jpegImageToJpegByteArray(image)
             } else if (imageFormat == ImageFormat.YUV_420_888) {
                 ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)
             } else {
@@ -123,34 +124,15 @@ class ImageSaver(
         }
     }
 
-    private fun withoutTrailingPadding(jpeg: ByteArray): ByteArray {
-        val length = jpeg.indexOfLast { it != 0.toByte() } + 1
-        if (length == jpeg.size) {
-            return jpeg
-        }
-
-        // Only zeros straight after the EOI marker are padding. Without the marker right before
-        // them they may be image data, e.g. of a JPEG that ends early
-        if (!endsWithEoiMarker(jpeg, length)) {
-            return jpeg
-        }
-
-        return jpeg.copyOf(length)
-    }
-
-    private fun endsWithEoiMarker(jpeg: ByteArray, length: Int): Boolean {
-        return length >= 2 && jpeg[length - 2] == 0xff.toByte() && jpeg[length - 1] == 0xd9.toByte()
-    }
-
     private fun saveImage() {
-        val item = try {
+        try {
             saveImageInner()
         } catch (e: ImageSaverException) {
             handleError(e)
             return
         }
 
-        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive { generateThumbnail(item) }
+        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
     }
 
     private var cropRect: Rect? = null
@@ -160,7 +142,7 @@ class ImageSaver(
     private var orientation = 0
 
     @Throws(ImageSaverException::class)
-    private fun saveImageInner(): CapturedItem {
+    private fun saveImageInner() {
         val uncroppedJpegBytes = origJpegBytes!!
         if (cropRect != null) {
             try {
@@ -225,8 +207,7 @@ class ImageSaver(
         logDuration(startOfWriting) {"image writing (saveToMediaStore: ${saveToMediaStore()})"}
 
         val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
-        mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem) }
-        return capturedItem
+        mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem, portraitRequested, portraitStrength) }
     }
 
     // based on EXIF update sequence in androidx.camera.core.ImageSaver#saveImageToTempFile(),
@@ -261,7 +242,6 @@ class ImageSaver(
         val exifInterface = exif.exifInterface
 
         if (removeExifAfterCapture) {
-            // TODO improve clearExif() by moving it into ExifInterface
             exifInterface.clearExif()
         } else {
             exifInterface.fixExif(captureTime)
@@ -293,7 +273,7 @@ class ImageSaver(
         return res
     }
 
-    private fun generateThumbnail(item: CapturedItem) {
+    private fun generateThumbnail() {
         val source = ImageDecoder.createSource(ByteBuffer.wrap(processedJpegBytes))
         val bitmap = try {
             ImageDecoder.decodeBitmap(source, ImageResizer(targetThumbnailWidth, targetThumbnailHeight))
@@ -303,7 +283,7 @@ class ImageSaver(
             Log.w(TAG, "unable to generate a thumbnail", e)
             null
         }
-        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(item, bitmap) }
+        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
     }
 
     fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION
@@ -313,7 +293,7 @@ class ImageSaver(
         SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
 
     private fun fileName(): String {
-        return IMAGE_NAME_PREFIX + dateString() + imageFileFormat
+        return fileNamePrefix + dateString() + imageFileFormat
     }
 
     private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
@@ -347,7 +327,7 @@ class ImageSaver(
             val num = contentResolver.delete(uri, null, null)
             check(num == 1) { "unexpected number of deleted rows: $num" }
         } catch (deleteException: Exception) {
-            Log.w(TAG, "unable to delete an incomplete image $uri", deleteException)
+            Log.w(TAG, "Unable to delete an incomplete image", deleteException)
         }
     }
 

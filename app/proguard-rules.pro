@@ -9,3 +9,11 @@
 -keepclassmembers class androidx.camera.core.internal.utils.ImageUtil {
     private static byte[] cropJpegByteArray(byte[], android.graphics.Rect, int);
 }
+
+# The ONNX Runtime native bridge uses JNI to find Java classes, fields and
+# constructors (including NodeInfo(String, ValueInfo)). R8 cannot infer all
+# of these lookups, so keep the ABI intact in minified release builds.
+-keep class ai.onnxruntime.** { *; }
+
+# OpenCV Java API names/JNI entry points in the official Android AAR.
+-keep class org.opencv.** { *; }

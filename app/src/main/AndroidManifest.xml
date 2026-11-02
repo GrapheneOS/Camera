@@ -12,6 +12,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <!--
       androidx.media3:media3-common declares this for ExoPlayer's network playback. We only pull
@@ -39,6 +45,16 @@
         android:enableOnBackInvokedCallback="true"
         android:memtagMode="async"
         tools:ignore="UnusedAttribute">
+
+        <service
+            android:name=".portrait.PortraitRenderService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <service
+            android:name=".capturer.PanoramaProcessingService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- The main activity of the app (supports all modes) -->
         <activity
@@ -72,6 +88,7 @@
             </intent-filter>
 
         </activity-alias>
+
 
         <!-- The main activity of the app (supports all modes) -->
         <activity

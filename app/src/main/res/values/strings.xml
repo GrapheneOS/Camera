@@ -14,7 +14,6 @@
 
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>
-    <string name="flash_mode">Flash Mode</string>
     <string name="start_value_timer">00:00</string>
     <string name="zoom">Zoom</string>
     <string name="exposure_compensation">Exposure compensation</string>
@@ -53,14 +52,19 @@
     <string name="include_audio">Include Audio</string>
     <string name="enable_eis">Enable EIS</string>
     <string name="video_quality">Video Quality</string>
-    <string name="optimize_for">Optimize for</string>
-    <string name="quality">Quality</string>
-    <string name="latency">Latency</string>
     <string name="preview">Preview</string>
     <string name="play_video">Play video</string>
     <string name="file_info">File Info</string>
     <string name="delete_file">Delete file</string>
     <string name="edit">Edit</string>
+    <string name="mode_tab_more">MORE</string>
+    <string name="mode_tab_save">SAVE</string>
+    <string name="mode_tab_selected">Selected: %1$s</string>
+    <string name="mode_tab_navigation">Scroll through camera modes</string>
+    <string name="mode_tab_hide">Hide mode</string>
+    <string name="mode_tab_open">Open %1$s</string>
+    <string name="mode_tab_restore">Add %1$s to mode bar</string>
+    <string name="mode_tab_leave_fold_first">Exit the active Fold mode before hiding it.</string>
     <string name="self_illumination">Self Illumination</string>
     <string name="focus_timeout">Focus Timeout</string>
     <string name="timer">Timer</string>
@@ -69,7 +73,41 @@
 
     <string name="camera">CAMERA</string>
     <string name="video">VIDEO</string>
+    <string name="pro_mode">PRO</string>
     <string name="portrait_mode">PORTRAIT</string>
+    <string name="burst_mode">BURST</string>
+    <string name="panorama_mode">PANORAMA</string>
+    <string name="slow_motion_mode">SLOW MOTION</string>
+    <string name="slow_motion_fps_title">Slow Motion frame rate</string>
+    <string name="hyperlapse_mode">HYPERLAPSE</string>
+    <string name="timelapse_photo_mode">TIMELAPSE PHOTO</string>
+    <string name="hyperlapse_interval_title">Hyperlapse — time between photos</string>
+    <string name="timelapse_duration_title">Timelapse Photo — capture duration</string>
+    <string name="interval_capture_stop">Stop and save</string>
+    <string name="interval_capture_cancel">Discard capture?</string>
+    <string name="interval_capture_discard">Discard</string>
+    <string name="interval_capture_saved">Capture saved</string>
+    <string name="interval_capture_failed">Could not save capture</string>
+    <string name="interval_capture_processing">Finishing capture…</string>
+    <string name="interval_capture_low_space">Not enough free storage for a long capture</string>
+    <string name="interval_capture_thermal">Phone is too hot; saving captured frames</string>
+    <string name="interval_capture_no_frames">No usable frames captured</string>
+    <string name="interval_capture_photo_progress">Light trails: %1$d / %2$d min • %3$d frames</string>
+    <string name="timelapse_recover_title">Recover interrupted interval capture?</string>
+    <string name="timelapse_recover_message">An unfinished export or light-trail checkpoint was found. Save the recovered media to your gallery?</string>
+    <string name="timelapse_recover_save">Recover media</string>
+    <string name="timelapse_recover_later">Later</string>
+    <string name="interval_capture_video_progress">Hyperlapse: %1$d frames • %2$d seconds • %3$dx</string>
+    <string name="slow_motion_unavailable">Slow motion is not supported by this camera</string>
+    <string name="slow_motion_frame_rate">Slow motion: %1$d fps</string>
+    <string name="panorama_progress">Panorama: %1$d of %2$d photos captured</string>
+    <string name="panorama_finish">Finish panorama</string>
+    <string name="panorama_processing">Joining panorama…</string>
+    <string name="panorama_saved">Panorama saved</string>
+    <string name="panorama_failed">Unable to create panorama</string>
+    <string name="panorama_rear_required">Use the rear camera for panorama</string>
+    <string name="panorama_sensor_unavailable">Rotation sensor is unavailable</string>
+    <string name="panorama_need_two_frames">Move farther before finishing panorama</string>
     <string name="hdr_mode">HDR</string>
     <string name="night_mode">NIGHT</string>
     <string name="face_retouch_mode">FACE RETOUCH</string>
@@ -185,8 +223,6 @@
     <string name="already_using_default_directory">Already using the default storage location</string>
     <string name="photo_quality_number_limit" tools:ignore="PluralsCandidate">Photo quality can only be between %1$d and %2$d</string>
     <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
-    <string name="file_already_exists">File exists at %s</string>
-    <string name="file_does_not_exist">File does not exist at %s</string>
     <string name="couldnt_exclude_qr_format">Couldn\'t exclude %s format. Please ensure at least one format is selected in manual mode.</string>
 
     <string name="capturing_image">Capturing Image…</string>
@@ -200,9 +236,6 @@
     <string name="unable_to_save_video">Unable to save this video</string>
     <string name="unable_to_save_video_verbose">Unable to save this video, error code: %d</string>
     <string name="unable_to_play_video">Unable to play this video</string>
-    <string name="recording_stopped_storage_almost_full">Recording stopped because the storage is almost full</string>
-    <string name="recording_stopped_camera_lost">Recording stopped because the camera stopped working</string>
-    <string name="recording_not_started_camera_lost">Recording could not start because the camera stopped working</string>
     <string name="error_during_recording">A error has occurred finishing the current recording, error code: %d</string>
     <string name="unable_to_access_output_file">Unable to access output file</string>
     <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
@@ -237,4 +270,25 @@
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
     <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
+    <string name="fold_tab_dual">DUAL SCREEN</string>
+    <string name="fold_tab_rear">REAR SELFIE</string>
+    <string name="portrait_blur_strength">Background blur</string>
+    <string name="portrait_saved">Portrait photo saved</string>
+    <string name="portrait_failed">Portrait processing failed. Original photo saved.</string>
+    <string name="reopen_last_mode_title">Open last used mode</string>
+    <string name="reopen_last_mode_desc">Start in the camera mode you used last, including QR scan. Off starts in Camera mode.</string>
+    <string name="capture_haptics_title">Capture haptics</string>
+    <string name="capture_haptics_desc">A short vibration when taking a photo or starting and stopping capture, independent of the ringer mode</string>
+    <string name="slow_motion_audio_processing">Saving slowed audio… video will be kept if audio fails</string>
+    <string name="dual_photo_mode">DUAL PHOTO</string>
+    <string name="dual_unsupported">This device has no compatible concurrent camera pair</string>
+    <string name="dual_pair_failed">This pair does not support two previews and two photos</string>
+    <string name="dual_secure_unavailable">Dual Photo is not available from the lock screen</string>
+    <string name="dual_busy">Finish the current capture before opening Dual Photo</string>
+    <string name="dual_video_mode">DUAL VIDEO</string>
+    <string name="panorama_360_mode">PANORAMA 360°</string>
+    <string name="dual_video_saved">Dual video saved</string>
+    <string name="dual_video_failed">Dual video recording failed</string>
+    <string name="dual_layout_split">Split screen</string>
+    <string name="dual_layout_pip">Picture in picture</string>
 </resources>
