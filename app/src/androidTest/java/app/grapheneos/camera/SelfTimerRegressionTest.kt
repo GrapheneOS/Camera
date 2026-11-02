@@ -89,7 +89,7 @@ class SelfTimerRegressionTest {
             scenario.onActivity {
                 it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.QR_SCAN))
             }
-            waitUntil(scenario, "QR mode is active") { it.viewfinder.uiState.value.isQrMode }
+            waitUntil(scenario, "QR mode is active") { it.viewfinder.uiState.value.mode.isQr }
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CaptureAction.SelfTimerCancelClicked)
@@ -198,7 +198,7 @@ class SelfTimerRegressionTest {
     }
 
     private fun isSelfTimerRunning(activity: MainActivity): Boolean {
-        return activity.viewfinder.uiState.value.selfTimerRemaining != null
+        return activity.viewfinder.uiState.value.selfTimer.remaining != null
     }
 
     private fun <T : MainActivity> launchRestoringSelfTimer(

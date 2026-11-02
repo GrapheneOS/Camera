@@ -3,9 +3,9 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.net.Uri
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
@@ -15,6 +15,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDel
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
@@ -56,9 +57,16 @@ open class ViewfinderViewModelTestBase {
     protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
     protected val dialogDelegate = mockk<ViewfinderDialogDelegate>(relaxed = true)
     protected val gestureDelegate = mockk<ViewfinderGestureDelegate>(relaxed = true)
+    protected val cameraControlsDelegate = mockk<ViewfinderCameraControlsDelegate>(
+        relaxed = true,
+    )
+    protected val previewControlsDelegate = mockk<ViewfinderPreviewControlsDelegate>(
+        relaxed = true,
+    )
 
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
+    protected val zoomChanges = MutableSharedFlow<Unit>()
     protected val recordingEvents = MutableSharedFlow<ViewfinderRecordingEvent>()
 
     protected lateinit var stateHolder: ViewfinderStateHolder
@@ -68,6 +76,7 @@ open class ViewfinderViewModelTestBase {
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
         every { cameraDelegate.cameraEvents } returns cameraEvents
         every { captureDelegate.captureEvents } returns captureEvents
+        every { cameraControlsDelegate.zoomChanges } returns zoomChanges
         every { recordingDelegate.recordingEvents } returns recordingEvents
     }
 
@@ -81,6 +90,7 @@ open class ViewfinderViewModelTestBase {
             settingsDelegate = settingsDelegate,
             modeDelegate = modeDelegate,
             cameraDelegate = cameraDelegate,
+            cameraControlsDelegate = cameraControlsDelegate,
             captureDelegate = captureDelegate,
             recordingDelegate = recordingDelegate,
             permissionDelegate = permissionDelegate,
@@ -90,6 +100,7 @@ open class ViewfinderViewModelTestBase {
             galleryDelegate = galleryDelegate,
             dialogDelegate = dialogDelegate,
             gestureDelegate = gestureDelegate,
+            previewControlsDelegate = previewControlsDelegate,
             uiStateMapper = mockk(relaxed = true),
             zoomUiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),

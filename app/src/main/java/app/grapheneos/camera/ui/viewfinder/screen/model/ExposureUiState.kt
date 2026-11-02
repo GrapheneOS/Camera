@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
 data class ExposureUiState(
-    val min: Int,
-    val max: Int,
-    val progress: Int,
+    val range: IntRange? = null,
+    val progress: Int = 0,
+    val panelVisible: Boolean = false,
 )

@@ -43,7 +43,7 @@ internal fun CameraOverlay(
 ) {
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
         val controlsShown = uiState.isSettingsPanelAvailable && !uiState.capturedPreviewVisible
-        val statusBarVisible = controlsShown && !uiState.isRecordingActive && !isModeSwitching
+        val statusBarVisible = controlsShown && !uiState.recording.isActive && !isModeSwitching
         val controlsEnabled = sheetState.isHidden && !isTransitionShown && !isModeSwitching
 
         Box(modifier = Modifier.fillMaxSize()) {
