@@ -521,6 +521,20 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun panels_followTheirState() {
+        val state = mapper.map(
+            ViewfinderState(
+                mode = CameraMode.CAMERA,
+                requiresVideoModeOnly = false,
+                isZoomPanelShown = true,
+            ),
+        )
+
+        assertTrue(state.zoomPanelVisible)
+        assertFalse(state.exposurePanelVisible)
+    }
+
+    @Test
     fun screenWake_keepsTheScreenOnWithoutARecording() {
         assertTrue(map(keepsScreenAwake = true).keepScreenOn)
     }
