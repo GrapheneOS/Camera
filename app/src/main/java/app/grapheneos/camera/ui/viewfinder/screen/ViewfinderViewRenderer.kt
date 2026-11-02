@@ -62,6 +62,7 @@ internal class ViewfinderViewRenderer(
             icon = state.thirdCircleIcon,
             description = state.thirdCircleDescription,
         )
+        activity.flipCameraCircle.visibility = visibleOrInvisible(state.flipCameraVisible)
         activity.setFlipCameraIcon(
             icon = state.flipCameraIcon,
             description = state.flipCameraDescription,
@@ -70,7 +71,8 @@ internal class ViewfinderViewRenderer(
         activity.previewGrid.gridType = state.gridType
         activity.cbText.text = state.selfTimerBadge
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
-        activity.cdTimer.visibility = visibleOrGone(state.selfTimerCountdownVisible)
+        activity.cdTimer.visibility = visibleOrGone(state.selfTimerRemaining != null)
+        activity.cdTimer.render(state.selfTimerRemaining)
         activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
 
         activity.exposureBar.render(state.exposure)

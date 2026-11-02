@@ -150,13 +150,14 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
     ): ViewfinderUiState {
         val settings = state.settings
         val selfTimerDuration = settings.selfTimerDuration
-        val isSelfTimerRunning = state.capture.isSelfTimerRunning
+        val isSelfTimerRunning = state.capture.isSelfTimerRunning()
 
         return ViewfinderUiState(
             qrOverlayVisible = false,
             qrScanTogglesVisible = false,
             thirdOptionVisible = thirdOptionVisible(state) && !isSelfTimerRunning,
             cancelButtonVisible = !isSelfTimerRunning,
+            flipCameraVisible = !isSelfTimerRunning,
             micMutedIconVisible = isVideoMode && !settings.includeAudio,
             captureButton = CaptureButtonUiState(
                 icon = when {
@@ -181,7 +182,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             selfTimerBadgeVisible = selfTimerDuration != Duration.ZERO &&
                 !isVideoMode &&
                 !isSelfTimerRunning,
-            selfTimerCountdownVisible = isSelfTimerRunning,
+            selfTimerRemaining = state.capture.selfTimerRemaining,
             selfTimerCancelVisible = isSelfTimerRunning,
         )
     }
@@ -213,7 +214,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
     private fun modeTabsVisible(state: ViewfinderState): Boolean {
         return state.showsCameraModeTabs &&
             !state.recording.isRecording() &&
-            !state.capture.isSelfTimerRunning
+            !state.capture.isSelfTimerRunning()
     }
 
     /**

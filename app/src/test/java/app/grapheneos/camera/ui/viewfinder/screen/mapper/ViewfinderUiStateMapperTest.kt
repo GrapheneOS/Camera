@@ -80,7 +80,7 @@ class ViewfinderUiStateMapperTest {
                 .modeTabsVisible,
         )
         assertFalse(
-            map(capture = ViewfinderCaptureState(isSelfTimerRunning = true)).modeTabsVisible,
+            map(capture = ViewfinderCaptureState(selfTimerRemaining = 3.seconds)).modeTabsVisible,
         )
     }
 
@@ -283,13 +283,14 @@ class ViewfinderUiStateMapperTest {
     fun selfTimerCountdown_hidesTheControlsItWouldRaceAndOffersToCancel() {
         val state = map(
             settings = CameraSettings(selfTimerDuration = 5.seconds),
-            capture = ViewfinderCaptureState(isSelfTimerRunning = true),
+            capture = ViewfinderCaptureState(selfTimerRemaining = 3.seconds),
         )
 
         assertFalse(state.thirdOptionVisible)
         assertFalse(state.cancelButtonVisible)
+        assertFalse(state.flipCameraVisible)
         assertFalse(state.selfTimerBadgeVisible)
-        assertTrue(state.selfTimerCountdownVisible)
+        assertEquals(3.seconds, state.selfTimerRemaining)
         assertTrue(state.selfTimerCancelVisible)
         assertEquals(R.string.cancel_timer, state.captureButton.description)
     }
@@ -300,8 +301,9 @@ class ViewfinderUiStateMapperTest {
 
         assertTrue(state.thirdOptionVisible)
         assertTrue(state.cancelButtonVisible)
+        assertTrue(state.flipCameraVisible)
         assertTrue(state.selfTimerBadgeVisible)
-        assertFalse(state.selfTimerCountdownVisible)
+        assertNull(state.selfTimerRemaining)
         assertFalse(state.selfTimerCancelVisible)
         assertEquals(R.string.capture, state.captureButton.description)
     }

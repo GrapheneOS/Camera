@@ -355,6 +355,8 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onCaptureEvent(event: ViewfinderCaptureEvent) {
         when (event) {
+            is ViewfinderCaptureEvent.SelfTimerFinished -> takePicture()
+
             is ViewfinderCaptureEvent.Saved -> {
                 galleryDelegate.recordCapturedItem(event.item)
             }
@@ -442,7 +444,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             state.isVideoMode() -> toggleRecording(state)
             state.isQrMode() -> cameraDelegate.toggleTorch()
             state.settings.selfTimerDuration == Duration.ZERO -> takePicture()
-            state.capture.isSelfTimerRunning -> captureDelegate.cancelSelfTimer()
+            state.capture.isSelfTimerRunning() -> captureDelegate.cancelSelfTimer()
             else -> captureDelegate.startSelfTimer()
         }
     }
@@ -634,6 +636,8 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onScreenPaused() {
+        captureDelegate.cancelSelfTimer()
+
         if (!state().isQrMode()) {
             captureDelegate.cancelPictureCapture()
         }

@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -55,7 +56,9 @@ class LevelUiStateMapperTest {
     @Test
     fun level_holdsItsAnglesWhileTheSelfTimerCountsDown() {
         val shown = LevelUiState(visible = true, tiltDegrees = 1)
-        val state = photoState.copy(capture = ViewfinderCaptureState(isSelfTimerRunning = true))
+        val state = photoState.copy(
+            capture = ViewfinderCaptureState(selfTimerRemaining = 3.seconds),
+        )
 
         assertEquals(
             shown,
