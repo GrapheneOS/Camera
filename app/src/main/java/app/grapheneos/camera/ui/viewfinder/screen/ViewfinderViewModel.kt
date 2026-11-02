@@ -690,7 +690,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         captureDelegate.cancelPictureCapture()
 
-        emitEffect(Effect.Panel.HideExposure)
+        cameraDelegate.hideExposurePanel()
 
         slotCurrentMode()
 
@@ -737,7 +737,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             BindOutcome.BOUND -> {
                 cameraDelegate.announceBind()
-                emitEffect(Effect.Panel.HideZoom)
+                cameraDelegate.hideZoomPanel()
             }
         }
     }

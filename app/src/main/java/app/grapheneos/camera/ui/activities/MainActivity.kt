@@ -689,8 +689,14 @@ open class MainActivity : AppCompatActivity() {
             viewfinder.onAction(CaptureAction.CaptureButtonClicked)
         }
 
-        zoomBar.setMainActivity(this)
-        exposureBar.setMainActivity(this)
+        zoomBar.onLinearZoomDragged = { linearZoom ->
+            viewfinder.onAction(CameraAction.ZoomSliderDragged(linearZoom = linearZoom))
+        }
+        exposureBar.onCompensationDragged = { compensationIndex ->
+            viewfinder.onAction(
+                CameraAction.ExposureSliderDragged(compensationIndex = compensationIndex),
+            )
+        }
 
         setContentView(binding.getRoot())
 
