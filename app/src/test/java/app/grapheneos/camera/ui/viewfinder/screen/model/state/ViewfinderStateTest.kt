@@ -19,11 +19,18 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderStateTest {
 
     @Test
-    fun isVideoMode_inAVideoOnlyEntryPoint_holdsForEveryMode() {
-        val state = state(mode = CameraMode.CAMERA, requiresVideoModeOnly = true)
+    fun isVideoMode_followsTheSelectedMode() {
+        for (mode in CameraMode.entries) {
+            for (requiresVideoModeOnly in listOf(false, true)) {
+                val state = state(mode = mode, requiresVideoModeOnly = requiresVideoModeOnly)
 
-        assertTrue(state.isVideoMode())
-        assertFalse(state.isInPhotoMode())
+                assertEquals(mode == CameraMode.VIDEO, state.isVideoMode())
+                assertEquals(
+                    mode != CameraMode.VIDEO && mode != CameraMode.QR_SCAN,
+                    state.isPhotoMode(),
+                )
+            }
+        }
     }
 
     @Test
@@ -67,7 +74,8 @@ class ViewfinderStateTest {
 
     @Test
     fun isReviewingRecordedVideo_inAVideoCaptureSession_coversTheSaveBeforeThePreview() {
-        val session = state(requiresVideoModeOnly = true).copy(isCaptureSession = true)
+        val session = state(mode = CameraMode.VIDEO, requiresVideoModeOnly = true)
+            .copy(isCaptureSession = true)
 
         assertFalse(session.isReviewingRecordedVideo())
         assertTrue(
@@ -82,7 +90,7 @@ class ViewfinderStateTest {
 
     @Test
     fun isReviewingRecordedVideo_outsideACaptureSession_neverHolds() {
-        val saving = state(requiresVideoModeOnly = true)
+        val saving = state(mode = CameraMode.VIDEO, requiresVideoModeOnly = true)
             .copy(recording = ViewfinderRecordingState(isSaving = true))
 
         assertFalse(saving.isReviewingRecordedVideo())

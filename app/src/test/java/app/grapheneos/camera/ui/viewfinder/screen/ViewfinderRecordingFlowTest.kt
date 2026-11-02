@@ -2,9 +2,16 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
 import app.grapheneos.camera.data.camera.model.BindOutcome
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.TorchControl
+import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.ModeSlot
+import app.grapheneos.camera.data.core.model.VideoFrameRate
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -28,6 +35,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMappe
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -63,6 +71,7 @@ class ViewfinderRecordingFlowTest {
     private var outputCreated = CompletableDeferred(Unit)
     private var outputPublished = CompletableDeferred(Unit)
 
+    private val torch = mockk<TorchControl>(relaxed = true)
     private val captureOutputRepository = mockk<CaptureOutputRepository>(relaxed = true) {
         coEvery { createVideo(any(), any(), any()) } coAnswers {
             outputCreated.await()
@@ -97,6 +106,45 @@ class ViewfinderRecordingFlowTest {
         previewFrames = mockk(relaxed = true),
         thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
+
+    @Test
+    fun videoOnlySession_startsInVideoModeAndLoadsTheVideoSlot() {
+        runTest {
+            assertVideoOnlyModeAndSettings(isCaptureSession = false)
+        }
+    }
+
+    @Test
+    fun videoCaptureSession_startsInVideoModeAndLoadsTheVideoSlot() {
+        runTest {
+            assertVideoOnlyModeAndSettings(isCaptureSession = true)
+        }
+    }
+
+    @Test
+    fun videoOnlySession_anUnusableExtension_fallsBackToVideo() {
+        runTest {
+            prepareVideoOnlyCamera()
+            every { cameraSession.bind(any()) } returnsMany listOf(
+                BindOutcome.EXTENSION_UNUSABLE,
+                BindOutcome.BOUND,
+            )
+            val viewModel = createViewModel(
+                entryPoint = cameraEntryPoint(
+                    isVideoOnlySession = true,
+                    requiresVideoModeOnly = true,
+                    showsCameraModeTabs = false,
+                ),
+            )
+            viewModel.onAction(LifecycleAction.ScreenCreated(host))
+
+            viewModel.onAction(CameraAction.ModeSelected(CameraMode.NIGHT))
+
+            assertEquals(CameraMode.VIDEO, viewModel.uiState.value.mode)
+            verify(exactly = 1) { cameraSession.bind(match { it.mode == CameraMode.NIGHT }) }
+            verify(exactly = 1) { cameraSession.bind(match { it.mode == CameraMode.VIDEO }) }
+        }
+    }
 
     @Test
     fun aStopBeforeTheOutputIsCreated_startsNothingAndThrowsTheOutputAway() {
@@ -161,6 +209,7 @@ class ViewfinderRecordingFlowTest {
                     showsCameraModeTabs = false,
                 ),
             )
+            assertEquals(CameraMode.VIDEO, viewModel.uiState.value.mode)
             val effects = collectEffects(viewModel)
             viewModel.onAction(LifecycleAction.ScreenCreated(host))
 
@@ -184,6 +233,58 @@ class ViewfinderRecordingFlowTest {
         }
     }
 
+    private fun TestScope.assertVideoOnlyModeAndSettings(isCaptureSession: Boolean) {
+        prepareVideoOnlyCamera()
+        val videoSlot = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = true)
+        val videoSettings = ModeSettings(
+            flashMode = FlashMode.ON,
+            selfIllumination = true,
+            videoQuality = VideoQuality.UHD,
+            videoFrameRate = VideoFrameRate.FPS_60,
+        )
+        every { settingsRepository.modeSettings(videoSlot) } returns videoSettings
+        every { settingsRepository.observeModeSettings(videoSlot) } returns flowOf(videoSettings)
+        val viewModel = createViewModel(
+            entryPoint = cameraEntryPoint(
+                isVideoOnlySession = !isCaptureSession,
+                isCaptureSession = isCaptureSession,
+                requiresVideoModeOnly = true,
+                showsCameraModeTabs = false,
+            ),
+        )
+
+        assertEquals(CameraMode.VIDEO, viewModel.uiState.value.mode)
+
+        viewModel.onAction(LifecycleAction.ScreenCreated(host))
+        viewModel.onAction(LifecycleAction.ScreenResumed)
+        viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+        assertTrue(viewModel.uiState.value.isSelfIlluminating)
+        verify { settingsRepository.modeSettings(videoSlot) }
+        verify(exactly = 0) {
+            settingsRepository.modeSettings(match { it.mode != CameraMode.VIDEO })
+        }
+        verify(exactly = 1) {
+            cameraSession.bind(
+                match {
+                    it.mode == CameraMode.VIDEO &&
+                        it.video?.quality == VideoQuality.UHD &&
+                        it.video.frameRate == VideoFrameRate.FPS_60 &&
+                        it.photo == null
+                },
+            )
+        }
+        verify { cameraSession.setFlashMode(FlashMode.ON) }
+        verify { torch.enable(true) }
+    }
+
+    private fun prepareVideoOnlyCamera() {
+        every { cameraSession.cameraProvider } returns mockk()
+        every { cameraSession.lensFacing } returns LensFacing.FRONT
+        every { cameraSession.isLensFacingSupported(any(), any()) } returns true
+        every { cameraSession.imageCapture } returns null
+    }
+
     private fun TestScope.createViewModel(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
     ): ViewfinderViewModel {
@@ -193,10 +294,10 @@ class ViewfinderRecordingFlowTest {
             outputUri = null,
             entryPoint = entryPoint,
             settingsDelegate = ViewfinderSettingsDelegateImpl(settingsRepository),
-            modeDelegate = ViewfinderModeDelegateImpl(),
+            modeDelegate = ViewfinderModeDelegateImpl(entryPoint = entryPoint),
             cameraDelegate = ViewfinderCameraDelegateImpl(
                 session = cameraSession,
-                torch = mockk(relaxed = true),
+                torch = torch,
                 entryPoint = entryPoint,
                 resolveAvailableModes = mockk(relaxed = true),
                 resolveDroppedVideoQuality = mockk(relaxed = true),

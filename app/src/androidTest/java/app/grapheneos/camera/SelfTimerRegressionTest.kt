@@ -191,7 +191,7 @@ class SelfTimerRegressionTest {
             scenario.onActivity { activity ->
                 activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(5.seconds))
 
-                assertTrue(activity.viewfinder.uiState.value.isVideoMode)
+                assertTrue(activity.viewfinder.uiState.value.mode.isVideo)
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
             }
         }

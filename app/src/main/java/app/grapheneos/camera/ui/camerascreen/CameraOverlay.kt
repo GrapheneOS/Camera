@@ -115,7 +115,7 @@ private fun BoxScope.BottomRowLayer(
         selfIlluminating = uiState.isSelfIlluminating,
     ) {
         ViewfinderBottomRow(
-            isVideoMode = uiState.isVideoMode,
+            isVideoMode = uiState.mode.isVideo,
             onQuickSettingsClick = onQuickSettingsClick,
             modifier = Modifier
                 .align(Alignment.BottomStart)

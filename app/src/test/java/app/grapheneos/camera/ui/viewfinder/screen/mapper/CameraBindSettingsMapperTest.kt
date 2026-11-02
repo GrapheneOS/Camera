@@ -127,9 +127,9 @@ class CameraBindSettingsMapperTest {
     }
 
     @Test
-    fun videoOnlyEntryPoint_bindsForVideoInWhicheverModeIsSelected() {
+    fun videoOnlyEntryPoint_bindsVideoWithoutSnapshots() {
         val state = ViewfinderState(
-            mode = CameraMode.CAMERA,
+            mode = CameraMode.VIDEO,
             requiresVideoModeOnly = true,
         )
 
@@ -138,8 +138,10 @@ class CameraBindSettingsMapperTest {
             target = ViewfinderBindTarget(qrLensFacing = null),
         )
 
+        assertEquals(CameraMode.VIDEO, settings.mode)
         assertNotNull(settings.video)
         assertNull(settings.photo)
+        assertNull(settings.qr)
         assertEquals(AspectRatio.RATIO_16_9, settings.aspectRatio)
     }
 

@@ -40,10 +40,10 @@ data class ViewfinderState(
     }
 
     fun isVideoMode(): Boolean {
-        return mode.isVideo || requiresVideoModeOnly
+        return mode.isVideo
     }
 
-    fun isInPhotoMode(): Boolean {
+    fun isPhotoMode(): Boolean {
         return !isQrMode() && !isVideoMode()
     }
 
@@ -75,7 +75,7 @@ data class ViewfinderState(
     }
 
     fun showsLevel(): Boolean {
-        return settings.gyroscopeSuggestions && isInPhotoMode()
+        return settings.gyroscopeSuggestions && isPhotoMode()
     }
 
     fun selfIlluminate(): Boolean {
