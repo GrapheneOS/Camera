@@ -5,21 +5,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
-import android.os.Handler
-import android.os.Looper
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatSeekBar
-import androidx.transition.Fade
-import androidx.transition.Transition
-import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -32,50 +24,11 @@ class ZoomBar : AppCompatSeekBar {
         defStyle
     )
 
-    companion object {
-        private const val PANEL_VISIBILITY_DURATION = 2000L
-    }
-
-    private val closePanelHandler: Handler = Handler(Looper.getMainLooper())
-
-    private val closePanelRunnable = Runnable {
-        hidePanel()
-    }
-
     @SuppressLint("InflateParams")
     private var thumbView: View = LayoutInflater.from(context)
         .inflate(R.layout.zoom_bar_thumb, null, false)
 
-    private lateinit var mainActivity: MainActivity
-
-    fun setMainActivity(mainActivity: MainActivity) {
-        this.mainActivity = mainActivity
-    }
-
-    fun showPanel() {
-        togglePanel(View.VISIBLE)
-        closePanelHandler.removeCallbacks(closePanelRunnable)
-        closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
-    }
-
-    fun hidePanel() {
-        togglePanel(View.GONE)
-    }
-
-    private fun togglePanel(visibility: Int) {
-        val transition: Transition = Fade()
-        if (visibility == View.GONE) {
-            transition.duration = 300
-        } else {
-            transition.duration = 0
-        }
-        transition.addTarget(R.id.zoom_bar_panel)
-
-        TransitionManager.beginDelayedTransition(
-            mainActivity.window.decorView.rootView as ViewGroup, transition
-        )
-        mainActivity.zoomBarPanel.visibility = visibility
-    }
+    var onLinearZoomDragged: (Float) -> Unit = {}
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
@@ -127,22 +80,21 @@ class ZoomBar : AppCompatSeekBar {
             return false
         }
         when (event.action) {
-
             MotionEvent.ACTION_MOVE, MotionEvent.ACTION_DOWN -> {
-
                 var progress = max - (max * event.y / height).toInt()
 
                 if (progress < 1) progress = 1
                 if (progress > 100) progress = 100
 
-                mainActivity.viewfinder.onAction(
-                    CameraAction.ZoomSliderDragged(linearZoom = progress / 100f),
-                )
-
+                onLinearZoomDragged(progress / LINEAR_ZOOM_SCALE)
             }
             MotionEvent.ACTION_CANCEL -> {
             }
         }
         return true
+    }
+
+    private companion object {
+        private const val LINEAR_ZOOM_SCALE = 100f
     }
 }

@@ -109,13 +109,14 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(DialogAction.QrResultDismissed)
 
             assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Panel.HideExposure,
-                    ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable),
-                    ViewfinderScreenEffect.Panel.HideZoom,
-                ),
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable)),
                 effects,
             )
+            verifyOrder {
+                cameraDelegate.hideExposurePanel()
+                cameraDelegate.bindCamera(any())
+                cameraDelegate.hideZoomPanel()
+            }
         }
     }
 
@@ -193,10 +194,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             assertEquals(CameraMode.CAMERA, stateHolder.state.value.mode)
             assertEquals(
                 listOf(
-                    ViewfinderScreenEffect.Panel.HideExposure,
                     ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
-                    ViewfinderScreenEffect.Panel.HideExposure,
-                    ViewfinderScreenEffect.Panel.HideZoom,
                     ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
                     ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
                 ),

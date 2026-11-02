@@ -78,7 +78,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 else -> 0f
             },
             levelFrameRotationDegrees = deviceRotation,
+            zoomPanelVisible = state.isZoomPanelShown,
             exposure = exposureState(state.session.exposure),
+            exposurePanelVisible = state.isExposurePanelShown,
             capture = captureUiStateMapper.map(state),
             dialog = state.dialog,
         )

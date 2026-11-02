@@ -8,10 +8,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.LinearInterpolator
+import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.updateLayoutParams
+import androidx.transition.Fade
+import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -76,6 +79,16 @@ internal class ViewfinderViewRenderer(
         activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
 
         activity.exposureBar.render(state.exposure)
+        renderPanel(
+            panel = activity.zoomBarPanel,
+            visible = state.zoomPanelVisible,
+            fadeTarget = R.id.zoom_bar_panel,
+        )
+        renderPanel(
+            panel = activity.exposureBarPanel,
+            visible = state.exposurePanelVisible,
+            fadeTarget = R.id.exposure_bar,
+        )
 
         renderKeepScreenOn(state.keepScreenOn)
         renderSelfIllumination(state.isSelfIlluminating)
@@ -95,6 +108,27 @@ internal class ViewfinderViewRenderer(
 
         renderTilt(level.tiltDegrees)
         renderHorizon(level.horizonDegrees)
+    }
+
+    private fun renderPanel(
+        panel: View,
+        visible: Boolean,
+        @IdRes fadeTarget: Int,
+    ) {
+        val visibility = visibleOrGone(visible)
+        if (panel.visibility == visibility) return
+
+        val transition = Fade().addTarget(fadeTarget)
+        transition.duration = when {
+            visible -> 0L
+            else -> PANEL_FADE_OUT_DURATION
+        }
+
+        TransitionManager.beginDelayedTransition(
+            activity.window.decorView.rootView as ViewGroup,
+            transition,
+        )
+        panel.visibility = visibility
     }
 
     private fun renderKeepScreenOn(keepScreenOn: Boolean) {
@@ -348,6 +382,7 @@ internal class ViewfinderViewRenderer(
     private companion object {
         private const val ROTATION_DURATION = 400L
         private const val SELF_ILLUMINATION_DURATION = 300L
+        private const val PANEL_FADE_OUT_DURATION = 300L
         private const val LEVEL_LINE_THICKNESS_DP = 4
         private const val TILTED_LINE_THICKNESS_DP = 2
         private const val HORIZON_RANGE_DEGREES = 45

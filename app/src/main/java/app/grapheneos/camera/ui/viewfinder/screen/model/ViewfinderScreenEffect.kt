@@ -86,15 +86,6 @@ sealed interface ViewfinderScreenEffect {
         ) : Location
     }
 
-    sealed interface Panel : ViewfinderScreenEffect {
-
-        data object ShowZoom : Panel
-
-        data object HideZoom : Panel
-
-        data object HideExposure : Panel
-    }
-
     sealed interface Picture : ViewfinderScreenEffect {
 
         data object PreviewFailed : Picture

@@ -35,6 +35,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -239,6 +240,8 @@ class ViewfinderCameraDelegateTest {
             ),
             effects,
         )
+        assertTrue(stateHolder.state.value.isZoomPanelShown)
+        assertTrue(stateHolder.state.value.isExposurePanelShown)
         coVerify(exactly = 1) { playCameraSound(CameraSound.FOCUS_START) }
     }
 
@@ -258,6 +261,8 @@ class ViewfinderCameraDelegateTest {
         verify(exactly = 0) { session.cancelFocusAndMetering() }
         verify(exactly = 0) { session.setZoomRatio(any()) }
         assertTrue(effects.isEmpty())
+        assertFalse(stateHolder.state.value.isZoomPanelShown)
+        assertFalse(stateHolder.state.value.isExposurePanelShown)
     }
 
     @Test
@@ -350,7 +355,7 @@ class ViewfinderCameraDelegateTest {
         sessionEvents.tryEmit(CameraSessionEvent.ZoomStateLoaded)
 
         assertEquals(ZOOM, stateHolder.state.value.session.zoom)
-        assertTrue(effects.isEmpty())
+        assertFalse(stateHolder.state.value.isZoomPanelShown)
     }
 
     @Test
@@ -361,7 +366,49 @@ class ViewfinderCameraDelegateTest {
         sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
 
         assertEquals(ZOOM, stateHolder.state.value.session.zoom)
-        assertEquals(listOf(Effect.Panel.ShowZoom), effects)
+        assertTrue(stateHolder.state.value.isZoomPanelShown)
+    }
+
+    @Test
+    fun zoomPanel_hidesTwoSecondsAfterTheLastZoomChange() {
+        every { session.zoom } returns ZOOM
+        createAttachedDelegate()
+
+        sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
+        scope.advanceTimeBy(1.seconds)
+        sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
+        scope.advanceTimeBy(1.5.seconds)
+        assertTrue(stateHolder.state.value.isZoomPanelShown)
+
+        scope.advanceTimeBy(1.seconds)
+        assertFalse(stateHolder.state.value.isZoomPanelShown)
+    }
+
+    @Test
+    fun exposurePanel_staysWhileDraggedAndHidesTwoSecondsAfter() {
+        stateHolder.update { it.copy(session = it.session.copy(exposure = EXPOSURE)) }
+        val delegate = createAttachedDelegate()
+
+        delegate.setExposureCompensation(compensationIndex = 1)
+        scope.advanceTimeBy(1.5.seconds)
+        delegate.setExposureCompensation(compensationIndex = 2)
+        scope.advanceTimeBy(1.5.seconds)
+        assertTrue(stateHolder.state.value.isExposurePanelShown)
+
+        scope.advanceTimeBy(1.seconds)
+        assertFalse(stateHolder.state.value.isExposurePanelShown)
+    }
+
+    @Test
+    fun hidePanels_hidesThemAtOnce() {
+        val delegate = createAttachedDelegate()
+
+        delegate.focusAt(x = 10f, y = 20f)
+        delegate.hideZoomPanel()
+        delegate.hideExposurePanel()
+
+        assertFalse(stateHolder.state.value.isZoomPanelShown)
+        assertFalse(stateHolder.state.value.isExposurePanelShown)
     }
 
     @Test

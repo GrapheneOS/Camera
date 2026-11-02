@@ -51,7 +51,9 @@ data class ViewfinderUiState(
     val sensorOrientationDegrees: Int? = null,
     val iconRotationDegrees: Float = 0f,
     val levelFrameRotationDegrees: Float = 0f,
+    val zoomPanelVisible: Boolean = false,
     val exposure: ExposureUiState? = null,
+    val exposurePanelVisible: Boolean = false,
     val capture: CaptureUiState = CaptureUiState(),
     val dialog: ViewfinderDialog? = null,
 )

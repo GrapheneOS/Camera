@@ -27,6 +27,8 @@ data class ViewfinderState(
     val missingPermissions: Set<AppPermission> = emptySet(),
     val dialog: ViewfinderDialog? = null,
     val isSettingsPanelOpen: Boolean = false,
+    val isZoomPanelShown: Boolean = false,
+    val isExposurePanelShown: Boolean = false,
     val deviceOrientation: DeviceOrientation? = null,
     val displayRotation: Int = Surface.ROTATION_0,
     val autoRotateEnabled: Boolean = false,

@@ -40,7 +40,6 @@
     <ID>MagicNumber:CustomGrid.kt:CustomGrid$255</ID>
     <ID>MagicNumber:CustomGrid.kt:CustomGrid$3f</ID>
     <ID>MagicNumber:CustomGrid.kt:CustomGrid$4f</ID>
-    <ID>MagicNumber:ExposureBar.kt:ExposureBar$300</ID>
     <ID>MagicNumber:ExposureBar.kt:ExposureBar$90f</ID>
     <ID>MagicNumber:ImageCapturer.kt:ImageCapturer$200</ID>
     <ID>MagicNumber:MainActivity.kt:MainActivity$0.05f</ID>
@@ -75,7 +74,6 @@
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$5</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$90f</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$100</ID>
-    <ID>MagicNumber:ZoomBar.kt:ZoomBar$300</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$90f</ID>
     <ID>MatchingDeclarationName:ImageDecoderUtils.kt:ImageResizer : OnHeaderDecodedListener</ID>
     <ID>NewLineAtEndOfFile:SystemSettingsObserver.kt:app.grapheneos.camera.ktx.SystemSettingsObserver.kt</ID>

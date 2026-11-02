@@ -26,6 +26,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect a
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -78,6 +79,8 @@ interface ViewfinderCameraDelegate {
     fun scaleZoom(scaleFactor: Float)
     fun setLinearZoom(linearZoom: Float)
     fun setExposureCompensation(compensationIndex: Int)
+    fun hideZoomPanel()
+    fun hideExposurePanel()
 
     fun focusAt(x: Float, y: Float)
     fun cancelFocus()
@@ -104,6 +107,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     private var host: ViewfinderHost? = null
     private var zoomStepping: Job? = null
+    private var zoomPanelTimeout: Job? = null
+    private var exposurePanelTimeout: Job? = null
 
     private val _cameraEvents = Channel<ViewfinderCameraEvent>(capacity = Channel.BUFFERED)
     override val cameraEvents: Flow<ViewfinderCameraEvent> = _cameraEvents.receiveAsFlow()
@@ -342,6 +347,18 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
             it.copy(session = it.session.copy(exposure = exposure))
         }
+
+        showExposurePanel()
+    }
+
+    override fun hideZoomPanel() {
+        zoomPanelTimeout?.cancel()
+        stateHolder.update { it.copy(isZoomPanelShown = false) }
+    }
+
+    override fun hideExposurePanel() {
+        exposurePanelTimeout?.cancel()
+        stateHolder.update { it.copy(isExposurePanelShown = false) }
     }
 
     override fun focusAt(
@@ -362,6 +379,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                 y = y,
             ),
         )
+        showExposurePanel()
+        showZoomPanel()
 
         if (!state.isVideoMode()) {
             scope.launch(mainDispatcher) {
@@ -386,6 +405,26 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         return session.capabilities()
     }
 
+    private fun showZoomPanel() {
+        stateHolder.update { it.copy(isZoomPanelShown = true) }
+
+        zoomPanelTimeout?.cancel()
+        zoomPanelTimeout = scope.launch(mainDispatcher) {
+            delay(PANEL_VISIBILITY_DURATION)
+            stateHolder.update { it.copy(isZoomPanelShown = false) }
+        }
+    }
+
+    private fun showExposurePanel() {
+        stateHolder.update { it.copy(isExposurePanelShown = true) }
+
+        exposurePanelTimeout?.cancel()
+        exposurePanelTimeout = scope.launch(mainDispatcher) {
+            delay(PANEL_VISIBILITY_DURATION)
+            stateHolder.update { it.copy(isExposurePanelShown = false) }
+        }
+    }
+
     private fun onSessionEvent(event: CameraSessionEvent) {
         when (event) {
             is CameraSessionEvent.ZoomStateLoaded -> refreshZoom()
@@ -398,7 +437,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
             is CameraSessionEvent.ZoomStateChanged -> {
                 refreshZoom()
-                postEffect(Effect.Panel.ShowZoom)
+                showZoomPanel()
             }
 
             is CameraSessionEvent.CameraProviderUnavailable -> {
@@ -505,5 +544,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         private const val TAG = "ViewfinderCamera"
 
         private val ZOOM_STOP_INTERVAL = 500.milliseconds
+        private val PANEL_VISIBILITY_DURATION = 2.seconds
     }
 }

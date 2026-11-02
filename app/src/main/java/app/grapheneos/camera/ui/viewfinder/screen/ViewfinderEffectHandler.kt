@@ -69,7 +69,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ModeTab -> handleModeTab(effect)
             is Effect.Gallery -> handleGallery(effect)
             is Effect.Location -> handleLocation(effect)
-            is Effect.Panel -> handlePanel(effect)
             is Effect.Picture -> handlePicture(effect)
             is Effect.Recording -> handleRecording(effect)
             is Effect.Permission -> handlePermission(effect)
@@ -111,8 +110,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun showFocus(effect: Effect.Preview.ShowFocus) {
         activity.animateFocusRing(effect.x, effect.y)
-        activity.exposureBar.showPanel()
-        activity.zoomBar.showPanel()
     }
 
     private fun flashPreview(selfIlluminate: Boolean) {
@@ -260,14 +257,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun openLocationSettings() {
         activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-    }
-
-    private fun handlePanel(effect: Effect.Panel) {
-        when (effect) {
-            is Effect.Panel.ShowZoom -> activity.zoomBar.showPanel()
-            is Effect.Panel.HideZoom -> activity.zoomBar.hidePanel()
-            is Effect.Panel.HideExposure -> activity.exposureBar.hidePanel()
-        }
     }
 
     private fun handlePicture(effect: Effect.Picture) {
