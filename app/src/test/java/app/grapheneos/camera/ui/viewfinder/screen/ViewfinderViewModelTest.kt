@@ -283,7 +283,10 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             val viewModel = createViewModel()
             every { modeDelegate.select(any()) } returns true
             stateHolder.update {
-                it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO))
+                it.copy(
+                    modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
+                    session = it.session.copy(availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO)),
+                )
             }
 
             viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
@@ -319,13 +322,34 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
 
             stateHolder.update {
-                it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO))
+                it.copy(
+                    modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
+                    session = it.session.copy(availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO)),
+                )
             }
 
             viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.PORTRAIT))
 
             verify(exactly = 0) { modeDelegate.select(any()) }
             verify(exactly = 0) { modeSwitchDelegate.cancelSwitch() }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_onAModeThatDisappeared_cancelsTheSwitch() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(
+                    modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
+                    session = it.session.copy(availableModes = setOf(CameraMode.CAMERA)),
+                )
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+
+            verify(exactly = 1) { modeSwitchDelegate.cancelSwitch() }
+            verify(exactly = 0) { modeDelegate.select(any()) }
         }
     }
 

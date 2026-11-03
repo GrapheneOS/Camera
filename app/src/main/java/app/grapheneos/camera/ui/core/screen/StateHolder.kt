@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.core.screen
 
+import androidx.annotation.MainThread
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +19,7 @@ open class StateHolder<State>(
      * A flow of [map] applied to the state, recomputed within every [update], so it is current by
      * the time [update] returns. It only emits when its own value changes.
      */
+    @MainThread
     fun <T> derive(map: (State) -> T): StateFlow<T> {
         val derived = MutableStateFlow(map(_state.value))
         derivations += { state -> derived.value = map(state) }
@@ -25,10 +27,9 @@ open class StateHolder<State>(
         return derived.asStateFlow()
     }
 
+    @MainThread
     fun update(transform: (State) -> State) {
         _state.update(transform)
-
-        val state = _state.value
-        derivations.forEach { derivation -> derivation(state) }
+        derivations.forEach { derivation -> derivation(_state.value) }
     }
 }

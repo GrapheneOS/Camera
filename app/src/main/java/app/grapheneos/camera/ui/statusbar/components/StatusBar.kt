@@ -13,7 +13,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusItemUiModel
 import kotlinx.collections.immutable.ImmutableList
 

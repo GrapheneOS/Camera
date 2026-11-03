@@ -14,9 +14,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import app.grapheneos.camera.ui.components.motion.FADE_IN
 import app.grapheneos.camera.ui.components.motion.FADE_OUT
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel

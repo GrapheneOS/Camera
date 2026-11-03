@@ -10,9 +10,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.statusbar.components.StatusBar
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusItemUiModel

@@ -48,12 +48,16 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -63,6 +67,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderRecordingFlowTest {
 
@@ -248,6 +253,8 @@ class ViewfinderRecordingFlowTest {
             val effects = collectEffects(viewModel)
             assertEquals(CameraMode.VIDEO, state().mode)
             viewModel.onAction(LifecycleAction.ScreenCreated(host))
+            advanceTimeBy(1.seconds)
+            runCurrent()
 
             viewModel.onAction(RecordingAction.RecordingRequested)
             finishStartSound(viewModel = viewModel, effects = effects)

@@ -76,6 +76,7 @@ class ViewfinderUiStateMapperTest {
         val held = map(capture = ViewfinderCaptureState(isShutterHeld = true))
 
         assertFalse(held.captureButton.visible)
+        assertFalse(held.captureButton.enabled)
     }
 
     @Test
@@ -295,7 +296,7 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun captureButton_isDisabledOnlyWhileAPictureIsTaken() {
+    fun captureButton_isDisabledWhileAPictureIsTaken() {
         val taking = map(capture = ViewfinderCaptureState(isTakingPicture = true))
 
         assertFalse(taking.captureButton.enabled)
