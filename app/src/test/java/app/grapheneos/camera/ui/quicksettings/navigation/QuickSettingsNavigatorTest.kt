@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.quicksettings.navigation
 
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.navigation.NavKey
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import org.junit.Assert.assertEquals

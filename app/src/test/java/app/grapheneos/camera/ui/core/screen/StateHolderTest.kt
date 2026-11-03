@@ -47,6 +47,27 @@ class StateHolderTest {
         }
     }
 
+    @Test
+    fun derive_staysCurrentWhenACollectorUpdatesTheState() {
+        runTest {
+            val count = stateHolder.derive { state -> state.count }
+            val isBusy = stateHolder.derive { state -> state.isBusy }
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                count.collect { value ->
+                    if (value == 1) {
+                        stateHolder.update { state -> state.copy(count = 2, isBusy = true) }
+                    }
+                }
+            }
+
+            stateHolder.update { state -> state.copy(count = 1) }
+
+            assertEquals(2, stateHolder.state.value.count)
+            assertEquals(2, count.value)
+            assertEquals(true, isBusy.value)
+        }
+    }
+
     private data class TestState(
         val count: Int = 0,
         val isBusy: Boolean = false,

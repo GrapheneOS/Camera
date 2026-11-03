@@ -24,13 +24,11 @@ import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
-import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
@@ -38,7 +36,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
@@ -59,8 +56,11 @@ internal class ViewfinderViewRenderer(
     private val onAction: (ViewfinderAction) -> Unit,
 ) {
 
+    private val modeStripRenderer by lazy {
+        ViewfinderModeStripRenderer(tabs = activity.tabLayout, onAction = onAction)
+    }
+
     private var renderedThumbnailLoaderVisible = false
-    private var renderedModes: Set<CameraMode> = emptySet()
     private var renderedAspectRatio: AspectRatio? = null
     private var renderedSensorOrientationDegrees: Int? = null
     private var renderedIconRotation: Float? = null
@@ -73,7 +73,6 @@ internal class ViewfinderViewRenderer(
     private var renderedThumbnail: Bitmap? = null
     private var renderedFocusRingId: Int? = null
     private var renderedLensFacing: LensFacing? = null
-    private var renderedModeSelectionId: Int? = null
     private var renderedLastFrameVisible: Boolean? = null
     private var renderedStreaming: Boolean? = null
     private var blursLastFrame = true
@@ -85,7 +84,7 @@ internal class ViewfinderViewRenderer(
     fun render(state: ViewfinderUiState) {
         renderPreview(state)
         renderQr(state.qr)
-        renderModeTabs(state)
+        modeStripRenderer.render(state.modeTabs)
         renderCancelButton(state.cancelButtonVisible)
         renderCaptureButton(state.captureButton)
         renderFlipCamera(state.flipCamera)
@@ -464,39 +463,6 @@ internal class ViewfinderViewRenderer(
         renderedThumbnail = thumbnail
 
         activity.imagePreview.setImageBitmap(thumbnail)
-    }
-
-    private fun renderModeTabs(state: ViewfinderUiState) {
-        activity.tabLayout.visibility = visibleOrInvisible(state.modeTabs.visible)
-
-        renderModes(availableModes = state.modeTabs.availableModes, currentMode = state.mode)
-        renderModeSelection(state.modeTabs)
-    }
-
-    private fun renderModes(
-        availableModes: Set<CameraMode>,
-        currentMode: CameraMode,
-    ) {
-        if (availableModes == renderedModes) return
-        renderedModes = availableModes
-
-        activity.tabLayout.setModes(
-            modes = availableModes,
-            currentMode = currentMode,
-            onModeTouched = { mode -> onAction(CameraAction.ModeStripReleased(mode)) },
-        )
-    }
-
-    private fun renderModeSelection(modeTabs: ModeTabsUiModel) {
-        val isNewSelection = renderedModeSelectionId != null &&
-            modeTabs.selectionId != renderedModeSelectionId
-        renderedModeSelectionId = modeTabs.selectionId
-
-        if (!isNewSelection) return
-
-        activity.tabLayout.goToMode(modeTabs.selectedMode) {
-            onAction(CameraAction.ModeStripSettled(modeTabs.selectedMode))
-        }
     }
 
     private fun renderBoundPreview(preview: PreviewUiModel) {

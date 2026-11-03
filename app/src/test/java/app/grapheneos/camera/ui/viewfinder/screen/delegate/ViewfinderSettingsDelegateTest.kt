@@ -19,7 +19,7 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase

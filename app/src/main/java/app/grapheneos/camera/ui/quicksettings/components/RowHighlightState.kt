@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.grapheneos.camera.ui.core.animation.blink
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 
 @Stable
 internal class RowHighlightState {

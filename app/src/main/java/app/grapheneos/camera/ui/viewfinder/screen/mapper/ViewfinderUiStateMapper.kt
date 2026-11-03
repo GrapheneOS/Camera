@@ -110,7 +110,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         val isTorchOn = state.session.isTorchOn
         val common = CaptureButtonUiModel(
             visible = !state.capture.hasResult() && !state.capture.isShutterHeld,
-            enabled = !state.capture.isTakingPicture,
+            enabled = !state.capture.isTakingPicture && !state.capture.isShutterHeld,
             recording = state.recording.isActive(),
         )
 
@@ -132,16 +132,18 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
                     state.isVideoMode() -> R.drawable.recording
                     else -> R.drawable.camera_shutter
                 },
-                description = when {
-                    state.recording.isRecording() -> R.string.stop_recording
-                    state.isVideoMode() -> R.string.start_recording
-                    // The capture button cancels the countdown while one is up, so it must not
-                    // keep announcing itself as the shutter. Only the description changes; the
-                    // cross is drawn over the button.
-                    state.capture.isSelfTimerRunning() -> R.string.cancel_timer
-                    else -> R.string.capture
-                },
+                description = captureButtonDescription(state),
             )
+        }
+    }
+
+    private fun captureButtonDescription(state: ViewfinderState): Int {
+        return when {
+            state.recording.isRecording() -> R.string.stop_recording
+            state.isVideoMode() -> R.string.start_recording
+            // The cross is drawn over the button, but accessibility must announce cancellation.
+            state.capture.isSelfTimerRunning() -> R.string.cancel_timer
+            else -> R.string.capture
         }
     }
 

@@ -14,9 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel

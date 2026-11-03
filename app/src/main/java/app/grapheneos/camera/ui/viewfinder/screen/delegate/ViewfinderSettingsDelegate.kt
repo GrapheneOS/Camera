@@ -5,7 +5,7 @@ import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect

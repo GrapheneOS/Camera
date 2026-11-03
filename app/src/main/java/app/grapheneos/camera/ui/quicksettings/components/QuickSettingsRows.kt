@@ -17,7 +17,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.ui.core.animation.crossfadeResizing
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import app.grapheneos.camera.ui.settingvalues.flashIcon

@@ -224,6 +224,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     }
 
     override fun startSelfTimer() {
+        if (stateHolder.state.value.capture.isShutterHeld) return
+
         cancelSelfTimer()
 
         val settings = stateHolder.state.value.settings

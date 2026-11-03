@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.settingvalues.flashIcon
 import app.grapheneos.camera.ui.settingvalues.flashLabel
 import app.grapheneos.camera.ui.settingvalues.selfTimerLabel

@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.quicksettings.navigation
 
 import androidx.compose.runtime.Stable
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.navigation.Navigator
 
 @Stable

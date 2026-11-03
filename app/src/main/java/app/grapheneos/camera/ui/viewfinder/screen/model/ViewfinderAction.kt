@@ -2,7 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
