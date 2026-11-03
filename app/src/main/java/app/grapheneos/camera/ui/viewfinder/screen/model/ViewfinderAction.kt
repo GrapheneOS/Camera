@@ -33,6 +33,18 @@ sealed interface ViewfinderAction {
             val mode: CameraMode,
         ) : CameraAction
 
+        data object ModeStripDragged : CameraAction
+
+        data object ModeStripTouchCancelled : CameraAction
+
+        data class ModeStripReleased(
+            val mode: CameraMode,
+        ) : CameraAction
+
+        data class ModeStripSettled(
+            val mode: CameraMode,
+        ) : CameraAction
+
         data class DisplayRotationChanged(
             val rotation: Int,
         ) : CameraAction
@@ -133,6 +145,8 @@ sealed interface ViewfinderAction {
         data object ScreenInteracted : LifecycleAction
 
         data object PreviewStreamingStarted : LifecycleAction
+
+        data object PreviewStreamingStopped : LifecycleAction
 
         data object ScreenDestroyed : LifecycleAction
 
