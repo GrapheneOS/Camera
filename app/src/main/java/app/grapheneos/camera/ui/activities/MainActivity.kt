@@ -63,6 +63,9 @@ import app.grapheneos.camera.ui.gallery.navigation.GalleryIntents
 import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
+import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysViewModel
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigatorImpl
@@ -72,7 +75,6 @@ import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
-import app.grapheneos.camera.ui.viewfinder.components.CustomGrid
 import app.grapheneos.camera.ui.viewfinder.components.ExposureBar
 import app.grapheneos.camera.ui.viewfinder.components.ZoomBar
 import app.grapheneos.camera.ui.viewfinder.components.qr.QROverlay
@@ -143,6 +145,10 @@ open class MainActivity : AppCompatActivity() {
     )
 
     private val statusBar: StatusBarViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
+    private val previewOverlays: PreviewOverlaysViewModel by viewModels(
         extrasProducer = { cameraEntryPointCreationExtras() },
     )
 
@@ -235,9 +241,6 @@ open class MainActivity : AppCompatActivity() {
 
     val mainOverlay: ImageView
         get() = binding.mainOverlay
-
-    val previewGrid: CustomGrid
-        get() = binding.previewGrid
 
     val cdTimer: CountDownTimerUI
         get() = binding.cTimer
@@ -399,6 +402,9 @@ open class MainActivity : AppCompatActivity() {
         tabLayout.settleNow()
 
         viewfinder.onAction(LifecycleAction.ScreenPaused)
+        previewOverlays.onAction(
+            PreviewOverlaysAction.PreviewFlashVisibilityChanged(visible = false),
+        )
         previewFrames.clear()
     }
 
@@ -417,6 +423,11 @@ open class MainActivity : AppCompatActivity() {
             vibrator = vibrator,
             capturedItemIntents = capturedItemIntents,
             onAction = viewfinder::onAction,
+            onPreviewFlashVisibilityChanged = { visible ->
+                previewOverlays.onAction(
+                    PreviewOverlaysAction.PreviewFlashVisibilityChanged(visible = visible),
+                )
+            },
         )
         viewfinder.onAction(
             LifecycleAction.ScreenCreated(
@@ -442,6 +453,15 @@ open class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.uiState.collect { state ->
+                    previewOverlays.onAction(
+                        PreviewOverlaysAction.PreviewContentChanged(
+                            content = PreviewContentState(
+                                mode = state.mode,
+                                isTransitionFrameVisible = state.preview.lastFrameVisible,
+                                isCaptureResultVisible = state.captureResult.visible,
+                            ),
+                        ),
+                    )
                     renderer.render(state)
                 }
             }
@@ -480,6 +500,7 @@ open class MainActivity : AppCompatActivity() {
             CameraTheme {
                 CameraOverlay(
                     viewfinder = viewfinder,
+                    previewOverlays = previewOverlays,
                     statusBar = statusBar,
                     quickSettings = quickSettings,
                     sheetState = quickSettingsSheet,

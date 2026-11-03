@@ -72,7 +72,9 @@ internal class GalleryViewModel @Inject constructor(
         ),
     )
 
-    override val uiState: StateFlow<GalleryUiState> = stateHolder.derive(uiStateMapper::map)
+    override val uiState: StateFlow<GalleryUiState> = stateHolder.derive { state ->
+        uiStateMapper.map(state)
+    }
 
     override val effects: Flow<Effect> = stateHolder.effects
 

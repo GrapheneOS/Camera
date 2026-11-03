@@ -40,6 +40,7 @@ internal class ViewfinderEffectHandlerImpl(
     private val vibrator: Vibrator,
     private val capturedItemIntents: CapturedItemIntents,
     private val onAction: (ViewfinderAction) -> Unit,
+    private val onPreviewFlashVisibilityChanged: (Boolean) -> Unit,
 ) : ViewfinderEffectHandler {
 
     private val permissionRequests = AppPermission.entries.associateWith { permission ->
@@ -167,12 +168,14 @@ internal class ViewfinderEffectHandlerImpl(
         animation.setAnimationListener(
             object : Animation.AnimationListener {
                 override fun onAnimationStart(animation: Animation?) {
+                    onPreviewFlashVisibilityChanged(true)
                     activity.mainOverlay.visibility = View.VISIBLE
                 }
 
                 override fun onAnimationEnd(animation: Animation?) {
                     activity.mainOverlay.visibility = View.INVISIBLE
                     activity.mainOverlay.setImageResource(android.R.color.transparent)
+                    onPreviewFlashVisibilityChanged(false)
                 }
 
                 override fun onAnimationRepeat(animation: Animation?) {}

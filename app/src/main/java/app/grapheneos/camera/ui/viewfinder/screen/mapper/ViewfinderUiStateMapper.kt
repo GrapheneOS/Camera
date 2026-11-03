@@ -85,7 +85,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         return PreviewUiModel(
             aspectRatio = state.aspectRatio(),
             sensorOrientationDegrees = state.session.sensorOrientationDegrees,
-            gridType = state.settings.gridType,
             isStreaming = state.preview.isStreaming,
             lastFrameVisible = state.preview.isLastFrameShown,
             blursLastFrame = !state.isCaptureSession,

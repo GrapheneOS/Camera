@@ -35,7 +35,9 @@ internal class LicensesViewModel @Inject constructor(
         LicensesState(),
     )
 
-    override val uiState: StateFlow<LicensesUiState> = stateHolder.derive(uiStateMapper::map)
+    override val uiState: StateFlow<LicensesUiState> = stateHolder.derive { state ->
+        uiStateMapper.map(state)
+    }
 
     override val effects: Flow<Effect> = stateHolder.effects
 
