@@ -31,11 +31,6 @@ sealed interface ViewfinderScreenEffect {
 
     sealed interface Preview : ViewfinderScreenEffect {
 
-        data class ShowFocus(
-            val x: Float,
-            val y: Float,
-        ) : Preview
-
         data class Flash(
             val selfIlluminate: Boolean,
         ) : Preview

@@ -7,7 +7,6 @@ import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
@@ -140,12 +139,6 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
             x = x,
             y = y,
             autoCancelSeconds = state.settings.focusTimeoutSeconds,
-        )
-        stateHolder.postEffect(
-            Effect.Preview.ShowFocus(
-                x = x,
-                y = y,
-            ),
         )
 
         if (!state.isVideoMode()) {

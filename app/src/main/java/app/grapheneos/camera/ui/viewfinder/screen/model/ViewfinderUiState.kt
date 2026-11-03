@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
@@ -24,6 +25,7 @@ data class ViewfinderUiState(
     val selfTimer: SelfTimerUiModel = SelfTimerUiModel(),
     val recording: RecordingUiModel = RecordingUiModel(),
     val qr: QrUiModel = QrUiModel(),
+    val focusRing: FocusRingUiModel? = null,
     val exposure: ExposureUiModel = ExposureUiModel(),
     val rotation: RotationUiModel = RotationUiModel(),
     val capturedPreviewVisible: Boolean = false,
