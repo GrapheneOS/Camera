@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import android.view.Surface
+import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
@@ -14,12 +15,14 @@ import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderFocusRequest
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import kotlin.time.Duration
@@ -54,14 +57,30 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun aShownCapturedPreview_takesTheShutterOffTheScreen() {
-        val shown = map(capture = ViewfinderCaptureState(isCapturedPreviewShown = true))
+    fun aCaptureResult_takesTheShutterOffTheScreen() {
+        val image = createBitmap(1, 1)
+        val shown = map(
+            capture = ViewfinderCaptureState(result = ViewfinderCaptureResult.Photo(image)),
+        )
 
         assertFalse(shown.captureButton.visible)
-        assertTrue(shown.capturedPreviewVisible)
+        assertEquals(CaptureResultUiModel(visible = true, image = image), shown.captureResult)
 
-        assertFalse(map().capturedPreviewVisible)
+        assertEquals(CaptureResultUiModel(), map().captureResult)
         assertTrue(map().captureButton.visible)
+    }
+
+    @Test
+    fun aHeldShutter_staysOffTheScreen() {
+        val held = map(capture = ViewfinderCaptureState(isShutterHeld = true))
+
+        assertFalse(held.captureButton.visible)
+    }
+
+    @Test
+    fun captureSessions_doNotBlurTheLastFrame() {
+        assertTrue(map().preview.blursLastFrame)
+        assertFalse(map(isCaptureSession = true).preview.blursLastFrame)
     }
 
     @Test
@@ -453,7 +472,9 @@ class ViewfinderUiStateMapperTest {
         val waiting = map(isCaptureSession = true)
         val reviewing = map(
             isCaptureSession = true,
-            capture = ViewfinderCaptureState(isCapturedPreviewShown = true),
+            capture = ViewfinderCaptureState(
+                result = ViewfinderCaptureResult.Photo(image = createBitmap(1, 1)),
+            ),
         )
 
         assertFalse(waiting.thirdOption.visible)
@@ -477,14 +498,14 @@ class ViewfinderUiStateMapperTest {
             mode = CameraMode.VIDEO,
             isCaptureSession = true,
             requiresVideoModeOnly = true,
-            capture = ViewfinderCaptureState(isCapturedPreviewShown = true),
+            capture = ViewfinderCaptureState(result = ViewfinderCaptureResult.Video(image = null)),
         )
 
         assertFalse(waiting.thirdOption.visible)
         assertFalse(recording.thirdOption.visible)
         assertFalse(recording.cancelButtonVisible)
         assertTrue(reviewing.thirdOption.visible)
-        assertTrue(reviewing.capturedPreviewVisible)
+        assertTrue(reviewing.captureResult.visible)
     }
 
     @Test

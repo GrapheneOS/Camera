@@ -79,10 +79,6 @@ sealed interface ViewfinderScreenEffect {
         data class PreviewReturned(
             val bitmap: Bitmap,
         ) : Picture
-
-        data class PreviewCaptured(
-            val bitmap: Bitmap,
-        ) : Picture
     }
 
     sealed interface Recording : ViewfinderScreenEffect {
