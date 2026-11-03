@@ -32,6 +32,7 @@ import app.grapheneos.camera.ui.camerasettings.components.SettingsTopAppBar
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarNestedScroll
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarScrollBehavior
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
+import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsNavEvent
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
@@ -42,6 +43,7 @@ import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 @Composable
 internal fun CameraSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigate: (CameraSettingsNavEvent) -> Unit,
     modifier: Modifier = Modifier,
     screenModel: CameraSettingsScreenModel = hiltViewModel<CameraSettingsViewModel>(),
 ) {
@@ -68,6 +70,11 @@ internal fun CameraSettingsScreen(
     CollectEvents(
         events = screenModel.effects,
         onEvent = effectHandler::handle,
+    )
+
+    CollectEvents(
+        events = screenModel.navigationEvents,
+        onEvent = onNavigate,
     )
 
     CameraSettingsContent(

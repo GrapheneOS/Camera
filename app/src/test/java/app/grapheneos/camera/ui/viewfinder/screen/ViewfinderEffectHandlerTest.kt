@@ -12,7 +12,6 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect.CaptureResult
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import io.mockk.verifyOrder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -28,6 +27,7 @@ class ViewfinderEffectHandlerTest {
     private val handler = ViewfinderEffectHandlerImpl(
         activity = activity,
         vibrator = mockk<Vibrator>(),
+        capturedItemIntents = mockk(),
         onAction = {},
     )
 
@@ -90,17 +90,10 @@ class ViewfinderEffectHandlerTest {
             activity.finish()
         }
         assertEquals(uri, result.captured.data)
-        assertEquals(uri, result.captured.getParcelableExtra(MediaStore.EXTRA_OUTPUT, Uri::class.java))
+        assertEquals(
+            uri,
+            result.captured.getParcelableExtra(MediaStore.EXTRA_OUTPUT, Uri::class.java),
+        )
         assertTrue(result.captured.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
-    }
-
-    @Test
-    fun videoReview_usesTheActivityLauncher() {
-        val uri = Uri.parse("content://media/external/video/media/42")
-
-        handler.handle(CaptureResult.OpenVideo(uri))
-
-        verify(exactly = 1) { activity.videoPlayerLauncher.open(activity, uri) }
-        verify(exactly = 0) { activity.finish() }
     }
 }

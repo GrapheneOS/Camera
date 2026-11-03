@@ -57,7 +57,10 @@ internal class ViewfinderViewRenderer(
 ) {
 
     private val modeStripRenderer by lazy {
-        ViewfinderModeStripRenderer(tabs = activity.tabLayout, onAction = onAction)
+        ViewfinderModeStripRenderer(
+            tabs = activity.tabLayout,
+            onAction = onAction,
+        )
     }
 
     private var renderedThumbnailLoaderVisible = false

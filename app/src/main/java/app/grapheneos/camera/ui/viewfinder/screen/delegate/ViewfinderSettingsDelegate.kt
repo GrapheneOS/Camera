@@ -138,15 +138,13 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     override fun openCameraSettings(capabilities: CameraCapabilities) {
         val state = stateHolder.state.value
-        val effect = when {
-            state.recording.isActive() -> {
-                Effect.ShowMessage(R.string.camera_settings_unavailable_during_recording)
-            }
+        when {
+            state.recording.isActive() -> stateHolder.postEffect(
+                Effect.ShowMessage(R.string.camera_settings_unavailable_during_recording),
+            )
 
-            else -> Effect.Settings.OpenCameraSettings(capabilities)
+            else -> stateHolder.postNavEvent(NavEvent.OpenCameraSettings(capabilities))
         }
-
-        stateHolder.postEffect(effect)
     }
 
     private fun reload() {

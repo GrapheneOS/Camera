@@ -13,11 +13,11 @@ import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
 import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapper
 import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
@@ -37,6 +37,7 @@ internal interface QuickSettingsScreenModel {
     val uiState: StateFlow<QuickSettingsUiState>
 
     val effects: Flow<Effect>
+    val navigationEvents: Flow<NavEvent>
 
     fun onAction(action: Action)
 }
@@ -53,7 +54,7 @@ internal class QuickSettingsViewModel @Inject constructor(
 ) : ViewModel(),
     QuickSettingsScreenModel {
 
-    private val stateHolder = ScreenStateHolder<QuickSettingsState, Effect>(
+    private val stateHolder = QuickSettingsStateHolder(
         initial = QuickSettingsState(
             settings = settingsRepository.settings.value,
         ),
@@ -62,6 +63,8 @@ internal class QuickSettingsViewModel @Inject constructor(
     override val uiState: StateFlow<QuickSettingsUiState> = stateHolder.derive(uiStateMapper::map)
 
     override val effects: Flow<Effect> = stateHolder.effects
+
+    override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents
 
     private val state: QuickSettingsState
         get() = stateHolder.state.value
@@ -129,8 +132,8 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun openCameraSettings() {
-        stateHolder.send(
-            Effect.OpenCameraSettings(
+        stateHolder.postNavEvent(
+            NavEvent.OpenCameraSettings(
                 entryPoint = entryPoint,
                 capabilities = session.capabilities(),
             ),

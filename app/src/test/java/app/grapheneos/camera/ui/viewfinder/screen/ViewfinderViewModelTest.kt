@@ -285,7 +285,9 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             stateHolder.update {
                 it.copy(
                     modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
-                    session = it.session.copy(availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO)),
+                    session = it.session.copy(
+                        availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO),
+                    ),
                 )
             }
 
@@ -324,7 +326,9 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             stateHolder.update {
                 it.copy(
                     modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
-                    session = it.session.copy(availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO)),
+                    session = it.session.copy(
+                        availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO),
+                    ),
                 )
             }
 

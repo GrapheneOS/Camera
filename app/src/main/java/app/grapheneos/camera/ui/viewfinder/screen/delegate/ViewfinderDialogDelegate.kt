@@ -5,6 +5,7 @@ import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
 import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 
@@ -40,7 +41,7 @@ internal class ViewfinderDialogDelegateImpl @Inject constructor(
 
         // The camera can't do anything without its permission, so declining to grant it leaves.
         if (dialog is ViewfinderDialog.CameraPermission) {
-            stateHolder.postEffect(Effect.CloseScreen)
+            stateHolder.postNavEvent(NavEvent.CloseScreen)
         }
     }
 

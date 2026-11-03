@@ -29,6 +29,7 @@ import app.grapheneos.camera.ui.quicksettings.components.quickSettingsTitle
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 
 @Composable
@@ -39,6 +40,7 @@ internal fun QuickSettingsScreen(
     insets: QuickSettingsInsets,
     highlight: QuickSetting?,
     onVisibleChange: (visible: Boolean) -> Unit,
+    onNavigate: (QuickSettingsNavEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
@@ -48,6 +50,11 @@ internal fun QuickSettingsScreen(
     CollectEvents(
         events = screenModel.effects,
         onEvent = effectHandler::handle,
+    )
+
+    CollectEvents(
+        events = screenModel.navigationEvents,
+        onEvent = onNavigate,
     )
 
     LaunchedEffect(sheetState, visible) {

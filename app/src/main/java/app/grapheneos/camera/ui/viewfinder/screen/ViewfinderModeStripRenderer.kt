@@ -26,9 +26,12 @@ internal class ViewfinderModeStripRenderer(
             onModeTouched = { mode -> onAction(CameraAction.ModeStripReleased(mode)) },
         )
 
-        if (previous != null &&
-            (state.selectionId != previous.selectionId || state.selectedMode != previous.selectedMode)
-        ) {
+        if (previous == null) return
+
+        val selectionChanged = state.selectionId != previous.selectionId ||
+            state.selectedMode != previous.selectedMode
+
+        if (selectionChanged) {
             tabs.goToMode(state.selectedMode) {
                 onAction(CameraAction.ModeStripSettled(state.selectedMode))
             }
