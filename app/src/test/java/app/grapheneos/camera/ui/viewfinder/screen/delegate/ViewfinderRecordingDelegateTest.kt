@@ -356,15 +356,18 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
-    fun aSavedRecording_inACaptureSession_isShownForReview() {
+    fun aSavedRecording_inACaptureSession_becomesTheCaptureResult() {
         runTest {
-            createDelegate()
-            val effects = collectEffects(stateHolder)
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
             stateHolder.update { state -> state.copy(isCaptureSession = true) }
 
             recorderEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
 
-            assertEquals(listOf(Effect.Recording.ShowForReview(uri = Uri.EMPTY)), effects)
+            assertEquals(
+                listOf(ViewfinderRecordingEvent.CaptureResultSaved(uri = Uri.EMPTY)),
+                events,
+            )
         }
     }
 
@@ -372,13 +375,13 @@ class ViewfinderRecordingDelegateTest {
     fun aSavedRecording_inACaptureSession_isNotShownOverTheNextOne() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectEvents(delegate)
             stateHolder.update { state -> state.copy(isCaptureSession = true) }
 
             delegate.requestRecording()
             recorderEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
 
-            assertTrue(effects.none { it is Effect.Recording.ShowForReview })
+            assertTrue(events.isEmpty())
         }
     }
 

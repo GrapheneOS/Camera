@@ -156,7 +156,7 @@ class ViewfinderCaptureDelegateTest {
             delegate.takePreviewPicture()
 
             assertFalse(capture().isSavingPicture)
-            assertEquals(listOf(Effect.Picture.PreviewFailed), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoFailed), effects)
         }
     }
 
@@ -184,7 +184,7 @@ class ViewfinderCaptureDelegateTest {
 
             delegate.confirmResult(outputUri = FOREIGN_URI)
 
-            assertEquals(listOf(Effect.Picture.PreviewStored), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoStored), effects)
         }
     }
 
@@ -199,7 +199,7 @@ class ViewfinderCaptureDelegateTest {
 
             delegate.confirmResult(outputUri = FOREIGN_URI)
 
-            assertEquals(listOf(Effect.Picture.PreviewStoreFailed), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoStoreFailed), effects)
         }
     }
 
@@ -213,7 +213,7 @@ class ViewfinderCaptureDelegateTest {
 
             delegate.confirmResult(outputUri = null)
 
-            assertEquals(listOf(Effect.Picture.PreviewReturned(bitmap = bitmap)), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoReturned(bitmap = bitmap)), effects)
             coVerify(exactly = 0) { storeCapturedPreview(uri = any(), bitmap = any()) }
         }
     }
@@ -227,20 +227,58 @@ class ViewfinderCaptureDelegateTest {
 
             delegate.confirmResult(outputUri = null)
 
-            val returned = (effects.single() as Effect.Picture.PreviewReturned).bitmap
+            val returned = (effects.single() as Effect.CaptureResult.PhotoReturned).bitmap
             assertEquals(100, returned.width)
             assertEquals(100, returned.height)
         }
     }
 
     @Test
-    fun confirmResult_withoutAPhoto_doesNothing() {
+    fun confirmResult_ofARecording_handsItsUriBack() {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
-            delegate.showResult(ViewfinderCaptureResult.Video(image = null))
+            delegate.showResult(ViewfinderCaptureResult.Video(uri = FOREIGN_URI, image = null))
+
+            delegate.confirmResult(outputUri = FOREIGN_URI)
+
+            assertEquals(listOf(Effect.CaptureResult.VideoReturned(uri = FOREIGN_URI)), effects)
+        }
+    }
+
+    @Test
+    fun confirmResult_withoutAResult_doesNothing() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
 
             delegate.confirmResult(outputUri = null)
+
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun playResult_opensTheRecordingInThePlayer() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Video(uri = FOREIGN_URI, image = null))
+
+            delegate.playResult()
+
+            assertEquals(listOf(Effect.CaptureResult.OpenVideo(uri = FOREIGN_URI)), effects)
+        }
+    }
+
+    @Test
+    fun playResult_ofAPhoto_doesNothing() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Photo(image = createBitmap(1, 1)))
+
+            delegate.playResult()
 
             assertTrue(effects.isEmpty())
         }

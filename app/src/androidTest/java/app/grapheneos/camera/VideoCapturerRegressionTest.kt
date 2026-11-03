@@ -380,7 +380,7 @@ class VideoCapturerRegressionTest {
             scenario.moveToState(Lifecycle.State.RESUMED)
 
             waitUntil(scenario, "the preview the finalize deferred arrives") {
-                it.confirmButton.visibility == View.VISIBLE
+                it.binding.confirmButton.visibility == View.VISIBLE
             }
         }
     }

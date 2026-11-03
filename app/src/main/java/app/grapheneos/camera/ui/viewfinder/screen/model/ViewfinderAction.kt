@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
@@ -93,9 +92,7 @@ sealed interface ViewfinderAction {
 
         data object ConfirmClicked : CaptureAction
 
-        data class RecordingResultShown(
-            val image: Bitmap?,
-        ) : CaptureAction
+        data object PlayResultClicked : CaptureAction
 
         sealed interface VolumeKeyEvent : CaptureAction {
 

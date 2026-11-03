@@ -11,6 +11,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import io.mockk.every
 import io.mockk.verify
@@ -56,15 +57,31 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun recordingResultShown_isShownAsTheResultAndReleasesTheCamera() {
+    fun captureResultSaved_showsTheRecordingOverItsLastFrameAndReleasesTheCamera() {
         runTest {
-            val viewModel = createViewModel()
-            viewModel.onAction(CaptureAction.RecordingResultShown(image = null))
+            val frame = createBitmap(1, 1)
+            every { cameraDelegate.currentPreviewFrame() } returns frame
+            createViewModel()
+
+            recordingEvents.emit(ViewfinderRecordingEvent.CaptureResultSaved(uri = OUTPUT_URI))
 
             verifyOrder {
-                captureDelegate.showResult(ViewfinderCaptureResult.Video(image = null))
+                captureDelegate.showResult(
+                    ViewfinderCaptureResult.Video(uri = OUTPUT_URI, image = frame),
+                )
                 cameraDelegate.unbindCamera()
             }
+        }
+    }
+
+    @Test
+    fun playResultClicked_playsTheResult() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(CaptureAction.PlayResultClicked)
+
+            verify(exactly = 1) { captureDelegate.playResult() }
         }
     }
 

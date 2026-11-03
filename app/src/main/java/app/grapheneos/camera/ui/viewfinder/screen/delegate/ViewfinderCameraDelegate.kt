@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.annotation.StringRes
 import app.grapheneos.camera.R
@@ -63,6 +64,7 @@ interface ViewfinderCameraDelegate {
     fun dismissQrResult()
 
     fun capabilities(): CameraCapabilities
+    fun currentPreviewFrame(): Bitmap?
 }
 
 internal class ViewfinderCameraDelegateImpl @Inject constructor(
@@ -265,6 +267,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     override fun capabilities(): CameraCapabilities {
         return session.capabilities()
+    }
+
+    override fun currentPreviewFrame(): Bitmap? {
+        return host?.previewFrames?.currentFrame()
     }
 
     private fun onSessionEvent(event: CameraSessionEvent) {

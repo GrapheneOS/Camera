@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
+import android.net.Uri
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.LensFacing
@@ -85,7 +86,7 @@ class ViewfinderStateTest {
         assertTrue(
             session.copy(
                 capture = ViewfinderCaptureState(
-                    result = ViewfinderCaptureResult.Video(image = null),
+                    result = ViewfinderCaptureResult.Video(uri = Uri.EMPTY, image = null),
                 ),
             )
                 .isReviewingRecordedVideo(),

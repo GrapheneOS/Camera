@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.View
 import android.view.animation.AlphaAnimation
@@ -20,7 +21,6 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.camerasettings.navigation.openCameraSettings
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
@@ -66,7 +66,7 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Settings -> handleSettings(effect)
             is Effect.Gallery -> handleGallery(effect)
             is Effect.Location -> handleLocation(effect)
-            is Effect.Picture -> handlePicture(effect)
+            is Effect.CaptureResult -> handleCaptureResult(effect)
             is Effect.Recording -> handleRecording(effect)
             is Effect.Permission -> handlePermission(effect)
         }
@@ -232,23 +232,21 @@ internal class ViewfinderEffectHandlerImpl(
         activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
     }
 
-    private fun handlePicture(effect: Effect.Picture) {
+    private fun handleCaptureResult(effect: Effect.CaptureResult) {
         when (effect) {
-            is Effect.Picture.PreviewFailed -> showCapturedPreviewFailure()
-            is Effect.Picture.PreviewStored -> finishCapture(stored = true)
-            is Effect.Picture.PreviewReturned -> returnPhoto(effect.bitmap)
-            is Effect.Picture.PreviewStoreFailed -> finishCapture(stored = false)
+            is Effect.CaptureResult.PhotoFailed -> abandonCapture()
+            is Effect.CaptureResult.PhotoStored -> finishCapture(stored = true)
+            is Effect.CaptureResult.PhotoStoreFailed -> finishCapture(stored = false)
+            is Effect.CaptureResult.PhotoReturned -> returnPhoto(effect.bitmap)
+            is Effect.CaptureResult.VideoReturned -> returnVideo(effect.uri)
+
+            is Effect.CaptureResult.OpenVideo -> {
+                activity.videoPlayerLauncher.open(activity, effect.uri)
+            }
         }
     }
 
-    private fun returnPhoto(photo: Bitmap) {
-        val result = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, photo)
-
-        activity.setResult(AppCompatActivity.RESULT_OK, result)
-        activity.finish()
-    }
-
-    private fun showCapturedPreviewFailure() {
+    private fun abandonCapture() {
         activity.showMessage(R.string.unable_to_capture_image)
         activity.setResult(AppCompatActivity.RESULT_CANCELED)
         activity.finish()
@@ -268,10 +266,25 @@ internal class ViewfinderEffectHandlerImpl(
         activity.finish()
     }
 
+    private fun returnPhoto(photo: Bitmap) {
+        val result = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, photo)
+
+        activity.setResult(AppCompatActivity.RESULT_OK, result)
+        activity.finish()
+    }
+
+    private fun returnVideo(uri: Uri) {
+        val result = Intent()
+            .setData(uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            .putExtra(MediaStore.EXTRA_OUTPUT, uri)
+
+        activity.setResult(AppCompatActivity.RESULT_OK, result)
+        activity.finish()
+    }
+
     private fun handleRecording(effect: Effect.Recording) {
         when (effect) {
-            is Effect.Recording.ShowForReview -> videoCaptureActivity()?.afterRecording(effect.uri)
-
             is Effect.Recording.PlayStartSound -> {
                 activity.tunePlayer.playVRStartSound {
                     onAction(RecordingAction.StartSoundPlayed)
@@ -322,10 +335,6 @@ internal class ViewfinderEffectHandlerImpl(
             .setData(Uri.fromParts("package", activity.packageName, null))
 
         activity.startActivity(intent)
-    }
-
-    private fun videoCaptureActivity(): VideoCaptureActivity? {
-        return activity as? VideoCaptureActivity
     }
 
     private companion object {

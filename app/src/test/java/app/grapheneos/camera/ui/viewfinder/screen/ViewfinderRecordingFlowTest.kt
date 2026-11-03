@@ -35,6 +35,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -214,7 +215,7 @@ class ViewfinderRecordingFlowTest {
     }
 
     @Test
-    fun aCaptureSessionRecording_keepsTheCameraUnboundUntilItCanBeReviewed() {
+    fun aCaptureSessionRecording_keepsTheCameraUnboundUntilItIsRetaken() {
         runTest {
             outputPublished = CompletableDeferred()
             val viewModel = createViewModel(
@@ -225,7 +226,6 @@ class ViewfinderRecordingFlowTest {
                 ),
             )
             assertEquals(CameraMode.VIDEO, state().mode)
-            val effects = collectEffects(viewModel)
             viewModel.onAction(LifecycleAction.ScreenCreated(host))
 
             viewModel.onAction(RecordingAction.RecordingRequested)
@@ -237,13 +237,18 @@ class ViewfinderRecordingFlowTest {
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
             assertEquals(1, recordingSession.stopCount)
-            assertFalse(effects.any { it is ViewfinderScreenEffect.Recording.ShowForReview })
+            assertFalse(state().capture.hasResult())
             verify(exactly = 0) { cameraSession.bind(any()) }
 
             outputPublished.complete(Unit)
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            assertTrue(effects.any { it is ViewfinderScreenEffect.Recording.ShowForReview })
+            assertTrue(state().capture.hasResult())
+            verify(exactly = 0) { cameraSession.bind(any()) }
+
+            viewModel.onAction(CaptureAction.RetakeClicked)
+
+            assertFalse(state().capture.hasResult())
             verify(exactly = 1) { cameraSession.bind(any()) }
         }
     }

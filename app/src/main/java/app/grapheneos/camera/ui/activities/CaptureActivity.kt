@@ -14,8 +14,7 @@ import app.grapheneos.camera.util.getParcelableExtra
 open class CaptureActivity : MainActivity() {
 
     private lateinit var retakeIcon: ImageView
-
-    lateinit var confirmButton: ImageButton
+    private lateinit var confirmButton: ImageButton
 
     override val outputUri: Uri?
         get() {
