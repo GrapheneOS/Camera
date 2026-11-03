@@ -100,7 +100,6 @@
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$private fun isExtensionUsable: Boolean</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$override fun onSensorChanged</ID>
-    <ID>ReturnCount:Utils.kt:fun storageLocationToUiString: String</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$private fun createRecordingContext: RecordingContext?</ID>
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$override fun onTouch: Boolean</ID>

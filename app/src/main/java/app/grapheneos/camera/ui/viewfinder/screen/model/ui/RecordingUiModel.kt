@@ -1,5 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model.ui
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class RecordingUiModel(
     val isActive: Boolean = false,
     val isMuted: Boolean = false,

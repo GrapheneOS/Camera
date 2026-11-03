@@ -66,9 +66,16 @@ class BottomTabLayoutRegressionTest {
             val trace = dragStrip(scenario, scrollPx = travel, endWith = DragEnd.CANCEL)
 
             trace.zipWithNext { before, after ->
-                assertTrue("the strip moved backwards, $before -> $after, in $trace", after >= before)
+                assertTrue(
+                    "the strip moved backwards, $before -> $after, in $trace",
+                    after >= before
+                )
             }
-            assertEquals("the strip did not follow the finger", trace.first() + travel, trace.last())
+            assertEquals(
+                "the strip did not follow the finger",
+                trace.first() + travel,
+                trace.last()
+            )
         }
     }
 
@@ -254,7 +261,11 @@ class BottomTabLayoutRegressionTest {
                 val tabs = activity.tabLayout
                 tabs.settleNow()
 
-                assertEquals("the strip did not finish its move", centreOf(tabs, target), tabs.scrollX)
+                assertEquals(
+                    "the strip did not finish its move",
+                    centreOf(tabs, target),
+                    tabs.scrollX
+                )
                 assertEquals(
                     "the mode the strip was settling into never reached the camera",
                     tabs.modeAt(target),
@@ -414,15 +425,19 @@ class BottomTabLayoutRegressionTest {
                         still != null,
                     )
                     val drawn = RectF(
-                        0f, 0f, still!!.intrinsicWidth.toFloat(), still.intrinsicHeight.toFloat()
+                        0f,
+                        0f,
+                        still!!.intrinsicWidth.toFloat(),
+                        still.intrinsicHeight.toFloat()
                     )
                     overlay.imageMatrix.mapRect(drawn)
 
                     assertTrue(
-                        "entering $mode drew the still as ${drawn.width()}x${drawn.height()} in a " +
-                                "${overlay.width}x${overlay.height} preview",
+                        "entering $mode drew the still as " +
+                            "${drawn.width()}x${drawn.height()} in a " +
+                            "${overlay.width}x${overlay.height} preview",
                         drawn.left <= 0f && drawn.top <= 0f &&
-                                drawn.right >= overlay.width && drawn.bottom >= overlay.height
+                            drawn.right >= overlay.width && drawn.bottom >= overlay.height
                     )
                 }
             }
@@ -431,8 +446,10 @@ class BottomTabLayoutRegressionTest {
 
     @Test
     fun takingBackASwitchMidGlide_doesNotStrandTheTransition() {
-        assumeTrue("the switch lands before it can be taken back with animations off",
-            animatorsEnabled())
+        assumeTrue(
+            "the switch lands before it can be taken back with animations off",
+            animatorsEnabled()
+        )
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitStrip(scenario)

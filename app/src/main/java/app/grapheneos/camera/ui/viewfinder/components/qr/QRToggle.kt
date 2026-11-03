@@ -7,7 +7,8 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.imageview.ShapeableImageView
 
 class QRToggle @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null,
 ) : ShapeableImageView(context, attrs) {
 
     lateinit var mActivity: MainActivity
@@ -38,9 +39,12 @@ class QRToggle @JvmOverloads constructor(
         if (!selected && barcodeFormats.enabled.size == 1) {
             // Name the format the way the label under the toggle does, not as the raw enum
             // constant ("PDF 417", not "PDF_417").
-            mActivity.showMessage(mActivity.getString(
-                R.string.couldnt_exclude_qr_format, contentDescription ?: key
-            ))
+            mActivity.showMessage(
+                mActivity.getString(
+                    R.string.couldnt_exclude_qr_format,
+                    contentDescription ?: key
+                )
+            )
             isSelected = true
         } else {
             if (!barcodeFormats.setEnabled(formatName = key, enabled = selected)) {

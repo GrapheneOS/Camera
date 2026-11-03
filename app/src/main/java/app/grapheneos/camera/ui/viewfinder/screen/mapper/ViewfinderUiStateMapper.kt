@@ -23,6 +23,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 import app.grapheneos.camera.util.formatVideoDuration
 import javax.inject.Inject
 import kotlin.time.Duration
+import kotlinx.collections.immutable.toImmutableSet
 
 interface ViewfinderUiStateMapper {
     fun map(state: ViewfinderState): ViewfinderUiState
@@ -94,7 +95,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
     private fun modeTabs(state: ViewfinderState): ModeTabsUiModel {
         return ModeTabsUiModel(
             visible = modeTabsVisible(state),
-            availableModes = state.session.availableModes,
+            availableModes = state.session.availableModes.toImmutableSet(),
             selectedMode = state.modeStripTarget(),
             selectionId = state.modeStrip.selectionId,
         )

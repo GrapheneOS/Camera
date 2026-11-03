@@ -25,7 +25,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import io.mockk.every
-import io.mockk.verify
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch

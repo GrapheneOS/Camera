@@ -25,7 +25,7 @@ class QrTile : SecureMainActivity() {
         if (keyguardManager.isKeyguardLocked) {
             val cb = object : KeyguardManager.KeyguardDismissCallback() {
                 override fun onDismissSucceeded() {
-                    super@QrTile.startActivity(intent, options);
+                    super@QrTile.startActivity(intent, options)
                 }
             }
             keyguardManager.requestDismissKeyguard(this, cb)
