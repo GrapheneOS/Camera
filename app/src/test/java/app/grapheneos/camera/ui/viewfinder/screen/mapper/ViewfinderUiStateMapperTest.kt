@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import android.net.Uri
 import android.view.Surface
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.R
@@ -498,7 +499,9 @@ class ViewfinderUiStateMapperTest {
             mode = CameraMode.VIDEO,
             isCaptureSession = true,
             requiresVideoModeOnly = true,
-            capture = ViewfinderCaptureState(result = ViewfinderCaptureResult.Video(image = null)),
+            capture = ViewfinderCaptureState(
+                result = ViewfinderCaptureResult.Video(uri = Uri.EMPTY, image = null),
+            ),
         )
 
         assertFalse(waiting.thirdOption.visible)

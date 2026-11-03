@@ -265,10 +265,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.StorageLocationNotFound -> galleryDelegate.onStorageLocationNotFound()
             is CaptureAction.RetakeClicked -> retake()
             is CaptureAction.ConfirmClicked -> captureDelegate.confirmResult(outputUri)
-
-            is CaptureAction.RecordingResultShown -> {
-                showCaptureResult(ViewfinderCaptureResult.Video(image = action.image))
-            }
+            is CaptureAction.PlayResultClicked -> captureDelegate.playResult()
 
             is CaptureAction.VolumeKeyEvent -> {
                 volumeKeyActionMapper
@@ -432,6 +429,15 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (event) {
             is ViewfinderRecordingEvent.OutputUnavailable -> onRecordingOutputUnavailable()
             is ViewfinderRecordingEvent.ReadyToStart -> startPreparedRecording()
+
+            is ViewfinderRecordingEvent.CaptureResultSaved -> {
+                showCaptureResult(
+                    ViewfinderCaptureResult.Video(
+                        uri = event.uri,
+                        image = cameraDelegate.currentPreviewFrame(),
+                    ),
+                )
+            }
 
             is ViewfinderRecordingEvent.Saved -> {
                 galleryDelegate.recordCapturedItem(event.item)
@@ -751,7 +757,9 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun startCamera(forced: Boolean) {
-        if (!cameraDelegate.canBeginBind(forced)) return
+        // A recording can be saved while the screen is away, and its result is shown before the
+        // screen resumes: binding then would put the camera back to work behind the result.
+        if (state().capture.hasResult() || !cameraDelegate.canBeginBind(forced)) return
 
         captureDelegate.cancelPictureCapture()
 
