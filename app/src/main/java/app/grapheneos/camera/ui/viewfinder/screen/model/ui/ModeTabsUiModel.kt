@@ -5,4 +5,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 data class ModeTabsUiModel(
     val visible: Boolean = false,
     val availableModes: Set<CameraMode> = emptySet(),
+    val selectedMode: CameraMode = CameraMode.CAMERA,
+    val selectionId: Int = 0,
+    val isSwitching: Boolean = false,
 )

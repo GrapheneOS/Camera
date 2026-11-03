@@ -10,12 +10,12 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegateImpl
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegateImpl
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
@@ -46,9 +46,9 @@ internal abstract class ViewfinderViewModelBindsModule {
 
     @Binds
     @ViewModelScoped
-    abstract fun bindViewfinderGestureDelegate(
-        impl: ViewfinderGestureDelegateImpl,
-    ): ViewfinderGestureDelegate
+    abstract fun bindViewfinderModeSwitchDelegate(
+        impl: ViewfinderModeSwitchDelegateImpl,
+    ): ViewfinderModeSwitchDelegate
 
     @Binds
     @ViewModelScoped

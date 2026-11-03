@@ -36,15 +36,16 @@ internal fun CameraOverlay(
     quickSettings: QuickSettingsScreenModel,
     sheetState: QuickSettingsSheetState,
     sheet: QuickSettingsNavKey?,
-    isTransitionShown: Boolean,
-    isModeSwitching: Boolean,
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
 ) {
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
         val controlsShown = uiState.isSettingsPanelAvailable && !uiState.capturedPreviewVisible
+        val isModeSwitching = uiState.modeTabs.isSwitching
         val statusBarVisible = controlsShown && !uiState.recording.isActive && !isModeSwitching
-        val controlsEnabled = sheetState.isHidden && !isTransitionShown && !isModeSwitching
+        val controlsEnabled = sheetState.isHidden &&
+            !uiState.preview.lastFrameVisible &&
+            !isModeSwitching
 
         Box(modifier = Modifier.fillMaxSize()) {
             AnimatedVisibility(

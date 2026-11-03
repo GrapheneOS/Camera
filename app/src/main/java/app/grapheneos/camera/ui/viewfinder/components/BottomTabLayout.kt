@@ -38,15 +38,36 @@ class BottomTabLayout @JvmOverloads constructor(
             return getTabAt(selectedTabPosition)
         }
 
-    fun getTabForMode(mode: CameraMode): Tab? {
-        for (index in 0 until tabCount) {
-            val tab = getTabAt(index)
-            if (tab?.tag == mode) {
-                return tab
-            }
+    val selectedMode: CameraMode?
+        get() {
+            return selectedTab?.mode
         }
 
-        return null
+    private val Tab.mode: CameraMode?
+        get() {
+            return tag as? CameraMode
+        }
+
+    fun modeAt(position: Int): CameraMode? {
+        return getTabAt(position)?.mode
+    }
+
+    fun centredMode(): CameraMode? {
+        return (getTabAtX(scrollX) ?: selectedTab)?.mode
+    }
+
+    fun goToMode(
+        mode: CameraMode,
+        onSettled: Runnable? = null,
+    ) {
+        val tab = tabFor(mode) ?: return
+
+        goToTab(tab, onSettled)
+    }
+
+    private fun tabFor(mode: CameraMode): Tab? {
+        return (0 until tabCount)
+            .firstNotNullOfOrNull { index -> getTabAt(index)?.takeIf { it.mode == mode } }
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -109,13 +130,16 @@ class BottomTabLayout @JvmOverloads constructor(
         }
     }
 
-    fun isSettledOn(tab: Tab): Boolean {
-        val center = tabCenters.getOrNull(tab.position) ?: return true
+    fun isSettledOn(mode: CameraMode): Boolean {
+        val center = tabFor(mode)?.let { tabCenters.getOrNull(it.position) }
 
-        return scrollX == center
+        return center == null || scrollX == center
     }
 
-    fun goToTab(tab: Tab, onSettled: Runnable? = null) {
+    private fun goToTab(
+        tab: Tab,
+        onSettled: Runnable? = null,
+    ) {
         selectTab(tab)
 
         drawSelectionAtScroll(scrollX)
@@ -215,7 +239,7 @@ class BottomTabLayout @JvmOverloads constructor(
     fun setModes(
         modes: Set<CameraMode>,
         currentMode: CameraMode,
-        onTabTouched: (Tab) -> Unit,
+        onModeTouched: (CameraMode) -> Unit,
     ) {
         if (modes == getAllModes()) {
             return
@@ -231,7 +255,7 @@ class BottomTabLayout @JvmOverloads constructor(
 
                 tab.view.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_UP) {
-                        onTabTouched(tab)
+                        onModeTouched(mode)
                     }
                     false
                 }
@@ -245,9 +269,7 @@ class BottomTabLayout @JvmOverloads constructor(
     }
 
     fun getAllModes(): Set<CameraMode> {
-        return IntRange(0, tabCount - 1).map {
-            getTabAt(it)!!.tag as CameraMode
-        }.toSet()
+        return (0 until tabCount).mapNotNull(::modeAt).toSet()
     }
 
     private companion object {
