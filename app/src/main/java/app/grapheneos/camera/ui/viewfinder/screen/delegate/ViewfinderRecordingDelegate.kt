@@ -228,7 +228,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         }
 
         if (state.isCaptureSession && !state.recording.isActive()) {
-            postEffect(Effect.Recording.ShowForReview(uri = event.uri))
+            _recordingEvents.trySend(ViewfinderRecordingEvent.CaptureResultSaved(uri = event.uri))
         }
     }
 

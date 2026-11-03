@@ -126,7 +126,6 @@ internal class ViewfinderViewRenderer(
         renderLastFrame(
             preview = state.preview,
             isQrMode = state.mode.isQr,
-            isResultShown = result.visible,
         )
     }
 
@@ -158,7 +157,6 @@ internal class ViewfinderViewRenderer(
     private fun renderLastFrame(
         preview: PreviewUiModel,
         isQrMode: Boolean,
-        isResultShown: Boolean,
     ) {
         // A camera that stops streaming under a frame already up puts the still up again, now over
         // the frame held for the bind.
@@ -171,9 +169,6 @@ internal class ViewfinderViewRenderer(
         when {
             isUnchanged -> Unit
             preview.lastFrameVisible -> showLastFrame()
-            // The overlay holds the captured image, which a camera streaming again behind the
-            // result, after a pause, must not take down.
-            isResultShown -> Unit
             else -> hideLastFrame(isQrMode)
         }
     }

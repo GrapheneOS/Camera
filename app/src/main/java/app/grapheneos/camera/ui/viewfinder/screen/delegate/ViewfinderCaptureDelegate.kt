@@ -61,14 +61,15 @@ interface ViewfinderCaptureDelegate {
     fun onScreenStopped()
     fun onScreenDestroyed()
 
-    fun takePicture()
-    fun cancelPictureCapture()
-
     fun holdShutter()
 
+    fun takePicture()
     fun takePreviewPicture()
+    fun cancelPictureCapture()
+
     fun showResult(result: ViewfinderCaptureResult)
     fun confirmResult(outputUri: Uri?)
+    fun playResult()
     fun discardResult()
 
     fun startSelfTimer()
@@ -131,6 +132,15 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
+    override fun holdShutter() {
+        updateCapture { it.copy(isShutterHeld = true) }
+
+        scope.launch(mainDispatcher) {
+            delay(SHUTTER_HOLD)
+            updateCapture { it.copy(isShutterHeld = false) }
+        }
+    }
+
     override fun takePicture() {
         val thumbnailSize = host?.thumbnailSize ?: return
         val state = stateHolder.state.value
@@ -166,22 +176,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
-    override fun cancelPictureCapture() {
-        val pending = pendingCapture ?: return
-
-        pending.isCancelled = true
-        finish(pending)
-    }
-
-    override fun holdShutter() {
-        updateCapture { it.copy(isShutterHeld = true) }
-
-        scope.launch(mainDispatcher) {
-            delay(SHUTTER_HOLD)
-            updateCapture { it.copy(isShutterHeld = false) }
-        }
-    }
-
     override fun takePreviewPicture() {
         startPictureSave()
 
@@ -194,47 +188,39 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
+    override fun cancelPictureCapture() {
+        val pending = pendingCapture ?: return
+
+        pending.isCancelled = true
+        finish(pending)
+    }
+
     override fun showResult(result: ViewfinderCaptureResult) {
         updateCapture { it.copy(result = result) }
     }
 
     override fun confirmResult(outputUri: Uri?) {
-        val result = stateHolder.state.value.capture.result
-        val photo = (result as? ViewfinderCaptureResult.Photo)?.image ?: return
+        when (val result = stateHolder.state.value.capture.result) {
+            null -> Unit
 
-        applicationScope.launch(mainDispatcher) {
-            val effect = when {
-                outputUri == null -> {
-                    Effect.Picture.PreviewReturned(bitmap = inlineResult(photo))
-                }
-
-                storeCapturedPreview(uri = outputUri, bitmap = photo) -> {
-                    Effect.Picture.PreviewStored
-                }
-
-                else -> Effect.Picture.PreviewStoreFailed
+            is ViewfinderCaptureResult.Photo -> {
+                returnPhoto(photo = result.image, outputUri = outputUri)
             }
 
-            postEffect(effect)
+            is ViewfinderCaptureResult.Video -> {
+                postEffect(Effect.CaptureResult.VideoReturned(uri = result.uri))
+            }
         }
+    }
+
+    override fun playResult() {
+        val video = stateHolder.state.value.capture.result as? ViewfinderCaptureResult.Video
+
+        video?.let { postEffect(Effect.CaptureResult.OpenVideo(uri = it.uri)) }
     }
 
     override fun discardResult() {
         updateCapture { it.copy(result = null) }
-    }
-
-    // The photo goes back inside the result intent, and a binder transaction has no room for a
-    // full-size bitmap.
-    private suspend fun inlineResult(photo: Bitmap): Bitmap {
-        if (photo.byteCount <= MAX_INLINE_RESULT_BYTES) return photo
-
-        return withContext(defaultDispatcher) {
-            photo.scale(
-                photo.width / INLINE_RESULT_DOWNSCALE,
-                photo.height / INLINE_RESULT_DOWNSCALE,
-                false,
-            )
-        }
     }
 
     override fun startSelfTimer() {
@@ -432,7 +418,42 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private fun onPreviewFailed() {
         finishPictureSave()
 
-        postEffect(Effect.Picture.PreviewFailed)
+        postEffect(Effect.CaptureResult.PhotoFailed)
+    }
+
+    private fun returnPhoto(
+        photo: Bitmap,
+        outputUri: Uri?,
+    ) {
+        applicationScope.launch(mainDispatcher) {
+            val effect = when {
+                outputUri == null -> {
+                    Effect.CaptureResult.PhotoReturned(bitmap = inlineResult(photo))
+                }
+
+                storeCapturedPreview(uri = outputUri, bitmap = photo) -> {
+                    Effect.CaptureResult.PhotoStored
+                }
+
+                else -> Effect.CaptureResult.PhotoStoreFailed
+            }
+
+            postEffect(effect)
+        }
+    }
+
+    // The photo goes back inside the result intent, and a binder transaction has no room for a
+    // full-size bitmap.
+    private suspend fun inlineResult(photo: Bitmap): Bitmap {
+        if (photo.byteCount <= MAX_INLINE_RESULT_BYTES) return photo
+
+        return withContext(defaultDispatcher) {
+            photo.scale(
+                photo.width / INLINE_RESULT_DOWNSCALE,
+                photo.height / INLINE_RESULT_DOWNSCALE,
+                false,
+            )
+        }
     }
 
     private fun startPictureSave() {
