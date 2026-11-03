@@ -35,14 +35,25 @@ class ViewfinderModeStripRendererTest {
         visible = true,
         availableModes = linkedSetOf(CameraMode.CAMERA, CameraMode.VIDEO),
     )
-    private val target = initial.copy(selectedMode = CameraMode.VIDEO, selectionId = 1)
+    private val target = initial.copy(
+        selectedMode = CameraMode.VIDEO,
+        selectionId = 1,
+    )
 
     @Before
     fun setUp() {
         host = Robolectric.buildActivity(Activity::class.java).setup()
-        tabs = BottomTabLayout(ContextThemeWrapper(host.get(), R.style.Theme_Camera))
+        tabs = BottomTabLayout(
+            ContextThemeWrapper(
+                host.get(),
+                R.style.Theme_Camera,
+            ),
+        )
         host.get().setContentView(tabs)
-        renderer = ViewfinderModeStripRenderer(tabs = tabs, onAction = { actions += it })
+        renderer = ViewfinderModeStripRenderer(
+            tabs = tabs,
+            onAction = { actions += it },
+        )
         renderer.render(initial)
         layOut()
         shadowOf(Looper.getMainLooper()).idle()

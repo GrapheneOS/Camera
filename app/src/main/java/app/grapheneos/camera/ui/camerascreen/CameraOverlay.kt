@@ -21,8 +21,10 @@ import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreen
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreenModel
+import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarNavEvent
 import app.grapheneos.camera.ui.viewfinder.components.ViewfinderBottomRow
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderOverlay
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
@@ -38,6 +40,8 @@ internal fun CameraOverlay(
     sheet: QuickSettingsNavKey?,
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
+    onQuickSettingsNavigate: (QuickSettingsNavEvent) -> Unit,
+    onStatusBarNavigate: (StatusBarNavEvent) -> Unit,
 ) {
     val isSheetHidden by remember(sheetState) {
         derivedStateOf { sheetState.visibleFraction() == 0f }
@@ -54,6 +58,7 @@ internal fun CameraOverlay(
                     statusBar = statusBar,
                     sheetState = sheetState,
                     enabled = isSheetHidden,
+                    onNavigate = onStatusBarNavigate,
                     height = insets.previewTop,
                     onItemClick = { setting ->
                         viewfinder.onAction(SettingsAction.StatusBarClicked(setting))
@@ -80,6 +85,7 @@ internal fun CameraOverlay(
                 ),
                 highlight = sheet?.highlight,
                 onVisibleChange = onSheetOpenChange,
+                onNavigate = onQuickSettingsNavigate,
             )
         }
     }
@@ -92,11 +98,13 @@ private fun StatusBarLayer(
     enabled: Boolean,
     height: Dp,
     onItemClick: (QuickSetting) -> Unit,
+    onNavigate: (StatusBarNavEvent) -> Unit,
 ) {
     StatusBarScreen(
         screenModel = statusBar,
         enabled = enabled,
         onItemClick = onItemClick,
+        onNavigate = onNavigate,
         modifier = Modifier
             .fillMaxWidth()
             .height(height)

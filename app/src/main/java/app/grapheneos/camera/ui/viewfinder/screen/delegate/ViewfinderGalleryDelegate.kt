@@ -12,6 +12,7 @@ import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderGalleryState
 import javax.inject.Inject
@@ -134,24 +135,22 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
         val lastCapturedItem = capturedItemSession.lastCapturedItem
             .takeIf { gallery.thumbnail != null }
 
-        val effect = when {
-            !entryPoint.isSecureSession -> {
-                Effect.Gallery.Open(lastCapturedItem = lastCapturedItem)
-            }
+        when {
+            !entryPoint.isSecureSession -> stateHolder.postNavEvent(
+                NavEvent.OpenGallery(lastCapturedItem = lastCapturedItem),
+            )
 
-            gallery.secureCapturedItems.isEmpty() -> {
-                Effect.ShowMessage(R.string.no_image)
-            }
+            gallery.secureCapturedItems.isEmpty() -> stateHolder.postEffect(
+                Effect.ShowMessage(R.string.no_image),
+            )
 
-            else -> {
-                Effect.Gallery.OpenSecure(
+            else -> stateHolder.postNavEvent(
+                NavEvent.OpenSecureGallery(
                     capturedItems = gallery.secureCapturedItems,
                     lastCapturedItem = lastCapturedItem,
-                )
-            }
+                ),
+            )
         }
-
-        stateHolder.postEffect(effect)
     }
 
     override fun shareLastCapturedItem() {
@@ -167,7 +166,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
             }
 
             else -> {
-                Effect.Gallery.Share(item)
+                Effect.ShareCapturedItem(item)
             }
         }
 

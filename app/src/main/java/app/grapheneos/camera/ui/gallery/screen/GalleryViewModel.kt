@@ -26,7 +26,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
-import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
+import app.grapheneos.camera.ui.mediaactions.SystemGalleryLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration

@@ -51,7 +51,10 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             every { cameraDelegate.canRecord } returns true
             val viewModel = createViewModel()
             stateHolder.update {
-                it.copy(mode = CameraMode.VIDEO, capture = it.capture.copy(isShutterHeld = true))
+                it.copy(
+                    mode = CameraMode.VIDEO,
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
             }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)

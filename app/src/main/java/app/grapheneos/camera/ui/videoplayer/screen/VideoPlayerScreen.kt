@@ -43,7 +43,7 @@ internal fun VideoPlayerScreen(
     screenModel: VideoPlayerScreenModel = hiltViewModel<VideoPlayerViewModel>(),
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
-    val effectHandler = rememberVideoPlayerEffectHandler()
+    val effectHandler = rememberVideoPlayerEffectHandler(onNavigateBack)
 
     ViewerLeftEffect(
         onLeave = { screenModel.onAction(Action.ScreenStopped) },

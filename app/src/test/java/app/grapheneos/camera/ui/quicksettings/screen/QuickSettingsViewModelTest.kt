@@ -25,6 +25,7 @@ import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiState
 import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog as Dialog
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
@@ -194,18 +195,20 @@ class QuickSettingsViewModelTest {
         runTest {
             val entryPoint = cameraEntryPoint(isSecureSession = true)
             val viewModel = viewModel(entryPoint = entryPoint)
+            val events = collectNavigation(viewModel)
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(Action.CameraSettingsClicked)
+            assertEquals(emptyList<Effect>(), effects)
 
             assertEquals(
                 listOf(
-                    Effect.OpenCameraSettings(
+                    NavEvent.OpenCameraSettings(
                         entryPoint = entryPoint,
                         capabilities = CAPABILITIES,
                     ),
                 ),
-                effects,
+                events,
             )
         }
     }
@@ -258,6 +261,14 @@ class QuickSettingsViewModelTest {
         }
 
         return effects
+    }
+
+    private fun TestScope.collectNavigation(viewModel: QuickSettingsViewModel): List<NavEvent> {
+        val events = mutableListOf<NavEvent>()
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            viewModel.navigationEvents.toList(events)
+        }
+        return events
     }
 
     private companion object {

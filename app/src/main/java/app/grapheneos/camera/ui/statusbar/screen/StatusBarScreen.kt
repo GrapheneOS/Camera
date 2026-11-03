@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.statusbar.components.StatusBar
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarAction as Action
+import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarNavEvent
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusItemUiModel
 import kotlin.time.Duration.Companion.seconds
@@ -42,14 +43,14 @@ internal fun StatusBarScreen(
     screenModel: StatusBarScreenModel,
     enabled: Boolean,
     onItemClick: (QuickSetting) -> Unit,
+    onNavigate: (StatusBarNavEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
-    val effectHandler = rememberStatusBarEffectHandler()
 
     CollectEvents(
-        events = screenModel.effects,
-        onEvent = effectHandler::handle,
+        events = screenModel.navigationEvents,
+        onEvent = onNavigate,
     )
 
     StatusBarContent(

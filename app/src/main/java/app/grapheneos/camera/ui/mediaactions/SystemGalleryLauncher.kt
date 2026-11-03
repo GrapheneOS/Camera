@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.mediaviewer.navigation
+package app.grapheneos.camera.ui.mediaactions
 
 import android.app.Activity
 import android.content.ActivityNotFoundException

@@ -308,13 +308,13 @@ class ViewfinderSettingsDelegateTest {
     fun openCameraSettings_opensThemWithWhatTheCameraSupports() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
 
             delegate.openCameraSettings(CAPABILITIES)
 
             assertEquals(
-                listOf(ViewfinderScreenEffect.Settings.OpenCameraSettings(CAPABILITIES)),
-                effects,
+                listOf(ViewfinderNavEvent.OpenCameraSettings(CAPABILITIES)),
+                events,
             )
         }
     }
@@ -324,12 +324,14 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
             stateHolder.update {
                 it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
             }
 
             delegate.openCameraSettings(CAPABILITIES)
 
+            assertTrue(events.isEmpty())
             assertEquals(
                 listOf(
                     ViewfinderScreenEffect.ShowMessage(

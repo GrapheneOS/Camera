@@ -5,9 +5,11 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
 import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
@@ -33,12 +35,14 @@ class ViewfinderDialogDelegateTest {
     fun cameraPermissionDismissed_closesTheScreen() {
         runTest {
             val effects = collectEffects(stateHolder)
+            val navigation = collectNavEvents(stateHolder)
             show(ViewfinderDialog.CameraPermission(offersSettings = true))
 
             delegate.dismiss()
 
             assertNull(dialog())
-            assertEquals(listOf(Effect.CloseScreen), effects)
+            assertEquals(listOf(NavEvent.CloseScreen), navigation)
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -46,12 +50,14 @@ class ViewfinderDialogDelegateTest {
     fun otherDialogDismissed_keepsTheScreen() {
         runTest {
             val effects = collectEffects(stateHolder)
+            val navigation = collectNavEvents(stateHolder)
             show(ViewfinderDialog.MicrophonePermission(offersSettings = true))
 
             delegate.dismiss()
 
             assertNull(dialog())
             assertTrue(effects.isEmpty())
+            assertTrue(navigation.isEmpty())
         }
     }
 

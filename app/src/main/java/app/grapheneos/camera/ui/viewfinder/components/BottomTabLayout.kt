@@ -14,9 +14,9 @@ import com.google.android.material.tabs.TabLayout
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-
 class BottomTabLayout @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null,
 ) : TabLayout(context, attrs) {
 
     // Scroll position that centers each tab, indexed by tab position.
@@ -29,7 +29,8 @@ class BottomTabLayout @JvmOverloads constructor(
 
     private val scroller = ValueAnimator().apply {
         interpolator = AnimationUtils.loadInterpolator(
-            context, android.R.interpolator.fast_out_slow_in
+            context,
+            android.R.interpolator.fast_out_slow_in,
         )
         addUpdateListener { scrollTo(it.animatedValue as Int, 0) }
     }

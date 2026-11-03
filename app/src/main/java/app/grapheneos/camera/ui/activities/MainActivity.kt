@@ -51,10 +51,14 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.camerascreen.CameraOverlay
 import app.grapheneos.camera.ui.camerascreen.CameraOverlayInsets
+import app.grapheneos.camera.ui.camerascreen.CameraScreenNavigationHandler
+import app.grapheneos.camera.ui.camerascreen.CameraScreenNavigationHandlerImpl
+import app.grapheneos.camera.ui.camerasettings.navigation.CameraSettingsIntents
 import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
-import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.gallery.navigation.GalleryIntents
+import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
@@ -62,6 +66,7 @@ import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
+import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -78,7 +83,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderNavigationCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
 import app.grapheneos.camera.ui.viewfinder.screen.applyPreviewRatio
@@ -116,6 +120,15 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var vibrator: Vibrator
+
+    @Inject
+    internal lateinit var capturedItemIntents: CapturedItemIntents
+
+    @Inject
+    internal lateinit var cameraSettingsIntents: CameraSettingsIntents
+
+    @Inject
+    internal lateinit var galleryIntents: GalleryIntents
 
     @Inject
     internal lateinit var videoPlayerLauncher: VideoPlayerLauncher
@@ -266,6 +279,19 @@ open class MainActivity : AppCompatActivity() {
         )
     }
 
+    private val navigationHandler: CameraScreenNavigationHandler by lazy {
+        CameraScreenNavigationHandlerImpl(
+            activity = this,
+            entryPoint = cameraEntryPoint,
+            videoPlayerLauncher = videoPlayerLauncher,
+            cameraSettingsIntents = cameraSettingsIntents,
+            galleryIntents = galleryIntents,
+            onOpenSettingsPanel = quickSettingsNavigator::navigateToQuickSettings,
+            onCloseSettingsPanel = { showSettingsPanel(false) },
+            onCloseScreen = ::finish,
+        )
+    }
+
     private lateinit var renderer: ViewfinderViewRenderer
 
     private lateinit var snackBar: Snackbar
@@ -387,6 +413,7 @@ open class MainActivity : AppCompatActivity() {
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
             vibrator = vibrator,
+            capturedItemIntents = capturedItemIntents,
             onAction = viewfinder::onAction,
         )
         viewfinder.onAction(
@@ -457,6 +484,8 @@ open class MainActivity : AppCompatActivity() {
                     sheet = quickSettingsNavigator.quickSettingsNavKey(),
                     insets = overlayInsets,
                     onSheetOpenChange = ::showSettingsPanel,
+                    onQuickSettingsNavigate = navigationHandler::handle,
+                    onStatusBarNavigate = navigationHandler::handle,
                 )
             }
         }
@@ -609,6 +638,7 @@ open class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
 
+        setUpNavigation()
         setUpSettingsPanel()
 
         binding.moreOptions.setOnClickListener {
@@ -637,20 +667,17 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setUpSettingsPanel() {
-        val navigation = ViewfinderNavigationCallbacks(
-            onOpenSettingsPanel = quickSettingsNavigator::navigateToQuickSettings,
-            onCloseSettingsPanel = { showSettingsPanel(false) },
-        )
-
+    private fun setUpNavigation() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.navigationEvents.collect { event ->
-                    navigation.navigate(event)
+                    navigationHandler.handle(event)
                 }
             }
         }
+    }
 
+    private fun setUpSettingsPanel() {
         lifecycleScope.launch {
             snapshotFlow { quickSettingsNavigator.quickSettingsNavKey() != null }
                 .collect { open -> renderSettingsPanel(open) }

@@ -462,7 +462,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPreviewSwiped(direction: SwipeDirection) {
         when (val outcome = swipeOutcomeMapper.map(direction = direction, state = state())) {
             null -> Unit
-            is SwipeOutcome.ShowQrFormats -> emitEffect(Effect.Settings.ShowQrFormats)
+            is SwipeOutcome.ShowQrFormats -> emitEffect(Effect.ShowQrFormats)
             is SwipeOutcome.SelectAdjacentMode -> {
                 modeSwitchDelegate.onAdjacentModeSwiped(outcome.offset)
             }
@@ -586,9 +586,11 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun startRecording() {
         val state = state()
 
-        if (state.capture.isShutterHeld || !cameraDelegate.canRecord || state.recording.isActive()) {
-            return
-        }
+        val isStartBlocked = state.capture.isShutterHeld ||
+            !cameraDelegate.canRecord ||
+            state.recording.isActive()
+
+        if (isStartBlocked) return
 
         recordingDelegate.requestRecording()
 

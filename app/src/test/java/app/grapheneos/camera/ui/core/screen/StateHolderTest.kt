@@ -5,6 +5,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -55,7 +56,12 @@ class StateHolderTest {
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 count.collect { value ->
                     if (value == 1) {
-                        stateHolder.update { state -> state.copy(count = 2, isBusy = true) }
+                        stateHolder.update { state ->
+                            state.copy(
+                                count = 2,
+                                isBusy = true,
+                            )
+                        }
                     }
                 }
             }
@@ -64,7 +70,7 @@ class StateHolderTest {
 
             assertEquals(2, stateHolder.state.value.count)
             assertEquals(2, count.value)
-            assertEquals(true, isBusy.value)
+            assertTrue(isBusy.value)
         }
     }
 

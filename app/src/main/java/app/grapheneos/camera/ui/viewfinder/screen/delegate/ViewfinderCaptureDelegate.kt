@@ -26,6 +26,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
@@ -216,7 +217,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     override fun playResult() {
         val video = stateHolder.state.value.capture.result as? ViewfinderCaptureResult.Video
 
-        video?.let { postEffect(Effect.CaptureResult.OpenVideo(uri = it.uri)) }
+        video?.let { stateHolder.postNavEvent(NavEvent.OpenVideo(uri = it.uri)) }
     }
 
     override fun discardResult() {
@@ -359,7 +360,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             playCameraSound(CameraSound.SHUTTER)
         }
 
-        postEffect(Effect.Preview.Flash(stateHolder.state.value.selfIlluminates()))
+        postEffect(Effect.FlashPreview(stateHolder.state.value.selfIlluminates()))
     }
 
     private fun onPictureThumbnailReady(thumbnail: Bitmap?) {

@@ -5,10 +5,9 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import app.grapheneos.camera.ui.statusbar.screen.mapper.StatusBarUiStateMapper
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarAction as Action
-import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarScreenEffect as Effect
+import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarNavEvent as NavEvent
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +24,7 @@ internal interface StatusBarScreenModel {
 
     val uiState: StateFlow<StatusBarUiState>
 
-    val effects: Flow<Effect>
+    val navigationEvents: Flow<NavEvent>
 
     fun onAction(action: Action)
 }
@@ -39,7 +38,7 @@ internal class StatusBarViewModel @Inject constructor(
 ) : ViewModel(),
     StatusBarScreenModel {
 
-    private val stateHolder = ScreenStateHolder<StatusBarState, Effect>(
+    private val stateHolder = StatusBarStateHolder(
         initial = StatusBarState(
             settings = settingsRepository.settings.value,
         ),
@@ -47,7 +46,7 @@ internal class StatusBarViewModel @Inject constructor(
 
     override val uiState: StateFlow<StatusBarUiState> = stateHolder.derive(uiStateMapper::map)
 
-    override val effects: Flow<Effect> = stateHolder.effects
+    override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents
 
     init {
         viewModelScope.launch {
@@ -87,8 +86,8 @@ internal class StatusBarViewModel @Inject constructor(
     }
 
     private fun openCameraSettings() {
-        stateHolder.send(
-            Effect.OpenCameraSettings(
+        stateHolder.postNavEvent(
+            NavEvent.OpenCameraSettings(
                 entryPoint = entryPoint,
                 capabilities = session.capabilities(),
             ),

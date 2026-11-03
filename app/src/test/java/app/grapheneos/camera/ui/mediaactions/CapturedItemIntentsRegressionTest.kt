@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.mediaviewer.navigation
+package app.grapheneos.camera.ui.mediaactions
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
@@ -24,6 +24,7 @@ import org.robolectric.RobolectricTestRunner
 class CapturedItemIntentsRegressionTest {
 
     private val activity = mockk<Activity>(relaxed = true)
+    private val intents = CapturedItemIntentsImpl()
 
     private val staleItem = CapturedItem(
         CapturedItemType.IMAGE,
@@ -31,18 +32,17 @@ class CapturedItemIntentsRegressionTest {
         Uri.parse("content://media/external/images/media/987654321"),
     )
 
-    /**
-     * Regression test for the production crash: startActivity() computes the uri grant for a
-     * directly started editor and throws a SecurityException when the app has lost access to
-     * the item, and the exception went uncaught through the edit path.
-     */
     @Test
     fun edit_whenUriGrantIsDenied_reportsFailureInsteadOfCrashing() {
         every { activity.startActivity(any()) } throws SecurityException(GRANT_DENIED)
 
         assertEquals(
             R.string.unable_to_edit_media,
-            editCapturedItem(activity, staleItem, useDefaultEditor = true),
+            intents.edit(
+                activity = activity,
+                item = staleItem,
+                useDefaultEditor = true,
+            ),
         )
     }
 
@@ -52,7 +52,11 @@ class CapturedItemIntentsRegressionTest {
 
         assertEquals(
             R.string.unable_to_edit_media,
-            editCapturedItem(activity, staleItem, useDefaultEditor = false),
+            intents.edit(
+                activity = activity,
+                item = staleItem,
+                useDefaultEditor = false,
+            ),
         )
     }
 
@@ -62,13 +66,23 @@ class CapturedItemIntentsRegressionTest {
 
         assertEquals(
             R.string.no_editor_app_error,
-            editCapturedItem(activity, staleItem, useDefaultEditor = true),
+            intents.edit(
+                activity = activity,
+                item = staleItem,
+                useDefaultEditor = true,
+            ),
         )
     }
 
     @Test
     fun edit_launchesEditorWithItemUri() {
-        assertNull(editCapturedItem(activity, staleItem, useDefaultEditor = true))
+        assertNull(
+            intents.edit(
+                activity = activity,
+                item = staleItem,
+                useDefaultEditor = true,
+            ),
+        )
 
         val edit = startedIntent()
         assertEquals(Intent.ACTION_EDIT, edit.action)
@@ -82,7 +96,13 @@ class CapturedItemIntentsRegressionTest {
     fun editWith_launchesChooserWithEditIntent() {
         every { activity.getString(R.string.edit_image) } returns EDIT_CHOOSER_TITLE
 
-        assertNull(editCapturedItem(activity, staleItem, useDefaultEditor = false))
+        assertNull(
+            intents.edit(
+                activity = activity,
+                item = staleItem,
+                useDefaultEditor = false,
+            ),
+        )
 
         val chooser = startedIntent()
         assertEquals(Intent.ACTION_CHOOSER, chooser.action)
@@ -96,23 +116,29 @@ class CapturedItemIntentsRegressionTest {
         assertTrue(edit.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
     }
 
-    /**
-     * Regression test for the production crash: OEM builds that grant the shared uri inside
-     * startActivity() throw a SecurityException when the app has lost access to the item, and
-     * the exception went uncaught through the share path.
-     */
     @Test
     fun share_whenUriGrantIsDenied_reportsFailureInsteadOfCrashing() {
         every { activity.startActivity(any()) } throws SecurityException(GRANT_DENIED)
 
-        assertEquals(R.string.unable_to_share_media, shareCapturedItem(activity, staleItem))
+        assertEquals(
+            R.string.unable_to_share_media,
+            intents.share(
+                activity = activity,
+                item = staleItem,
+            ),
+        )
     }
 
     @Test
     fun share_launchesChooserWithItemUri() {
         every { activity.getString(R.string.share_image) } returns SHARE_CHOOSER_TITLE
 
-        assertNull(shareCapturedItem(activity, staleItem))
+        assertNull(
+            intents.share(
+                activity = activity,
+                item = staleItem,
+            ),
+        )
 
         val chooser = startedIntent()
         assertEquals(Intent.ACTION_CHOOSER, chooser.action)
@@ -123,6 +149,37 @@ class CapturedItemIntentsRegressionTest {
         assertEquals(staleItem.uri, getParcelableExtra<Uri>(send, Intent.EXTRA_STREAM))
         assertEquals(staleItem.mimeType(), send.type)
         assertTrue(send.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
+    }
+
+    @Test
+    fun useAs_launchesChooserWithTheItemUriAndReadPermission() {
+        assertNull(
+            intents.useAs(
+                activity = activity,
+                item = staleItem,
+            ),
+        )
+
+        val chooser = startedIntent()
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        val target = getParcelableExtra<Intent>(chooser, Intent.EXTRA_INTENT)!!
+        assertEquals(Intent.ACTION_ATTACH_DATA, target.action)
+        assertEquals(staleItem.uri, target.data)
+        assertEquals(staleItem.mimeType(), target.type)
+        assertTrue(target.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0)
+    }
+
+    @Test
+    fun useAs_whenUriGrantIsDenied_reportsFailureInsteadOfCrashing() {
+        every { activity.startActivity(any()) } throws SecurityException(GRANT_DENIED)
+
+        assertEquals(
+            R.string.unable_to_use_media,
+            intents.useAs(
+                activity = activity,
+                item = staleItem,
+            ),
+        )
     }
 
     private fun startedIntent(): Intent {

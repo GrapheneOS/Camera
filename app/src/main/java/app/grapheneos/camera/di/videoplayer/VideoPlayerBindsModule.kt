@@ -1,7 +1,7 @@
 package app.grapheneos.camera.di.videoplayer
 
-import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
-import app.grapheneos.camera.ui.videoplayer.VideoPlayerLauncherImpl
+import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncherImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
