@@ -19,7 +19,6 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
-import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.camerasettings.navigation.openCameraSettings
@@ -235,27 +234,24 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handlePicture(effect: Effect.Picture) {
         when (effect) {
-            is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)
             is Effect.Picture.PreviewFailed -> showCapturedPreviewFailure()
             is Effect.Picture.PreviewStored -> finishCapture(stored = true)
+            is Effect.Picture.PreviewReturned -> returnPhoto(effect.bitmap)
             is Effect.Picture.PreviewStoreFailed -> finishCapture(stored = false)
-
-            is Effect.Picture.PreviewReturned -> {
-                captureActivity()?.returnCapturedBitmap(effect.bitmap)
-            }
         }
     }
 
-    private fun showCapturedPreview(bitmap: Bitmap) {
-        val captureActivity = captureActivity() ?: return
+    private fun returnPhoto(photo: Bitmap) {
+        val result = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, photo)
 
-        captureActivity.bitmap = bitmap
-        captureActivity.showPreview()
+        activity.setResult(AppCompatActivity.RESULT_OK, result)
+        activity.finish()
     }
 
     private fun showCapturedPreviewFailure() {
         activity.showMessage(R.string.unable_to_capture_image)
-        activity.finishActivity(AppCompatActivity.RESULT_CANCELED)
+        activity.setResult(AppCompatActivity.RESULT_CANCELED)
+        activity.finish()
     }
 
     private fun finishCapture(stored: Boolean) {
@@ -263,7 +259,13 @@ internal class ViewfinderEffectHandlerImpl(
             activity.showMessage(R.string.unable_to_save_image)
         }
 
-        captureActivity()?.finishWithResult(stored)
+        val result = when {
+            stored -> AppCompatActivity.RESULT_OK
+            else -> AppCompatActivity.RESULT_CANCELED
+        }
+
+        activity.setResult(result)
+        activity.finish()
     }
 
     private fun handleRecording(effect: Effect.Recording) {
@@ -322,10 +324,6 @@ internal class ViewfinderEffectHandlerImpl(
         activity.startActivity(intent)
     }
 
-    private fun captureActivity(): CaptureActivity? {
-        return activity as? CaptureActivity
-    }
-
     private fun videoCaptureActivity(): VideoCaptureActivity? {
         return activity as? VideoCaptureActivity
     }
@@ -333,6 +331,8 @@ internal class ViewfinderEffectHandlerImpl(
     private companion object {
         private const val PREVIEW_SNAP_DURATION = 200L
         private const val SELF_ILLUMINATION_OVERLAY_DURATION = 200L
+        private const val INLINE_DATA = "inline-data"
+        private const val INLINE_DATA_EXTRA = "data"
         private const val SELF_ILLUMINATION_OVERLAY_ALPHA = 0.8f
     }
 }

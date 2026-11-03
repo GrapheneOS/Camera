@@ -9,4 +9,5 @@ data class PreviewUiModel(
     val gridType: GridType = GridType.NONE,
     val isStreaming: Boolean = false,
     val lastFrameVisible: Boolean = false,
+    val blursLastFrame: Boolean = true,
 )

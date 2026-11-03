@@ -7,6 +7,7 @@ import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -43,9 +44,9 @@ class VideoCaptureActivity : CaptureActivity() {
     }
 
     private fun showRecordingPreview() {
-        bitmap = previewView.bitmap ?: previewFrames.lastFrame
+        val image = previewView.bitmap ?: previewFrames.lastFrame
 
-        showPreview()
+        viewfinder.onAction(CaptureAction.RecordingResultShown(image = image))
     }
 
     private fun confirmVideo() {

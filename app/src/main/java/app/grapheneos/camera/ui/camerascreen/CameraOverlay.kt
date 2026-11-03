@@ -40,7 +40,7 @@ internal fun CameraOverlay(
     onSheetOpenChange: (open: Boolean) -> Unit,
 ) {
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
-        val controlsShown = uiState.isSettingsPanelAvailable && !uiState.capturedPreviewVisible
+        val controlsShown = uiState.isSettingsPanelAvailable && !uiState.captureResult.visible
         val isModeSwitching = uiState.modeTabs.isSwitching
         val statusBarVisible = controlsShown && !uiState.recording.isActive && !isModeSwitching
         val controlsEnabled = sheetState.isHidden &&
