@@ -11,7 +11,6 @@ import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import io.mockk.coVerify
 import io.mockk.every
@@ -46,7 +45,6 @@ class ViewfinderCameraControlsDelegateTest {
     private val session = mockk<CameraSession>(relaxed = true)
     private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
     private val zoomEvents = MutableSharedFlow<CameraZoomEvent>(extraBufferCapacity = 8)
-    private val effects = mutableListOf<Effect>()
 
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
@@ -61,7 +59,7 @@ class ViewfinderCameraControlsDelegateTest {
     }
 
     @Test
-    fun focusAt_focusesForTheChosenTimeoutAndShowsItWithTheSoundOnlyForPhotos() {
+    fun focusAt_focusesForTheChosenTimeoutWithTheSoundOnlyForPhotos() {
         val delegate = createDelegate()
         stateHolder.update {
             it.copy(settings = CameraSettings(focusTimeoutSeconds = FOCUS_TIMEOUT_SECONDS))
@@ -78,13 +76,6 @@ class ViewfinderCameraControlsDelegateTest {
                 autoCancelSeconds = FOCUS_TIMEOUT_SECONDS,
             )
         }
-        assertEquals(
-            listOf(
-                Effect.Preview.ShowFocus(x = 10f, y = 20f),
-                Effect.Preview.ShowFocus(x = 10f, y = 20f),
-            ),
-            effects,
-        )
         coVerify(exactly = 1) { playCameraSound(CameraSound.FOCUS_START) }
     }
 
@@ -220,9 +211,6 @@ class ViewfinderCameraControlsDelegateTest {
         )
         scope.launch(mainDispatcherRule.testDispatcher) {
             delegate.trackZoom()
-        }
-        scope.launch(mainDispatcherRule.testDispatcher) {
-            stateHolder.effects.collect { effects += it }
         }
 
         return delegate

@@ -14,11 +14,13 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderFocusRequest
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
@@ -536,6 +538,22 @@ class ViewfinderUiStateMapperTest {
         )
 
         assertTrue(state.exposure.panelVisible)
+    }
+
+    @Test
+    fun focusRing_isTheLastFocusRequest() {
+        val focused = mapper.map(
+            ViewfinderState(
+                mode = CameraMode.CAMERA,
+                requiresVideoModeOnly = false,
+                previewControls = ViewfinderPreviewControlsState(
+                    focusRequest = ViewfinderFocusRequest(x = 10f, y = 20f, id = 3),
+                ),
+            ),
+        )
+
+        assertEquals(FocusRingUiModel(x = 10f, y = 20f, id = 3), focused.focusRing)
+        assertNull(map().focusRing)
     }
 
     @Test

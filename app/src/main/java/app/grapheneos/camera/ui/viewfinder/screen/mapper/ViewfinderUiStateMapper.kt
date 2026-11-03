@@ -11,6 +11,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
@@ -58,6 +59,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
                 overlayVisible = state.isQrMode(),
                 scanTogglesVisible = state.isQrMode() && !state.settings.scanAllCodes,
             ),
+            focusRing = focusRing(state),
             exposure = exposure(state),
             rotation = rotation(state),
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
@@ -225,6 +227,16 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             micOffIconVisible = !state.isQrMode() && state.isVideoMode() && !includeAudio,
             timerVisible = !state.isQrMode() && recording.isRecording(),
             timerText = formatVideoDuration(recording.duration.inWholeSeconds),
+        )
+    }
+
+    private fun focusRing(state: ViewfinderState): FocusRingUiModel? {
+        val request = state.previewControls.focusRequest ?: return null
+
+        return FocusRingUiModel(
+            x = request.x,
+            y = request.y,
+            id = request.id,
         )
     }
 

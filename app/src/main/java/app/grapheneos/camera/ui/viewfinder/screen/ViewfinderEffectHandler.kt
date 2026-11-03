@@ -103,13 +103,8 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handlePreview(effect: Effect.Preview) {
         when (effect) {
-            is Effect.Preview.ShowFocus -> showFocus(effect)
             is Effect.Preview.Flash -> flashPreview(effect.selfIlluminate)
         }
-    }
-
-    private fun showFocus(effect: Effect.Preview.ShowFocus) {
-        activity.animateFocusRing(effect.x, effect.y)
     }
 
     private fun flashPreview(selfIlluminate: Boolean) {

@@ -136,7 +136,6 @@ class ViewfinderOrientationDelegateTest {
         val delegate = ViewfinderOrientationDelegateImpl(
             deviceOrientationRepository = deviceOrientationRepository,
             levelStateMapper = ViewfinderLevelStateMapperImpl(),
-            mainDispatcher = dispatcher,
         )
         delegate.bind(
             stateHolder = stateHolder,

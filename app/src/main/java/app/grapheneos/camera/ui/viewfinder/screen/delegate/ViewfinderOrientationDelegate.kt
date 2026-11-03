@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapper
@@ -11,7 +10,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelSta
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -36,7 +34,6 @@ interface ViewfinderOrientationDelegate {
 internal class ViewfinderOrientationDelegateImpl @Inject constructor(
     private val deviceOrientationRepository: DeviceOrientationRepository,
     private val levelStateMapper: ViewfinderLevelStateMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderOrientationDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
@@ -59,10 +56,10 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
 
     override suspend fun trackOrientation() {
         coroutineScope {
-            launch(mainDispatcher) { trackMotion() }
-            launch(mainDispatcher) { trackAutoRotate() }
-            launch(mainDispatcher) { hideLevelOutsidePhotoMode() }
-            launch(mainDispatcher) { announceLevelReached() }
+            launch { trackMotion() }
+            launch { trackAutoRotate() }
+            launch { hideLevelOutsidePhotoMode() }
+            launch { announceLevelReached() }
         }
     }
 
