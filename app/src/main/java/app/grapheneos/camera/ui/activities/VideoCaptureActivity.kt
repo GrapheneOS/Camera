@@ -1,19 +1,15 @@
 package app.grapheneos.camera.ui.activities
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 
 class VideoCaptureActivity : CaptureActivity() {
 
     private lateinit var whiteOptionCircle: ImageView
     private lateinit var playPreview: ImageView
-
-    private var savedUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,45 +18,11 @@ class VideoCaptureActivity : CaptureActivity() {
         playPreview = findViewById(R.id.play_preview)
 
         playPreview.setOnClickListener {
-            savedUri?.let { uri ->
-                videoPlayerLauncher.open(this, uri)
-            }
+            viewfinder.onAction(CaptureAction.PlayResultClicked)
         }
 
         imagePreview.visibility = View.GONE
         whiteOptionCircle.visibility = View.GONE
         playPreview.visibility = View.VISIBLE
-
-        confirmButton.setOnClickListener {
-            confirmVideo()
-        }
-    }
-
-    fun afterRecording(savedUri: Uri?) {
-        this.savedUri = savedUri
-
-        showRecordingPreview()
-    }
-
-    private fun showRecordingPreview() {
-        bitmap = previewView.bitmap ?: previewFrames.lastFrame
-
-        showPreview()
-    }
-
-    private fun confirmVideo() {
-        if (savedUri == null) {
-            setResult(RESULT_CANCELED)
-        } else {
-            val resultIntent = Intent()
-            resultIntent.data = savedUri
-            resultIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-            resultIntent.putExtra(
-                EXTRA_OUTPUT,
-                savedUri
-            )
-            setResult(RESULT_OK, resultIntent)
-        }
-        finish()
     }
 }

@@ -28,16 +28,15 @@ import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import io.mockk.CapturingSlot
 import io.mockk.Runs
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.slot
 import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -62,38 +61,36 @@ class VideoCapturerRegressionTest {
     @get:Rule
     val screenAwake = ScreenAwakeRule()
 
-    /** Fires the callback twice, like a MediaPlayer error followed by normal completion. */
-    private fun doubleFiringTunePlayer(): TunePlayer {
+    /** Reports the sound played twice, like a MediaPlayer error followed by normal completion. */
+    private fun doubleFiringTunePlayer(activity: MainActivity): TunePlayer {
         return mockk(relaxed = true) {
-            every { playVRStartSound(onPlayed = any()) } answers {
-                val onPlayed = firstArg<Runnable>()
-                onPlayed.run()
-                onPlayed.run()
+            coEvery { playRecordingStartSound(soundEnabled = any()) } coAnswers {
+                activity.viewfinder.onAction(RecordingAction.StartSoundPlayed)
             }
         }
     }
 
-    /** Runs the callback synchronously, skipping the sound. */
+    /** Returns at once, skipping the sound. */
     private fun immediateTunePlayer(): TunePlayer {
         return mockk(relaxed = true) {
-            every { playVRStartSound(onPlayed = any()) } answers {
-                firstArg<Runnable>().run()
-            }
+            coEvery { playRecordingStartSound(soundEnabled = any()) } just Runs
         }
     }
 
-    /** Holds the callback until the test releases it. */
-    private fun manualTunePlayer(deferred: CapturingSlot<Runnable>): TunePlayer {
+    /** Holds the sound until the test releases it. */
+    private fun manualTunePlayer(startSound: HeldStartSound): TunePlayer {
         return mockk(relaxed = true) {
-            every { playVRStartSound(onPlayed = capture(deferred)) } just Runs
+            coEvery { playRecordingStartSound(soundEnabled = any()) } coAnswers {
+                startSound.await()
+            }
         }
     }
 
     private fun <A : MainActivity> waitForStartSound(
         scenario: ActivityScenario<A>,
-        deferred: CapturingSlot<Runnable>,
+        startSound: HeldStartSound,
     ) {
-        waitUntil(scenario, "the start sound is requested") { deferred.isCaptured }
+        waitUntil(scenario, "the start sound is requested") { startSound.isRequested }
     }
 
     /**
@@ -104,7 +101,7 @@ class VideoCapturerRegressionTest {
     fun startRecording_toleratesDuplicateStartSoundCallback() {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
-                activity.tunePlayer = doubleFiringTunePlayer()
+                activity.tunePlayer = doubleFiringTunePlayer(activity)
                 activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
 
@@ -124,17 +121,17 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             val pendingBefore = pendingVideoCount()
 
-            val deferred = slot<Runnable>()
+            val startSound = HeldStartSound()
             scenario.onActivity { activity ->
-                activity.tunePlayer = manualTunePlayer(deferred)
+                activity.tunePlayer = manualTunePlayer(startSound)
                 activity.viewfinder.onAction(RecordingAction.RecordingRequested)
                 assertTrue(isRecording(activity))
             }
-            waitForStartSound(scenario, deferred)
+            waitForStartSound(scenario, startSound)
 
             scenario.onActivity { activity ->
                 stopRecording(activity)
-                deferred.captured.run()
+                startSound.release()
                 assertFalse(isRecording(activity))
             }
 
@@ -157,15 +154,15 @@ class VideoCapturerRegressionTest {
     @Test
     fun pauseDuringDeferredStart_appliesWhenRecordingStarts() {
         recordingTest { scenario ->
-            val deferred = slot<Runnable>()
+            val startSound = HeldStartSound()
             scenario.onActivity { activity ->
-                activity.tunePlayer = manualTunePlayer(deferred)
+                activity.tunePlayer = manualTunePlayer(startSound)
                 activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
-            waitForStartSound(scenario, deferred)
+            waitForStartSound(scenario, startSound)
             scenario.onActivity { activity ->
                 setPaused(activity, paused = true)
-                deferred.captured.run()
+                startSound.release()
             }
 
             // A fixed dwell, not a waitUntil: the assertion below is that the timer does *not*
@@ -195,15 +192,15 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             val pendingBefore = pendingVideoCount()
 
-            val deferred = slot<Runnable>()
+            val startSound = HeldStartSound()
             scenario.onActivity { activity ->
-                activity.tunePlayer = manualTunePlayer(deferred)
+                activity.tunePlayer = manualTunePlayer(startSound)
                 activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
-            waitForStartSound(scenario, deferred)
+            waitForStartSound(scenario, startSound)
             scenario.onActivity { activity ->
                 setPaused(activity, paused = true)
-                deferred.captured.run()
+                startSound.release()
             }
             // Let the recorder reach paused-recording, so that stopping it finalizes with
             // ERROR_NO_VALID_DATA rather than racing the start
@@ -369,7 +366,7 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
             // A recording that wrote nothing is thrown away, and leaves no preview to defer
             waitUntil(scenario, "recording has content") {
-                it.viewfinder.uiState.value.recordingTimerText != "00:00"
+                it.viewfinder.uiState.value.recording.timerText != "00:00"
             }
 
             // Stops the activity, which stops the recording; the finalize event that used to crash
@@ -380,7 +377,7 @@ class VideoCapturerRegressionTest {
             scenario.moveToState(Lifecycle.State.RESUMED)
 
             waitUntil(scenario, "the preview the finalize deferred arrives") {
-                it.confirmButton.visibility == View.VISIBLE
+                it.binding.confirmButton.visibility == View.VISIBLE
             }
         }
     }
@@ -402,34 +399,36 @@ class VideoCapturerRegressionTest {
                 cameraSession(it).videoCapture != null
             }
 
-            val deferred = slot<Runnable>()
+            val startSound = HeldStartSound()
             var mode: CameraMode? = null
             var highlighted: CameraMode? = null
             val capturedBefore = lastCapturedUri(scenario)
 
             try {
                 scenario.onActivity { activity ->
-                    activity.tunePlayer = manualTunePlayer(deferred)
+                    activity.tunePlayer = manualTunePlayer(startSound)
                     activity.viewfinder.onAction(RecordingAction.RecordingRequested)
                     assertTrue(isRecording(activity))
 
-                    val cameraTab = activity.tabLayout.getTabForMode(CameraMode.CAMERA)
-                    assertNotNull("no CAMERA tab to tap", cameraTab)
+                    assertTrue(
+                        "no CAMERA tab to tap",
+                        CameraMode.CAMERA in activity.tabLayout.getAllModes(),
+                    )
 
                     // What both of the strip's touch listeners do with a tap
-                    activity.finalizeMode(cameraTab)
+                    activity.viewfinder.onAction(CameraAction.ModeStripReleased(CameraMode.CAMERA))
 
                     mode = activity.viewfinder.uiState.value.mode
-                    highlighted = activity.tabLayout.selectedTab?.tag as CameraMode?
+                    highlighted = activity.tabLayout.selectedMode
                 }
 
-                waitForStartSound(scenario, deferred)
+                waitForStartSound(scenario, startSound)
 
                 // Abandon the queued start rather than record for real: the damage is done or not
                 // by now, and a cancelled start leaves nothing behind to clean up.
                 scenario.onActivity { activity ->
                     stopRecording(activity)
-                    deferred.captured.run()
+                    startSound.release()
                     assertFalse(isRecording(activity))
                 }
 
@@ -442,11 +441,11 @@ class VideoCapturerRegressionTest {
     }
 
     private fun isRecording(activity: MainActivity): Boolean {
-        return activity.viewfinder.uiState.value.isRecordingActive
+        return activity.viewfinder.uiState.value.recording.isActive
     }
 
     private fun hasRecordingStarted(activity: MainActivity): Boolean {
-        return activity.viewfinder.uiState.value.recordingTimerVisible
+        return activity.viewfinder.uiState.value.recording.timerVisible
     }
 
     private fun stopRecording(activity: MainActivity) {
@@ -556,6 +555,24 @@ class VideoCapturerRegressionTest {
                     e.printStackTrace()
                 }
             }
+        }
+    }
+
+    private class HeldStartSound {
+
+        @Volatile
+        var isRequested = false
+            private set
+
+        private val released = CompletableDeferred<Unit>()
+
+        suspend fun await() {
+            isRequested = true
+            released.await()
+        }
+
+        fun release() {
+            released.complete(Unit)
         }
     }
 }

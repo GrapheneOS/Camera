@@ -9,17 +9,7 @@ sealed interface CapturedImageEvent {
 
     data object LocationUnavailable : CapturedImageEvent
 
-    data object PreviewFailed : CapturedImageEvent
-
-    data object PreviewStored : CapturedImageEvent
-
-    data object PreviewStoreFailed : CapturedImageEvent
-
     data object StorageLocationNotFound : CapturedImageEvent
-
-    data class PreviewReturned(
-        val bitmap: Bitmap,
-    ) : CapturedImageEvent
 
     data class CaptureFailed(
         val errorCode: Int,
@@ -28,10 +18,6 @@ sealed interface CapturedImageEvent {
 
     data class Saved(
         val item: CapturedItem,
-    ) : CapturedImageEvent
-
-    data class PreviewCaptured(
-        val bitmap: Bitmap,
     ) : CapturedImageEvent
 
     data class ThumbnailReady(

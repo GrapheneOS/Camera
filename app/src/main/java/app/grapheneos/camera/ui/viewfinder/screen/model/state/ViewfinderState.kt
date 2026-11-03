@@ -1,0 +1,93 @@
+package app.grapheneos.camera.ui.viewfinder.screen.model.state
+
+import android.view.Surface
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import com.google.zxing.BarcodeFormat
+
+data class ViewfinderState(
+    val mode: CameraMode,
+    val requiresVideoModeOnly: Boolean,
+    val isCaptureSession: Boolean = false,
+    val showsCameraModeTabs: Boolean = false,
+    val settings: CameraSettings = CameraSettings(),
+    val modeSettings: ModeSettings = ModeSettings(),
+    val session: ViewfinderSessionState = ViewfinderSessionState(),
+    val modeStrip: ViewfinderModeStripState = ViewfinderModeStripState(),
+    val preview: ViewfinderPreviewState = ViewfinderPreviewState(),
+    val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
+    val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+    val gallery: ViewfinderGalleryState = ViewfinderGalleryState(),
+    val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
+    val missingPermissions: Set<AppPermission> = emptySet(),
+    val dialog: ViewfinderDialog? = null,
+    val isSettingsPanelOpen: Boolean = false,
+    val previewControls: ViewfinderPreviewControlsState = ViewfinderPreviewControlsState(),
+    val deviceOrientation: DeviceOrientation? = null,
+    val displayRotation: Int = Surface.ROTATION_0,
+    val autoRotateEnabled: Boolean = false,
+    val keepsScreenAwake: Boolean = false,
+) {
+
+    fun isQrMode(): Boolean {
+        return mode.isQr
+    }
+
+    fun isVideoMode(): Boolean {
+        return mode.isVideo
+    }
+
+    fun modeStripTarget(): CameraMode {
+        return modeStrip.pendingMode ?: mode
+    }
+
+    fun isPhotoMode(): Boolean {
+        return !isQrMode() && !isVideoMode()
+    }
+
+    fun aspectRatio(): AspectRatio {
+        return when {
+            isVideoMode() -> AspectRatio.RATIO_16_9
+            isQrMode() -> AspectRatio.RATIO_4_3
+            else -> settings.aspectRatio
+        }
+    }
+
+    fun barcodeFormats(): Set<BarcodeFormat> {
+        return when {
+            settings.scanAllCodes -> BarcodeFormat.entries.toSet()
+            else -> BarcodeFormat.entries.filterTo(mutableSetOf()) {
+                it.name in settings.enabledBarcodeFormats
+            }
+        }
+    }
+
+    fun isReviewingRecordedVideo(): Boolean {
+        val isAwaitingReview = capture.hasResult() || recording.isSaving
+
+        return isCaptureSession && requiresVideoModeOnly && isAwaitingReview
+    }
+
+    fun includesLocation(): Boolean {
+        return settings.geoTagging && AppPermission.LOCATION !in missingPermissions
+    }
+
+    fun showsLevel(): Boolean {
+        return settings.gyroscopeSuggestions && isPhotoMode()
+    }
+
+    fun selfIlluminates(): Boolean {
+        return modeSettings.selfIlluminates(session.lensFacing)
+    }
+
+    fun isSettingsPanelAvailable(): Boolean {
+        return !(recording.isActive() || capture.isSelfTimerRunning() || isQrMode())
+    }
+}

@@ -2,22 +2,16 @@ package app.grapheneos.camera.di.viewfinder
 
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -36,39 +30,21 @@ internal abstract class ViewfinderBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindSettingsSheetUiStateMapper(
-        impl: SettingsSheetUiStateMapperImpl,
-    ): SettingsSheetUiStateMapper
-
-    @Binds
-    @Reusable
-    abstract fun bindCaptureUiStateMapper(
-        impl: CaptureUiStateMapperImpl,
-    ): CaptureUiStateMapper
-
-    @Binds
-    @Reusable
     abstract fun bindCameraBindSettingsMapper(
         impl: CameraBindSettingsMapperImpl,
     ): CameraBindSettingsMapper
 
     @Binds
     @Reusable
-    abstract fun bindLevelUiStateMapper(
-        impl: LevelUiStateMapperImpl,
-    ): LevelUiStateMapper
+    abstract fun bindViewfinderLevelStateMapper(
+        impl: ViewfinderLevelStateMapperImpl,
+    ): ViewfinderLevelStateMapper
 
     @Binds
     @Reusable
-    abstract fun bindZoomUiStateMapper(
-        impl: ZoomUiStateMapperImpl,
-    ): ZoomUiStateMapper
-
-    @Binds
-    @Reusable
-    abstract fun bindSwipeEffectMapper(
-        impl: SwipeEffectMapperImpl,
-    ): SwipeEffectMapper
+    abstract fun bindSwipeOutcomeMapper(
+        impl: SwipeOutcomeMapperImpl,
+    ): SwipeOutcomeMapper
 
     @Binds
     @Reusable

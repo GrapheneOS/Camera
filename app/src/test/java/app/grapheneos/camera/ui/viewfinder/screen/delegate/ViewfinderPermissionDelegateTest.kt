@@ -8,13 +8,12 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

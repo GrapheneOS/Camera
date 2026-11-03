@@ -7,7 +7,7 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest

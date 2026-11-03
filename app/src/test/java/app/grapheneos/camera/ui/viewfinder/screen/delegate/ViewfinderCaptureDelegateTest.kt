@@ -21,14 +21,17 @@ import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
 import app.grapheneos.camera.util.printStackTraceToString
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -39,6 +42,8 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import java.io.IOException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -77,48 +82,69 @@ class ViewfinderCaptureDelegateTest {
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.VIDEO)
 
     @Test
-    fun capturedPreview_isShownUntilDismissed() {
+    fun result_isShownUntilDiscarded() {
         runTest {
+            val result = ViewfinderCaptureResult.Photo(image = createBitmap(1, 1))
             val delegate = createDelegate()
 
-            delegate.showCapturedPreview()
-            assertTrue(capture().isCapturedPreviewShown)
+            delegate.showResult(result)
+            assertEquals(result, capture().result)
 
-            delegate.dismissCapturedPreview()
-            assertFalse(capture().isCapturedPreviewShown)
+            delegate.discardResult()
+            assertNull(capture().result)
         }
     }
 
     @Test
-    fun onScreenDestroyed_forgetsWhatTheScreenWasShowing() {
+    fun onScreenDestroyed_keepsTheResultAndTheHeldShutter() {
         runTest {
+            val result = ViewfinderCaptureResult.Photo(image = createBitmap(1, 1))
             val delegate = createDelegate()
 
-            delegate.showCapturedPreview()
+            delegate.holdShutter()
+            delegate.showResult(result)
+            delegate.startSelfTimer()
             delegate.onScreenDestroyed()
 
-            assertEquals(ViewfinderCaptureState(), capture())
+            assertEquals(
+                ViewfinderCaptureState(result = result, isShutterHeld = true),
+                capture(),
+            )
         }
     }
 
     @Test
-    fun takePreviewPicture_showsTheBitmapWithoutSavingIt() {
+    fun holdShutter_releasesItAfterASecond() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.holdShutter()
+            assertTrue(capture().isShutterHeld)
+
+            advanceTimeBy(999.milliseconds)
+            runCurrent()
+            assertTrue(capture().isShutterHeld)
+
+            advanceTimeBy(1.milliseconds)
+            runCurrent()
+            assertFalse(capture().isShutterHeld)
+        }
+    }
+
+    @Test
+    fun takePreviewPicture_handsThePhotoOverWithoutSavingIt() {
         runTest {
             val bitmap = createBitmap(1, 1)
             coEvery { capturePreviewImage() } returns CapturePreviewResult.Captured(bitmap)
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
+            val events = collectEvents(delegate)
 
             delegate.takePreviewPicture()
 
             assertFalse(capture().isSavingPicture)
-            assertEquals(
-                listOf(
-                    Effect.Picture.PreviewCaptured(bitmap),
-                    Effect.ShowMessage(R.string.image_captured_successfully),
-                ),
-                effects,
-            )
+            assertEquals(listOf(ViewfinderCaptureEvent.PhotoCaptured(bitmap)), events)
+            assertEquals(listOf(Effect.ShowMessage(R.string.image_captured_successfully)), effects)
         }
     }
 
@@ -132,7 +158,7 @@ class ViewfinderCaptureDelegateTest {
             delegate.takePreviewPicture()
 
             assertFalse(capture().isSavingPicture)
-            assertEquals(listOf(Effect.Picture.PreviewFailed), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoFailed), effects)
         }
     }
 
@@ -150,44 +176,113 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
-    fun confirmPreviewPicture_withAFileToWriteInto_storesTheBitmapThere() {
+    fun confirmResult_withAFileToWriteInto_storesThePhotoThere() {
         runTest {
             val bitmap = createBitmap(1, 1)
             coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns true
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Photo(image = bitmap))
 
-            delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = FOREIGN_URI)
+            delegate.confirmResult(outputUri = FOREIGN_URI)
 
-            assertEquals(listOf(Effect.Picture.PreviewStored), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoStored), effects)
         }
     }
 
     @Test
-    fun confirmPreviewPicture_thatCannotBeStored_saysSo() {
+    fun confirmResult_thatCannotBeStored_saysSo() {
         runTest {
             val bitmap = createBitmap(1, 1)
             coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns false
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Photo(image = bitmap))
 
-            delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = FOREIGN_URI)
+            delegate.confirmResult(outputUri = FOREIGN_URI)
 
-            assertEquals(listOf(Effect.Picture.PreviewStoreFailed), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoStoreFailed), effects)
         }
     }
 
     @Test
-    fun confirmPreviewPicture_withoutAFile_handsTheBitmapBackInline() {
+    fun confirmResult_withoutAFile_handsThePhotoBackInline() {
         runTest {
             val bitmap = createBitmap(1, 1)
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Photo(image = bitmap))
 
-            delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = null)
+            delegate.confirmResult(outputUri = null)
 
-            assertEquals(listOf(Effect.Picture.PreviewReturned(bitmap = bitmap)), effects)
+            assertEquals(listOf(Effect.CaptureResult.PhotoReturned(bitmap = bitmap)), effects)
             coVerify(exactly = 0) { storeCapturedPreview(uri = any(), bitmap = any()) }
+        }
+    }
+
+    @Test
+    fun confirmResult_ofALargePhoto_scalesItDownForTheIntent() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Photo(image = createBitmap(1000, 1000)))
+
+            delegate.confirmResult(outputUri = null)
+
+            val returned = (effects.single() as Effect.CaptureResult.PhotoReturned).bitmap
+            assertEquals(100, returned.width)
+            assertEquals(100, returned.height)
+        }
+    }
+
+    @Test
+    fun confirmResult_ofARecording_handsItsUriBack() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Video(uri = FOREIGN_URI, image = null))
+
+            delegate.confirmResult(outputUri = FOREIGN_URI)
+
+            assertEquals(listOf(Effect.CaptureResult.VideoReturned(uri = FOREIGN_URI)), effects)
+        }
+    }
+
+    @Test
+    fun confirmResult_withoutAResult_doesNothing() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.confirmResult(outputUri = null)
+
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun playResult_opensTheRecordingInThePlayer() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Video(uri = FOREIGN_URI, image = null))
+
+            delegate.playResult()
+
+            assertEquals(listOf(NavEvent.OpenVideo(uri = FOREIGN_URI)), events)
+        }
+    }
+
+    @Test
+    fun playResult_ofAPhoto_doesNothing() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+            delegate.showResult(ViewfinderCaptureResult.Photo(image = createBitmap(1, 1)))
+
+            delegate.playResult()
+
+            assertTrue(events.isEmpty())
         }
     }
 
@@ -204,7 +299,7 @@ class ViewfinderCaptureDelegateTest {
 
             assertFalse(capture().isTakingPicture)
             assertTrue(capture().isSavingPicture)
-            assertEquals(listOf(Effect.Preview.Flash(selfIlluminate = false)), effects)
+            assertEquals(listOf(Effect.FlashPreview(selfIlluminate = false)), effects)
             coVerify(exactly = 1) { playCameraSound(CameraSound.SHUTTER) }
         }
     }
@@ -431,11 +526,32 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun heldShutter_blocksDirectTimerStartsUntilReleased() {
+        runTest {
+            val delegate = createDelegate()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
+            }
+            delegate.holdShutter()
+
+            delegate.startSelfTimer()
+
+            assertFalse(capture().isSelfTimerRunning())
+
+            advanceTimeBy(1.seconds)
+            runCurrent()
+            delegate.startSelfTimer()
+
+            assertEquals(SELF_TIMER, capture().selfTimerRemaining)
+        }
+    }
+
+    @Test
     fun selfTimer_withTimerLight_blinksOnceThenTwiceAndLeavesTheLastSecondDark() {
         runTest {
             val delegate = createDelegate()
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = 5, timerLight = true))
+                it.copy(settings = CameraSettings(selfTimerDuration = 5.seconds, timerLight = true))
             }
 
             delegate.startSelfTimer()
@@ -457,11 +573,11 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val delegate = createDelegate()
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
-            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            advanceTimeBy(SELF_TIMER)
             runCurrent()
 
             coVerify(exactly = 0) { blinkTimerLight(any()) }
@@ -472,35 +588,38 @@ class ViewfinderCaptureDelegateTest {
     fun selfTimer_countsDownOneSecondApartAndThenFinishes() {
         runTest {
             val delegate = createDelegate()
-            val timeline = mutableListOf<Pair<Effect, Long>>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                stateHolder.effects.collect { effect -> timeline += effect to currentTime }
-            }
+            val events = collectEvents(delegate)
+            val timeline = mutableListOf<Pair<Duration?, Long>>()
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
+            }
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                stateHolder.state.collect { state ->
+                    timeline += state.capture.selfTimerRemaining to currentTime
+                }
             }
 
             delegate.startSelfTimer()
 
-            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            advanceTimeBy(SELF_TIMER)
             runCurrent()
 
             assertEquals(
                 listOf(
-                    Effect.SelfTimer.Started to 0L,
-                    Effect.SelfTimer.Ticked(secondsLeft = 3) to 0L,
-                    Effect.SelfTimer.Ticked(secondsLeft = 2) to 1_000L,
-                    Effect.SelfTimer.Ticked(secondsLeft = 1) to 2_000L,
-                    Effect.SelfTimer.Finished to 3_000L,
+                    null to 0L,
+                    3.seconds to 0L,
+                    2.seconds to 1_000L,
+                    1.seconds to 2_000L,
+                    null to 3_000L,
                 ),
                 timeline,
             )
+            assertEquals(listOf(ViewfinderCaptureEvent.SelfTimerFinished), events)
             coVerifyOrder {
                 playCameraSound(CameraSound.TIMER_TICK)
                 playCameraSound(CameraSound.TIMER_TICK)
                 playCameraSound(CameraSound.TIMER_FINAL_SECOND)
             }
-            assertFalse(capture().isSelfTimerRunning)
         }
     }
 
@@ -508,51 +627,55 @@ class ViewfinderCaptureDelegateTest {
     fun selfTimer_isRunningUntilCancelled() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectEvents(delegate)
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
-            assertTrue(capture().isSelfTimerRunning)
+            assertEquals(SELF_TIMER, capture().selfTimerRemaining)
 
             delegate.cancelSelfTimer()
-            assertFalse(capture().isSelfTimerRunning)
-            assertEquals(Effect.SelfTimer.Cancelled, effects.last())
+            advanceTimeBy(SELF_TIMER)
+            runCurrent()
+
+            assertNull(capture().selfTimerRemaining)
+            assertTrue(events.isEmpty())
         }
     }
 
     @Test
     fun selfTimerCancelled_withoutACountdown_putsNothingBack() {
         runTest {
-            val effects = collectEffects(stateHolder)
+            val delegate = createDelegate()
+            val states = mutableListOf<ViewfinderCaptureState>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                stateHolder.state.collect { state -> states += state.capture }
+            }
 
-            createDelegate().cancelSelfTimer()
+            delegate.cancelSelfTimer()
 
-            assertTrue(effects.isEmpty())
+            assertEquals(listOf(ViewfinderCaptureState()), states)
         }
     }
 
     @Test
-    fun screenDestroyed_dropsTheCountdownWithoutPuttingTheControlsBack() {
+    fun screenDestroyed_dropsTheCountdownWithoutFinishingIt() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectEvents(delegate)
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
             delegate.onScreenDestroyed()
-            delegate.cancelSelfTimer()
 
-            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            advanceTimeBy(SELF_TIMER)
             runCurrent()
 
-            assertEquals(
-                listOf(Effect.SelfTimer.Started, Effect.SelfTimer.Ticked(secondsLeft = 3)),
-                effects,
-            )
+            assertNull(capture().selfTimerRemaining)
+            assertTrue(events.isEmpty())
         }
     }
 
@@ -600,6 +723,7 @@ class ViewfinderCaptureDelegateTest {
             blinkTimerLight = blinkTimerLight,
             applicationScope = backgroundScope,
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
+            defaultDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         delegate.bind(
@@ -618,12 +742,12 @@ class ViewfinderCaptureDelegateTest {
     }
 
     private companion object {
-        const val SELF_TIMER_SECONDS = 3
         const val STORAGE_LOCATION = "MediaStore"
         const val CAPTURE_ERROR_CODE = 2
         const val SAVE_FAILURE_STAGE = "FILE_WRITE"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
         val ITEM = CapturedItem(CapturedItemType.IMAGE, "20260920_120000_000", Uri.EMPTY)
+        val SELF_TIMER = 3.seconds
     }
 }

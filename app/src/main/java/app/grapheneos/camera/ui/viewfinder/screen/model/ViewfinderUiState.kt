@@ -1,54 +1,39 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import android.graphics.Bitmap
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
-import app.grapheneos.camera.R
-import app.grapheneos.camera.data.core.model.AspectRatio
+import androidx.compose.runtime.Immutable
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 
+@Immutable
 data class ViewfinderUiState(
-    val qrOverlayVisible: Boolean = false,
-    val qrScanTogglesVisible: Boolean = false,
-    val thirdOptionVisible: Boolean = true,
-    val cancelButtonVisible: Boolean = true,
-    val capturedPreviewVisible: Boolean = false,
-    val cameraPreviewVisible: Boolean = true,
-    val qrResultVisible: Boolean = false,
-    val micMutedIconVisible: Boolean = false,
-    val isRecordingActive: Boolean = false,
-    val isRecordingPaused: Boolean = false,
-    val isRecordingMuted: Boolean = false,
-    val muteToggleVisible: Boolean = false,
-    val recordingTimerVisible: Boolean = false,
-    val recordingTimerText: String = "",
-    val modeTabsVisible: Boolean = false,
-    val keepScreenOn: Boolean = false,
-    @DrawableRes val thirdCircleIcon: Int = R.drawable.option_circle,
-    @StringRes val thirdCircleDescription: Int = R.string.open_gallery,
-    val thumbnailLoaderVisible: Boolean = false,
-    val thumbnail: Bitmap? = null,
-    val captureButton: CaptureButtonUiState = CaptureButtonUiState(),
-    @DrawableRes val flipCameraIcon: Int = R.drawable.flip_camera,
-    @StringRes val flipCameraDescription: Int = R.string.flip_camera,
-    val selfTimerBadge: String = "",
-    val selfTimerBadgeVisible: Boolean = false,
-    val selfTimerCountdownVisible: Boolean = false,
-    val selfTimerCancelVisible: Boolean = false,
-    val gridType: GridType = GridType.NONE,
     val mode: CameraMode = CameraMode.CAMERA,
-    val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,
-    val isQrMode: Boolean = false,
-    val isVideoMode: Boolean = false,
-    val scanAllCodes: Boolean = false,
+    val preview: PreviewUiModel = PreviewUiModel(),
+    val modeTabs: ModeTabsUiModel = ModeTabsUiModel(),
+    val captureButton: CaptureButtonUiModel = CaptureButtonUiModel(),
+    val flipCamera: FlipCameraUiModel = FlipCameraUiModel(),
+    val thirdOption: ThirdOptionUiModel = ThirdOptionUiModel(),
+    val cancelButtonVisible: Boolean = true,
+    val selfTimer: SelfTimerUiModel = SelfTimerUiModel(),
+    val recording: RecordingUiModel = RecordingUiModel(),
+    val qr: QrUiModel = QrUiModel(),
+    val focusRing: FocusRingUiModel? = null,
+    val exposure: ExposureUiModel = ExposureUiModel(),
+    val rotation: RotationUiModel = RotationUiModel(),
+    val captureResult: CaptureResultUiModel = CaptureResultUiModel(),
+    val keepScreenOn: Boolean = false,
+    val isSelfIlluminating: Boolean = false,
+    val isSettingsPanelAvailable: Boolean = false,
     val handlesVolumeKeys: Boolean = true,
-    val availableModes: Set<CameraMode> = emptySet(),
-    val sensorOrientationDegrees: Int? = null,
-    val iconRotationDegrees: Float = 0f,
-    val levelFrameRotationDegrees: Float = 0f,
-    val exposure: ExposureUiState? = null,
-    val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
-    val capture: CaptureUiState = CaptureUiState(),
     val dialog: ViewfinderDialog? = null,
 )

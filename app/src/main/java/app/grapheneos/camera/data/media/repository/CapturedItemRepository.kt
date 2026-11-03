@@ -2,7 +2,6 @@ package app.grapheneos.camera.data.media.repository
 
 import android.content.ContentResolver
 import android.content.ContentUris
-import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
 import android.graphics.Bitmap
@@ -22,7 +21,9 @@ import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapper
 import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapper
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.ImageBounds
 import app.grapheneos.camera.data.media.store.MediaPrefs
+import app.grapheneos.camera.data.media.store.RetrieverDataSource
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.data.media.store.imageCollectionUri
@@ -33,11 +34,8 @@ import app.grapheneos.camera.util.ImageDownscaler
 import app.grapheneos.camera.util.OrientedImageDownscaler
 import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.queryFirstRowOrNull
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import javax.inject.Inject
-import kotlin.math.max
-import kotlin.math.min
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.currentCoroutineContext
@@ -84,7 +82,7 @@ interface CapturedItemRepository {
     ): Bitmap?
 
     /** [item] decoded to fit the screen. */
-    suspend fun loadPhotoPreview(item: CapturedItem): Bitmap?
+    suspend fun loadPhotoPreview(item: CapturedItem, bounds: ImageBounds): Bitmap?
 
     /** [item] decoded at full resolution, scaled down only where it is too large to draw. */
     suspend fun loadFullPhoto(item: CapturedItem): Bitmap?
@@ -101,7 +99,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     private val storedCapturedItemMapper: StoredCapturedItemMapper,
     private val safTreeReleaseFlagsMapper: SafTreeReleaseFlagsMapper,
     private val contentResolver: ContentResolver,
-    @ApplicationContext private val context: Context,
+    private val retrieverDataSource: RetrieverDataSource,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @VideoFrameDispatcher private val videoFrameDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
@@ -299,10 +297,16 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun loadPhotoPreview(item: CapturedItem): Bitmap? {
+    override suspend fun loadPhotoPreview(
+        item: CapturedItem,
+        bounds: ImageBounds,
+    ): Bitmap? {
         return loadPhoto(
             item = item,
-            downscaler = screenDownscaler(),
+            downscaler = OrientedImageDownscaler(
+                maxLongSide = bounds.longSide,
+                maxShortSide = bounds.shortSide,
+            ),
         )
     }
 
@@ -487,7 +491,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return withContext(videoFrameDispatcher) {
             decodeOrNull(item) {
                 MediaMetadataRetriever().use { retriever ->
-                    retriever.setDataSource(context, item.uri)
+                    retrieverDataSource.setOn(retriever, item.uri)
                     retriever.getScaledFrameAtTime(
                         0,
                         MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
@@ -511,16 +515,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                 )
             }
         }
-    }
-
-    // The screen can be rotated, so the photo's longer side is fitted to the screen's longer side.
-    private fun screenDownscaler(): OrientedImageDownscaler {
-        val metrics = context.resources.displayMetrics
-
-        return OrientedImageDownscaler(
-            maxLongSide = max(metrics.widthPixels, metrics.heightPixels),
-            maxShortSide = min(metrics.widthPixels, metrics.heightPixels),
-        )
     }
 
     @Suppress("TooGenericExceptionCaught")

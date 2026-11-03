@@ -1,21 +1,25 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.testutil.cameraEntryPoint
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -25,6 +29,47 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
+
+    @Test
+    fun volumeKeyEvent_mapsWithTheCurrentSettingAndDispatchesTheResult() {
+        runTest {
+            val event = CaptureAction.VolumeKeyEvent.Pressed(VolumeKey.UP)
+            every {
+                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.ZOOM)
+            } returns CameraAction.ZoomStepKey.Pressed(ZoomDirection.IN)
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(volumeKeyAction = VolumeKeyAction.ZOOM))
+            }
+
+            viewModel.onAction(event)
+
+            verify(exactly = 1) { cameraControlsDelegate.startZoomStepping(ZoomDirection.IN) }
+        }
+    }
+
+    @Test
+    fun volumeKeyEvent_withoutAMappedAction_doesNothing() {
+        runTest {
+            val event = CaptureAction.VolumeKeyEvent.Released(VolumeKey.DOWN)
+            every {
+                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.OFF)
+            } returns null
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(volumeKeyAction = VolumeKeyAction.OFF))
+            }
+
+            viewModel.onAction(event)
+
+            verify(exactly = 1) {
+                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.OFF)
+            }
+            verify(exactly = 0) { captureDelegate.takePicture() }
+            verify(exactly = 0) { recordingDelegate.requestRecording() }
+            verify(exactly = 0) { cameraControlsDelegate.stopZoomStepping() }
+        }
+    }
 
     @Test
     fun captureKey_inQrMode_leavesTheTorchAlone() {
@@ -87,11 +132,11 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun captureButtonClicked_withASelfTimer_startsAndCancelsTheCountdown() {
         runTest {
             val viewModel = createViewModel()
-            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
+            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDuration = 3.seconds)) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
             stateHolder.update {
-                it.copy(capture = it.capture.copy(isSelfTimerRunning = true))
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
             }
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
 
@@ -104,43 +149,63 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewSwiped_sidewaysMovesAcrossTheModeTabs() {
+    fun heldShutter_blocksPhotoInputsUntilReleased() {
         runTest {
-            val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
+            every { cameraDelegate.isCameraReady } returns true
+            val viewModel = createViewModel(entryPoint = cameraEntryPoint(isCaptureSession = true))
+            stateHolder.update {
+                it.copy(
+                    session = it.session.copy(canTakePicture = true),
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
+            }
 
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+            viewModel.onAction(CaptureAction.ShutterClicked)
 
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = 1),
-                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = -1),
-                ),
-                effects,
-            )
+            verify(exactly = 0) { captureDelegate.takePreviewPicture() }
+            verify(exactly = 0) { captureDelegate.takePicture() }
+
+            stateHolder.update { it.copy(capture = it.capture.copy(isShutterHeld = false)) }
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+
+            verify(exactly = 1) { captureDelegate.takePreviewPicture() }
         }
     }
 
     @Test
-    fun flipCameraClicked_towardsAnUnavailableLens_saysSoAndDoesNotRebind() {
+    fun heldShutter_blocksStartingTheCountdown() {
         runTest {
             val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
-            every { cameraDelegate.lensFacing } returns LensFacing.BACK
-            every { cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any()) }
-                .returns(false)
+            stateHolder.update {
+                it.copy(
+                    settings = CameraSettings(selfTimerDuration = 3.seconds),
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
+            }
+
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+
+            verify(exactly = 0) { captureDelegate.startSelfTimer() }
+
+            stateHolder.update { it.copy(capture = it.capture.copy(isShutterHeld = false)) }
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+
+            verify(exactly = 1) { captureDelegate.startSelfTimer() }
+        }
+    }
+
+    @Test
+    fun flipCameraClicked_towardsAnUnavailableLens_doesNotRebind() {
+        runTest {
+            val viewModel = createViewModel()
+            every { cameraDelegate.switchLens(extensionMode = any()) } returns false
 
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.AnimateLensSwitch,
-                    ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable),
-                ),
-                effects,
-            )
         }
     }
 
@@ -154,9 +219,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 1) { settingsDelegate.toggleScanAllCodes() }
-            verify(exactly = 0) {
-                cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any())
-            }
+            verify(exactly = 0) { cameraDelegate.switchLens(extensionMode = any()) }
             assertTrue(effects.isEmpty())
         }
     }
@@ -173,9 +236,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 1) { recordingDelegate.setPaused(paused = true) }
-            verify(exactly = 0) {
-                cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any())
-            }
+            verify(exactly = 0) { cameraDelegate.switchLens(extensionMode = any()) }
             assertTrue(effects.isEmpty())
         }
     }
@@ -229,16 +290,91 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun settingsIconClicked_opensTheSheetOutsideQrMode() {
+    fun previewTapped_withTheSettingsPanelOpen_onlyClosesIt() {
         runTest {
             val viewModel = createViewModel()
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            viewModel.onAction(CameraAction.Preview.Tapped(x = 1f, y = 2f))
+
+            verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
+            verify(exactly = 0) { cameraControlsDelegate.focusAt(x = any(), y = any()) }
+        }
+    }
+
+    @Test
+    fun settingsPanel_followsTheStatusBarTheButtonAndTheHost() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(SettingsAction.StatusBarClicked(QuickSetting.SELF_TIMER))
+            viewModel.onAction(SettingsAction.QuickSettingsButtonClicked)
+            viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
+
+            verifyOrder {
+                settingsDelegate.openSettingsPanel(QuickSetting.SELF_TIMER)
+                settingsDelegate.openSettingsPanel()
+                settingsDelegate.onSettingsPanelVisibilityChanged(true)
+            }
+        }
+    }
+
+    @Test
+    fun sidewaysSwipes_moveTheModeStrip() {
+        runTest {
+            every {
+                swipeOutcomeMapper.map(
+                    direction = SwipeDirection.LEFT,
+                    state = any(),
+                )
+            } returns SwipeOutcome.SelectAdjacentMode(offset = 1)
+            every {
+                swipeOutcomeMapper.map(
+                    direction = SwipeDirection.RIGHT,
+                    state = any(),
+                )
+            } returns SwipeOutcome.SelectAdjacentMode(offset = -1)
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(showsCameraModeTabs = true) }
+
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
+
+            verifyOrder {
+                modeSwitchDelegate.onAdjacentModeSwiped(1)
+                modeSwitchDelegate.onAdjacentModeSwiped(-1)
+            }
+        }
+    }
+
+    @Test
+    fun swipeUp_inQrMode_offersTheBarcodeFormats() {
+        runTest {
+            every {
+                swipeOutcomeMapper.map(
+                    direction = SwipeDirection.UP,
+                    state = any(),
+                )
+            } returns SwipeOutcome.ShowQrFormats
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(SettingsAction.SettingsIconClicked)
-            stateHolder.update { state -> state.copy(mode = CameraMode.QR_SCAN) }
-            viewModel.onAction(SettingsAction.SettingsIconClicked)
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
 
-            assertEquals(listOf(ViewfinderScreenEffect.Settings.OpenSheet), effects)
+            assertEquals(listOf(ViewfinderScreenEffect.ShowQrFormats), effects)
+            verify(exactly = 0) { modeSwitchDelegate.onAdjacentModeSwiped(any()) }
+        }
+    }
+
+    @Test
+    fun screenPaused_cancelsTheSelfTimer() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+
+            verify(exactly = 1) { captureDelegate.cancelSelfTimer() }
         }
     }
 

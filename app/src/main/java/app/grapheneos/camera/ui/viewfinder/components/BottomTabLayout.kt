@@ -14,9 +14,9 @@ import com.google.android.material.tabs.TabLayout
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-
 class BottomTabLayout @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null,
 ) : TabLayout(context, attrs) {
 
     // Scroll position that centers each tab, indexed by tab position.
@@ -25,10 +25,12 @@ class BottomTabLayout @JvmOverloads constructor(
     private var suppressScroll = false
 
     private var onSettled: Runnable? = null
+    private val settleCompletion = Runnable { completeSettle() }
 
     private val scroller = ValueAnimator().apply {
         interpolator = AnimationUtils.loadInterpolator(
-            context, android.R.interpolator.fast_out_slow_in
+            context,
+            android.R.interpolator.fast_out_slow_in,
         )
         addUpdateListener { scrollTo(it.animatedValue as Int, 0) }
     }
@@ -38,27 +40,45 @@ class BottomTabLayout @JvmOverloads constructor(
             return getTabAt(selectedTabPosition)
         }
 
-    fun getTabForMode(mode: CameraMode): Tab? {
-        for (index in 0 until tabCount) {
-            val tab = getTabAt(index)
-            if (tab?.tag == mode) {
-                return tab
-            }
+    val selectedMode: CameraMode?
+        get() {
+            return selectedTab?.mode
         }
 
-        return null
+    private val Tab.mode: CameraMode?
+        get() {
+            return tag as? CameraMode
+        }
+
+    fun modeAt(position: Int): CameraMode? {
+        return getTabAt(position)?.mode
+    }
+
+    fun centredMode(): CameraMode? {
+        return (getTabAtX(scrollX) ?: selectedTab)?.mode
+    }
+
+    fun goToMode(
+        mode: CameraMode,
+        onSettled: Runnable? = null,
+    ) {
+        val tab = (0 until tabCount)
+            .firstNotNullOfOrNull { index -> getTabAt(index)?.takeIf { it.mode == mode } }
+            ?: return
+
+        goToTab(tab, onSettled)
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            cancelSettle()
+            pauseSettle()
         }
 
         val isHandled = super.dispatchTouchEvent(ev)
 
         // Only a lifted finger commits a mode, so nothing else would put the strip back.
         if (ev.actionMasked == MotionEvent.ACTION_CANCEL) {
-            selectedTab?.let(::goToTab)
+            selectedTab?.let { goToTab(tab = it, onSettled = onSettled) }
         }
 
         return isHandled
@@ -67,7 +87,10 @@ class BottomTabLayout @JvmOverloads constructor(
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
-        if (tabCount == 0) return
+        if (tabCount == 0) {
+            postSettleCompletion()
+            return
+        }
 
         val tabParent = getChildAt(0) as ViewGroup
         tabParent.setPaddingRelative(
@@ -92,8 +115,9 @@ class BottomTabLayout @JvmOverloads constructor(
         // there is nothing to animate from.
         tabCenters.clear()
         tabCenters.addAll(centers)
-        cancelSettle()
+        pauseSettle()
         setScrollPosition(selectedTabPosition, 0f, true)
+        postSettleCompletion()
     }
 
     override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
@@ -109,22 +133,26 @@ class BottomTabLayout @JvmOverloads constructor(
         }
     }
 
-    fun goToTab(tab: Tab, onSettled: Runnable? = null) {
+    private fun goToTab(
+        tab: Tab,
+        onSettled: Runnable? = null,
+    ) {
         selectTab(tab)
 
         drawSelectionAtScroll(scrollX)
 
         cancelSettle()
+        this.onSettled = onSettled
 
         val target = tabCenters.getOrNull(tab.position) ?: run {
-            onSettled?.run()
+            requestLayout()
             return
         }
 
         val duration = settleDuration(abs(target - scrollX))
         if (duration == 0L || !ValueAnimator.areAnimatorsEnabled()) {
             scrollTo(target, 0)
-            onSettled?.run()
+            completeSettle()
             return
         }
 
@@ -132,9 +160,8 @@ class BottomTabLayout @JvmOverloads constructor(
         scroller.setIntValues(scrollX, target)
         scroller.start()
 
-        onSettled?.let {
-            this.onSettled = it
-            postDelayed(it, duration)
+        if (onSettled != null) {
+            postDelayed(settleCompletion, duration)
         }
     }
 
@@ -143,16 +170,30 @@ class BottomTabLayout @JvmOverloads constructor(
             scroller.end()
         }
 
-        val settled = onSettled ?: return
-        onSettled = null
-        removeCallbacks(settled)
+        completeSettle()
+    }
 
-        settled.run()
+    private fun completeSettle() {
+        val settled = onSettled
+        onSettled = null
+        removeCallbacks(settleCompletion)
+        settled?.run()
+    }
+
+    private fun postSettleCompletion() {
+        if (onSettled != null) {
+            removeCallbacks(settleCompletion)
+            post(settleCompletion)
+        }
+    }
+
+    private fun pauseSettle() {
+        scroller.cancel()
+        removeCallbacks(settleCompletion)
     }
 
     private fun cancelSettle() {
-        scroller.cancel()
-        onSettled?.let { removeCallbacks(it) }
+        pauseSettle()
         onSettled = null
     }
 
@@ -209,7 +250,7 @@ class BottomTabLayout @JvmOverloads constructor(
     fun setModes(
         modes: Set<CameraMode>,
         currentMode: CameraMode,
-        onTabTouched: (Tab) -> Unit,
+        onModeTouched: (CameraMode) -> Unit,
     ) {
         if (modes == getAllModes()) {
             return
@@ -217,6 +258,8 @@ class BottomTabLayout @JvmOverloads constructor(
 
         Log.i(TAG, "Refreshing tabs...")
 
+        pauseSettle()
+        tabCenters.clear()
         removeAllTabs()
 
         modes.forEach { mode ->
@@ -225,23 +268,19 @@ class BottomTabLayout @JvmOverloads constructor(
 
                 tab.view.setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_UP) {
-                        onTabTouched(tab)
+                        onModeTouched(mode)
                     }
                     false
                 }
                 tab.tag = mode
 
-                // Highlight the mode the camera is really in, not the default one: the tabs are
-                // also rebuilt long after startup, once the extension probes report back.
                 addTab(tab, mode == currentMode)
             }
         }
     }
 
     fun getAllModes(): Set<CameraMode> {
-        return IntRange(0, tabCount - 1).map {
-            getTabAt(it)!!.tag as CameraMode
-        }.toSet()
+        return (0 until tabCount).mapNotNull(::modeAt).toSet()
     }
 
     private companion object {

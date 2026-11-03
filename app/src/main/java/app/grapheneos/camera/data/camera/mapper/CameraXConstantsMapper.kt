@@ -34,6 +34,7 @@ internal class CameraXConstantsMapperImpl @Inject constructor() : CameraXConstan
             FlashMode.OFF -> ImageCapture.FLASH_MODE_OFF
             FlashMode.ON -> ImageCapture.FLASH_MODE_ON
             FlashMode.AUTO -> ImageCapture.FLASH_MODE_AUTO
+            FlashMode.LOW_LIGHT_BOOST -> ImageCapture.FLASH_MODE_OFF
         }
     }
 

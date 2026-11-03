@@ -1,16 +1,19 @@
 package app.grapheneos.camera.di.core
 
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.usage.StorageStatsManager
 import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.AssetManager
+import android.content.res.Resources
 import android.hardware.SensorManager
 import android.location.LocationManager
 import android.os.Build
 import android.os.Vibrator
 import android.os.VibratorManager
+import app.grapheneos.camera.data.core.notification.NotificationBuilderFactory
 import dagger.Module
 import dagger.Provides
 import dagger.Reusable
@@ -28,6 +31,14 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): ContentResolver {
         return context.contentResolver
+    }
+
+    @Provides
+    @Reusable
+    fun provideResources(
+        @ApplicationContext context: Context,
+    ): Resources {
+        return context.resources
     }
 
     @Provides
@@ -76,6 +87,16 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): StorageStatsManager {
         return context.getSystemService(StorageStatsManager::class.java)
+    }
+
+    @Provides
+    @Reusable
+    fun provideNotificationBuilderFactory(
+        @ApplicationContext context: Context,
+    ): NotificationBuilderFactory {
+        return NotificationBuilderFactory { channelId ->
+            Notification.Builder(context, channelId)
+        }
     }
 
     @Provides

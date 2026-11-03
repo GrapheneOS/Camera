@@ -17,7 +17,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.core.preview.CameraPreviewSample

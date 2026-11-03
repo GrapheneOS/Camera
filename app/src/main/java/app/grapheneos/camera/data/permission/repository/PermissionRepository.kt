@@ -1,10 +1,6 @@
 package app.grapheneos.camera.data.permission.repository
 
-import android.content.Context
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import app.grapheneos.camera.data.permission.model.AppPermission
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 interface PermissionRepository {
@@ -12,12 +8,10 @@ interface PermissionRepository {
 }
 
 internal class PermissionRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val selfPermissionChecker: SelfPermissionChecker,
 ) : PermissionRepository {
 
     override fun isGranted(permission: AppPermission): Boolean {
-        return permission.manifestNames.any {
-            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-        }
+        return permission.manifestNames.any(selfPermissionChecker::isGranted)
     }
 }

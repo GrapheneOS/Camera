@@ -1,5 +1,6 @@
 package app.grapheneos.camera.data.settings.mapper
 
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
@@ -35,7 +36,7 @@ class StoredVideoQualityMapperTest {
 
             assertEquals(
                 quality,
-                readBack.map(stored = stored, isFrontFacing = false).videoQuality,
+                readBack.map(stored = stored, lensFacing = LensFacing.BACK).videoQuality,
             )
         }
     }

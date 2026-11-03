@@ -50,7 +50,7 @@ class BottomTabLayoutRegressionTest {
 
             var travel = 0
             scenario.onActivity { activity ->
-                val firstMode = activity.tabLayout.getTabAt(0)!!.tag as CameraMode
+                val firstMode = requireNotNull(activity.tabLayout.modeAt(0))
                 activity.viewfinder.onAction(CameraAction.ModeSelected(firstMode))
             }
             waitUntil(scenario, "the strip is centred on the first tab") {
@@ -66,9 +66,16 @@ class BottomTabLayoutRegressionTest {
             val trace = dragStrip(scenario, scrollPx = travel, endWith = DragEnd.CANCEL)
 
             trace.zipWithNext { before, after ->
-                assertTrue("the strip moved backwards, $before -> $after, in $trace", after >= before)
+                assertTrue(
+                    "the strip moved backwards, $before -> $after, in $trace",
+                    after >= before
+                )
             }
-            assertEquals("the strip did not follow the finger", trace.first() + travel, trace.last())
+            assertEquals(
+                "the strip did not follow the finger",
+                trace.first() + travel,
+                trace.last()
+            )
         }
     }
 
@@ -122,7 +129,7 @@ class BottomTabLayoutRegressionTest {
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
                 target = nextTo(tabs.selectedTabPosition, tabs.tabCount)
-                targetMode = tabs.getTabAt(target)!!.tag as CameraMode
+                targetMode = tabs.modeAt(target)
                 // Two thirds of the way over: past the halfway point that decides the mode, but
                 // short of the centre, so the strip still has somewhere to glide to.
                 travel = (centreOf(tabs, target) - tabs.scrollX) * 2 / 3
@@ -180,7 +187,7 @@ class BottomTabLayoutRegressionTest {
 
             assertNotEquals(selectedAtStart, target)
             waitUntil(scenario, "the camera switched to the tab the drag ended on") {
-                it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
+                it.viewfinder.uiState.value.mode == it.tabLayout.modeAt(target)
             }
         }
     }
@@ -224,7 +231,7 @@ class BottomTabLayoutRegressionTest {
             }
 
             waitUntil(scenario, "the camera switched once the strip had settled") {
-                it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
+                it.viewfinder.uiState.value.mode == it.tabLayout.modeAt(target)
             }
         }
     }
@@ -254,10 +261,14 @@ class BottomTabLayoutRegressionTest {
                 val tabs = activity.tabLayout
                 tabs.settleNow()
 
-                assertEquals("the strip did not finish its move", centreOf(tabs, target), tabs.scrollX)
+                assertEquals(
+                    "the strip did not finish its move",
+                    centreOf(tabs, target),
+                    tabs.scrollX
+                )
                 assertEquals(
                     "the mode the strip was settling into never reached the camera",
-                    tabs.getTabAt(target)!!.tag,
+                    tabs.modeAt(target),
                     activity.viewfinder.uiState.value.mode,
                 )
             }
@@ -300,7 +311,7 @@ class BottomTabLayoutRegressionTest {
             }
 
             waitUntil(scenario, "the camera switched to tab $target") {
-                it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
+                it.viewfinder.uiState.value.mode == it.tabLayout.modeAt(target)
             }
             val switchedAfterMs = SystemClock.uptimeMillis() - touchedAt
             assumeTrue(
@@ -370,8 +381,8 @@ class BottomTabLayoutRegressionTest {
                 val tabs = activity.tabLayout
                 // Started against a surface the rebind has just emptied, so the copy comes back
                 // with nothing and schedules the retry this is about.
-                val nextMode = tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount))!!.tag
-                    as CameraMode
+                val next = nextTo(tabs.selectedTabPosition, tabs.tabCount)
+                val nextMode = requireNotNull(tabs.modeAt(next))
                 activity.viewfinder.onAction(CameraAction.ModeSelected(nextMode))
                 activity.previewFrames.prefetch()
             }
@@ -396,7 +407,7 @@ class BottomTabLayoutRegressionTest {
             awaitStrip(scenario)
 
             for (mode in listOf(CameraMode.VIDEO, CameraMode.CAMERA)) {
-                scenario.onActivity { it.finalizeMode(it.tabLayout.getTabForMode(mode)) }
+                scenario.onActivity { releaseStrip(it, mode) }
 
                 // The rebind that applies the new ratio runs whole inside one message, so a poll
                 // that sees the mode has landed sees a layout the resize has already asked for.
@@ -414,15 +425,19 @@ class BottomTabLayoutRegressionTest {
                         still != null,
                     )
                     val drawn = RectF(
-                        0f, 0f, still!!.intrinsicWidth.toFloat(), still.intrinsicHeight.toFloat()
+                        0f,
+                        0f,
+                        still!!.intrinsicWidth.toFloat(),
+                        still.intrinsicHeight.toFloat()
                     )
                     overlay.imageMatrix.mapRect(drawn)
 
                     assertTrue(
-                        "entering $mode drew the still as ${drawn.width()}x${drawn.height()} in a " +
-                                "${overlay.width}x${overlay.height} preview",
+                        "entering $mode drew the still as " +
+                            "${drawn.width()}x${drawn.height()} in a " +
+                            "${overlay.width}x${overlay.height} preview",
                         drawn.left <= 0f && drawn.top <= 0f &&
-                                drawn.right >= overlay.width && drawn.bottom >= overlay.height
+                            drawn.right >= overlay.width && drawn.bottom >= overlay.height
                     )
                 }
             }
@@ -431,8 +446,10 @@ class BottomTabLayoutRegressionTest {
 
     @Test
     fun takingBackASwitchMidGlide_doesNotStrandTheTransition() {
-        assumeTrue("the switch lands before it can be taken back with animations off",
-            animatorsEnabled())
+        assumeTrue(
+            "the switch lands before it can be taken back with animations off",
+            animatorsEnabled()
+        )
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitStrip(scenario)
@@ -446,7 +463,8 @@ class BottomTabLayoutRegressionTest {
                 val tabs = activity.tabLayout
                 startMode = activity.viewfinder.uiState.value.mode
 
-                activity.finalizeMode(tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount)))
+                val next = tabs.modeAt(nextTo(tabs.selectedTabPosition, tabs.tabCount))
+                releaseStrip(activity, requireNotNull(next))
 
                 assertEquals(
                     "the switch reached the camera before it could be taken back",
@@ -461,7 +479,7 @@ class BottomTabLayoutRegressionTest {
 
                 // Back to the tab the camera never left, in the window the first switch is still
                 // gliding through.
-                activity.finalizeMode(tabs.getTabForMode(startMode))
+                releaseStrip(activity, requireNotNull(startMode))
             }
 
             waitUntil(scenario, "the transition came back down off the live preview") {
@@ -490,8 +508,10 @@ class BottomTabLayoutRegressionTest {
             tabs.width > 0 && (tabs.getChildAt(0)?.width ?: 0) > tabs.width
         }
         scenario.onActivity {
-            assertTrue("a strip of ${it.tabLayout.tabCount} tabs cannot be dragged across",
-                it.tabLayout.tabCount >= 2)
+            assertTrue(
+                "a strip of ${it.tabLayout.tabCount} tabs cannot be dragged across",
+                it.tabLayout.tabCount >= 2,
+            )
         }
         // The opening centring scroll is animated, and a drag started during it would be measuring
         // that animation rather than the finger.
@@ -512,6 +532,11 @@ class BottomTabLayoutRegressionTest {
 
     private fun tabViewAt(tabs: BottomTabLayout, position: Int): View =
         (tabs.getChildAt(0) as ViewGroup).getChildAt(position)
+
+    // What both of the strip's touch listeners hand the viewfinder when a finger lifts on [mode].
+    private fun releaseStrip(activity: MainActivity, mode: CameraMode) {
+        activity.viewfinder.onAction(CameraAction.ModeStripReleased(mode))
+    }
 
     private companion object {
         private const val RETRY_WINDOW_MS = 400L

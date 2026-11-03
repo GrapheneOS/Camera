@@ -4,12 +4,14 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.core.graphics.scale
 import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.BlinkTimerLight
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
@@ -23,13 +25,16 @@ import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
 import app.grapheneos.camera.util.printStackTraceToString
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +46,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 interface ViewfinderCaptureDelegate {
 
@@ -56,13 +62,16 @@ interface ViewfinderCaptureDelegate {
     fun onScreenStopped()
     fun onScreenDestroyed()
 
+    fun holdShutter()
+
     fun takePicture()
+    fun takePreviewPicture()
     fun cancelPictureCapture()
 
-    fun takePreviewPicture()
-    fun showCapturedPreview()
-    fun confirmPreviewPicture(bitmap: Bitmap, outputUri: Uri?)
-    fun dismissCapturedPreview()
+    fun showResult(result: ViewfinderCaptureResult)
+    fun confirmResult(outputUri: Uri?)
+    fun playResult()
+    fun discardResult()
 
     fun startSelfTimer()
     fun cancelSelfTimer()
@@ -78,6 +87,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val blinkTimerLight: BlinkTimerLight,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
 
     private lateinit var scope: CoroutineScope
@@ -115,7 +125,21 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     override fun onScreenDestroyed() {
         selfTimer?.cancel()
         host = null
-        updateCapture { ViewfinderCaptureState() }
+        updateCapture { capture ->
+            ViewfinderCaptureState(
+                result = capture.result,
+                isShutterHeld = capture.isShutterHeld,
+            )
+        }
+    }
+
+    override fun holdShutter() {
+        updateCapture { it.copy(isShutterHeld = true) }
+
+        scope.launch(mainDispatcher) {
+            delay(SHUTTER_HOLD)
+            updateCapture { it.copy(isShutterHeld = false) }
+        }
     }
 
     override fun takePicture() {
@@ -153,6 +177,18 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
+    override fun takePreviewPicture() {
+        startPictureSave()
+
+        applicationScope.launch(mainDispatcher) {
+            when (val result = capturePreviewImage()) {
+                is CapturePreviewResult.Unavailable -> Unit
+                is CapturePreviewResult.Failed -> onPreviewFailed()
+                is CapturePreviewResult.Captured -> onPreviewCaptured(result.bitmap)
+            }
+        }
+    }
+
     override fun cancelPictureCapture() {
         val pending = pendingCapture ?: return
 
@@ -160,65 +196,47 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         finish(pending)
     }
 
-    override fun takePreviewPicture() {
-        startPictureSave()
+    override fun showResult(result: ViewfinderCaptureResult) {
+        updateCapture { it.copy(result = result) }
+    }
 
-        applicationScope.launch(mainDispatcher) {
-            val update = when (val result = capturePreviewImage()) {
-                is CapturePreviewResult.Unavailable -> null
-                is CapturePreviewResult.Failed -> CapturedImageEvent.PreviewFailed
+    override fun confirmResult(outputUri: Uri?) {
+        when (val result = stateHolder.state.value.capture.result) {
+            null -> Unit
 
-                is CapturePreviewResult.Captured -> {
-                    CapturedImageEvent.PreviewCaptured(bitmap = result.bitmap)
-                }
+            is ViewfinderCaptureResult.Photo -> {
+                returnPhoto(photo = result.image, outputUri = outputUri)
             }
 
-            update?.let(::onCapturedImageEvent)
-        }
-    }
-
-    override fun showCapturedPreview() {
-        updateCapture { it.copy(isCapturedPreviewShown = true) }
-    }
-
-    override fun confirmPreviewPicture(
-        bitmap: Bitmap,
-        outputUri: Uri?,
-    ) {
-        if (outputUri == null) {
-            onCapturedImageEvent(CapturedImageEvent.PreviewReturned(bitmap = bitmap))
-            return
-        }
-
-        applicationScope.launch(mainDispatcher) {
-            val event = when {
-                storeCapturedPreview(uri = outputUri, bitmap = bitmap) -> {
-                    CapturedImageEvent.PreviewStored
-                }
-
-                else -> CapturedImageEvent.PreviewStoreFailed
+            is ViewfinderCaptureResult.Video -> {
+                postEffect(Effect.CaptureResult.VideoReturned(uri = result.uri))
             }
-
-            onCapturedImageEvent(event)
         }
     }
 
-    override fun dismissCapturedPreview() {
-        updateCapture { it.copy(isCapturedPreviewShown = false) }
+    override fun playResult() {
+        val video = stateHolder.state.value.capture.result as? ViewfinderCaptureResult.Video
+
+        video?.let { stateHolder.postNavEvent(NavEvent.OpenVideo(uri = it.uri)) }
+    }
+
+    override fun discardResult() {
+        updateCapture { it.copy(result = null) }
     }
 
     override fun startSelfTimer() {
+        if (stateHolder.state.value.capture.isShutterHeld) return
+
         cancelSelfTimer()
 
-        postEffect(Effect.SelfTimer.Started)
-        setSelfTimerRunning(true)
-
         val settings = stateHolder.state.value.settings
+        setSelfTimerRemaining(settings.selfTimerDuration)
+
         selfTimer = scope.launch(mainDispatcher) {
             val timer = this
 
-            selfTimerCountdown(settings.selfTimerDurationSeconds).collect { secondsLeft ->
-                postEffect(Effect.SelfTimer.Ticked(secondsLeft))
+            selfTimerCountdown(settings.selfTimerDuration).collect { secondsLeft ->
+                setSelfTimerRemaining(secondsLeft.seconds)
                 playCameraSound(tickSound(secondsLeft))
 
                 val flashes = timerLightFlashes(secondsLeft)
@@ -227,8 +245,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 }
             }
 
-            setSelfTimerRunning(false)
-            postEffect(Effect.SelfTimer.Finished)
+            setSelfTimerRemaining(null)
+            _captureEvents.trySend(ViewfinderCaptureEvent.SelfTimerFinished)
         }
     }
 
@@ -239,12 +257,11 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         if (selfTimer?.isActive != true) return
 
         selfTimer?.cancel()
-        setSelfTimerRunning(false)
-        postEffect(Effect.SelfTimer.Cancelled)
+        setSelfTimerRemaining(null)
     }
 
-    private fun setSelfTimerRunning(running: Boolean) {
-        updateCapture { it.copy(isSelfTimerRunning = running) }
+    private fun setSelfTimerRemaining(remaining: Duration?) {
+        updateCapture { it.copy(selfTimerRemaining = remaining) }
     }
 
     private fun tickSound(secondsLeft: Int): CameraSound {
@@ -263,9 +280,9 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
-    private fun selfTimerCountdown(seconds: Int): Flow<Int> {
+    private fun selfTimerCountdown(duration: Duration): Flow<Int> {
         return flow {
-            for (secondsLeft in seconds downTo 1) {
+            for (secondsLeft in duration.inWholeSeconds.toInt() downTo 1) {
                 emit(secondsLeft)
                 delay(SELF_TIMER_TICK)
             }
@@ -320,13 +337,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
             is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
             is CapturedImageEvent.SaveFailed -> onPictureSaveFailed(event)
-            is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
-            is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
-            is CapturedImageEvent.PreviewStored -> postEffect(Effect.Picture.PreviewStored)
-
-            is CapturedImageEvent.PreviewStoreFailed -> {
-                postEffect(Effect.Picture.PreviewStoreFailed)
-            }
 
             is CapturedImageEvent.StorageLocationNotFound -> {
                 _captureEvents.trySend(ViewfinderCaptureEvent.StorageLocationNotFound)
@@ -335,10 +345,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             is CapturedImageEvent.Saved -> {
                 storeLastCapturedItem(event.item)
                 _captureEvents.trySend(ViewfinderCaptureEvent.Saved(event.item))
-            }
-
-            is CapturedImageEvent.PreviewReturned -> {
-                postEffect(Effect.Picture.PreviewReturned(bitmap = event.bitmap))
             }
 
             is CapturedImageEvent.LocationUnavailable -> {
@@ -354,7 +360,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             playCameraSound(CameraSound.SHUTTER)
         }
 
-        postEffect(Effect.Preview.Flash(stateHolder.state.value.selfIlluminate()))
+        postEffect(Effect.FlashPreview(stateHolder.state.value.selfIlluminates()))
     }
 
     private fun onPictureThumbnailReady(thumbnail: Bitmap?) {
@@ -408,14 +414,49 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private fun onPreviewCaptured(bitmap: Bitmap) {
         finishPictureSave()
 
-        postEffect(Effect.Picture.PreviewCaptured(bitmap = bitmap))
+        _captureEvents.trySend(ViewfinderCaptureEvent.PhotoCaptured(photo = bitmap))
         postEffect(Effect.ShowMessage(R.string.image_captured_successfully))
     }
 
     private fun onPreviewFailed() {
         finishPictureSave()
 
-        postEffect(Effect.Picture.PreviewFailed)
+        postEffect(Effect.CaptureResult.PhotoFailed)
+    }
+
+    private fun returnPhoto(
+        photo: Bitmap,
+        outputUri: Uri?,
+    ) {
+        applicationScope.launch(mainDispatcher) {
+            val effect = when {
+                outputUri == null -> {
+                    Effect.CaptureResult.PhotoReturned(bitmap = inlineResult(photo))
+                }
+
+                storeCapturedPreview(uri = outputUri, bitmap = photo) -> {
+                    Effect.CaptureResult.PhotoStored
+                }
+
+                else -> Effect.CaptureResult.PhotoStoreFailed
+            }
+
+            postEffect(effect)
+        }
+    }
+
+    // The photo goes back inside the result intent, and a binder transaction has no room for a
+    // full-size bitmap.
+    private suspend fun inlineResult(photo: Bitmap): Bitmap {
+        if (photo.byteCount <= MAX_INLINE_RESULT_BYTES) return photo
+
+        return withContext(defaultDispatcher) {
+            photo.scale(
+                photo.width / INLINE_RESULT_DOWNSCALE,
+                photo.height / INLINE_RESULT_DOWNSCALE,
+                false,
+            )
+        }
     }
 
     private fun startPictureSave() {
@@ -454,7 +495,10 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         private const val TAG = "ViewfinderCapture"
 
         private const val TIMER_LIGHT_FINAL_SECONDS = 3
+        private const val MAX_INLINE_RESULT_BYTES = 1_000_000
+        private const val INLINE_RESULT_DOWNSCALE = 10
 
         private val SELF_TIMER_TICK = 1.seconds
+        private val SHUTTER_HOLD = 1.seconds
     }
 }

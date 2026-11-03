@@ -1,35 +1,30 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.view.Surface
-import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
-import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
+import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderModeStripState
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +32,42 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
+
+    @Test
+    fun levelState_isMappedInitiallyAndWhenTheLevelChanges() {
+        runTest {
+            val initial = ViewfinderLevelState()
+            val changed = initial.copy(visible = true, tiltDegrees = -3, horizonDegrees = -12)
+            val hidden = changed.copy(visible = false)
+            val initialUiState = mockk<LevelUiState>()
+            val changedUiState = mockk<LevelUiState>()
+            val hiddenUiState = mockk<LevelUiState>()
+            every { uiStateMapper.mapLevel(initial) } returns initialUiState
+            every { uiStateMapper.mapLevel(changed) } returns changedUiState
+            every { uiStateMapper.mapLevel(hidden) } returns hiddenUiState
+            val viewModel = createViewModel()
+            val screenState = stateHolder.state.value
+            assertSame(initialUiState, viewModel.levelUiState.value)
+
+            val levels = mutableListOf<LevelUiState>()
+            val collection = backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                viewModel.levelUiState.collect { level -> levels += level }
+            }
+
+            assertEquals(listOf(initialUiState), levels)
+
+            levelStateHolder.update { changed }
+
+            assertSame(changedUiState, viewModel.levelUiState.value)
+            assertSame(changedUiState, levels.last())
+            assertSame(screenState, stateHolder.state.value)
+
+            collection.cancel()
+            levelStateHolder.update { hidden }
+
+            assertSame(hiddenUiState, viewModel.levelUiState.value)
+        }
+    }
 
     @Test
     fun screenResumed_withTheProviderReady_startsTheBindBeforeReturning() {
@@ -109,13 +140,14 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(DialogAction.QrResultDismissed)
 
             assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Panel.HideExposure,
-                    ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable),
-                    ViewfinderScreenEffect.Panel.HideZoom,
-                ),
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable)),
                 effects,
             )
+            verifyOrder {
+                previewControlsDelegate.hideExposurePanel()
+                cameraDelegate.bindCamera(any())
+                previewControlsDelegate.hideZoomPanel()
+            }
         }
     }
 
@@ -145,13 +177,52 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewTapped_focusesThere() {
+    fun previewTapped_focusesThereAndShowsTheRingAndPanels() {
         runTest {
             val viewModel = createViewModel()
 
             viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
 
-            verify(exactly = 1) { cameraDelegate.focusAt(x = 10f, y = 20f) }
+            verify(exactly = 1) { cameraControlsDelegate.focusAt(x = 10f, y = 20f) }
+            verify(exactly = 1) { previewControlsDelegate.showFocus(x = 10f, y = 20f) }
+        }
+    }
+
+    @Test
+    fun previewTapped_inQrMode_neitherFocusesNorShowsTheRing() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+
+            viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
+
+            verify(exactly = 0) { cameraControlsDelegate.focusAt(x = any(), y = any()) }
+            verify(exactly = 0) { previewControlsDelegate.showFocus(x = any(), y = any()) }
+        }
+    }
+
+    @Test
+    fun exposureSliderDragged_appliesItAndKeepsThePanelShown() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(CameraAction.ExposureSliderDragged(compensationIndex = 2))
+
+            verifyOrder {
+                cameraControlsDelegate.setExposureCompensation(2)
+                previewControlsDelegate.showExposurePanel()
+            }
+        }
+    }
+
+    @Test
+    fun zoomChanged_showsTheZoomPanel() {
+        runTest {
+            createViewModel()
+
+            zoomChanges.emit(Unit)
+
+            verify(exactly = 1) { previewControlsDelegate.showZoomPanel() }
         }
     }
 
@@ -164,32 +235,9 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.ZoomOutKeyPressed)
 
             verifyOrder {
-                cameraDelegate.stepZoom(1f)
-                cameraDelegate.stepZoom(-1f)
+                cameraControlsDelegate.stepZoom(1f)
+                cameraControlsDelegate.stepZoom(-1f)
             }
-        }
-    }
-
-    @Test
-    fun previewStreamingStarted_inVideoMode_refreshesTheVideoQualities() {
-        runTest {
-            val viewModel = createViewModel()
-            stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-
-            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
-
-            verify(exactly = 1) { cameraDelegate.refreshVideoQualities() }
-        }
-    }
-
-    @Test
-    fun previewStreamingStarted_inPhotoMode_leavesTheVideoQualitiesAlone() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
-
-            verify(exactly = 0) { cameraDelegate.refreshVideoQualities() }
         }
     }
 
@@ -215,26 +263,105 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
 
             assertEquals(CameraMode.CAMERA, stateHolder.state.value.mode)
             assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Panel.HideExposure,
-                    ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
-                    ViewfinderScreenEffect.Panel.HideExposure,
-                    ViewfinderScreenEffect.Panel.HideZoom,
-                    ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
-                    ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
-                ),
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable)),
                 effects,
             )
+            verify(exactly = 2) { modeSwitchDelegate.followCamera() }
         }
     }
 
     @Test
-    fun torchToggleClicked_togglesTheTorch() {
+    fun modeStripSettled_onAnotherMode_switchesTheCameraAndTheStripFollows() {
         runTest {
             val viewModel = createViewModel()
-            viewModel.onAction(CameraAction.TorchToggleClicked)
+            every { modeDelegate.select(any()) } returns true
+            stateHolder.update {
+                it.copy(
+                    modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
+                    session = it.session.copy(
+                        availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO),
+                    ),
+                )
+            }
 
-            verify(exactly = 1) { cameraDelegate.toggleTorch() }
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+
+            verifyOrder {
+                modeDelegate.select(CameraMode.VIDEO)
+                cameraDelegate.canBeginBind(forced = true)
+                modeSwitchDelegate.followCamera()
+            }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_backOnTheCurrentMode_cancelsTheSwitch() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.CAMERA))
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.CAMERA))
+
+            verify(exactly = 1) { modeSwitchDelegate.cancelSwitch() }
+            verify(exactly = 0) { modeDelegate.select(any()) }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_somewhereTheStripIsNotHeaded_isIgnored() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+
+            stateHolder.update {
+                it.copy(
+                    modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
+                    session = it.session.copy(
+                        availableModes = setOf(CameraMode.CAMERA, CameraMode.VIDEO),
+                    ),
+                )
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.PORTRAIT))
+
+            verify(exactly = 0) { modeDelegate.select(any()) }
+            verify(exactly = 0) { modeSwitchDelegate.cancelSwitch() }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_onAModeThatDisappeared_cancelsTheSwitch() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(
+                    modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO),
+                    session = it.session.copy(availableModes = setOf(CameraMode.CAMERA)),
+                )
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+
+            verify(exactly = 1) { modeSwitchDelegate.cancelSwitch() }
+            verify(exactly = 0) { modeDelegate.select(any()) }
+        }
+    }
+
+    @Test
+    fun previewStreaming_reachesTheModeStrip() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStopped)
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verifyOrder {
+                modeSwitchDelegate.onPreviewStreaming(false)
+                modeSwitchDelegate.onPreviewStreaming(true)
+            }
         }
     }
 

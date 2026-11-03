@@ -1,29 +1,28 @@
 package app.grapheneos.camera.ui.common
 
-import android.os.Handler
-import android.os.Looper
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
+import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 open class TunePlayer(
     private val cameraSoundPlayer: CameraSoundPlayer,
-    private val soundsEnabled: () -> Boolean,
 ) {
 
-    private val mainHandler = Handler(Looper.getMainLooper())
+    open suspend fun playRecordingStartSound(soundEnabled: Boolean) {
+        if (!soundEnabled) return
 
-    open fun playVRStartSound(onPlayed: Runnable) {
-        if (!soundsEnabled()) {
-            onPlayed.run()
-            return
+        suspendCancellableCoroutine { continuation ->
+            cameraSoundPlayer.play(CameraSound.RECORDING_START) {
+                continuation.resume(Unit)
+            }
         }
-
-        cameraSoundPlayer.play(CameraSound.RECORDING_START) {
-            mainHandler.postDelayed(onPlayed, SOUND_TO_START_DELAY_MS)
-        }
+        delay(SOUND_TO_START_DELAY)
     }
 
     private companion object {
-        private const val SOUND_TO_START_DELAY_MS = 10L
+        private val SOUND_TO_START_DELAY = 10.milliseconds
     }
 }

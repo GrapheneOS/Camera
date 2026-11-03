@@ -3,21 +3,11 @@ package app.grapheneos.camera.ui.viewfinder.components
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
-import android.os.Handler
-import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatSeekBar
-import androidx.transition.Fade
-import androidx.transition.Transition
-import androidx.transition.TransitionManager
-import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 
 class ExposureBar : AppCompatSeekBar {
     constructor(context: Context) : super(context)
@@ -27,61 +17,21 @@ class ExposureBar : AppCompatSeekBar {
         defStyle
     )
 
-    companion object {
-        private const val PANEL_VISIBILITY_DURATION = 2000L
-    }
+    var onCompensationDragged: (Int) -> Unit = {}
 
-    private val closePanelHandler: Handler = Handler(Looper.getMainLooper())
+    private var renderedExposure: ExposureUiModel? = null
 
-    private val closePanelRunnable = Runnable {
-        hidePanel()
-    }
-
-    private lateinit var mainActivity: MainActivity
-
-    fun setMainActivity(mainActivity: MainActivity) {
-        this.mainActivity = mainActivity
-    }
-
-    private var renderedExposure: ExposureUiState? = null
-
-    fun render(exposure: ExposureUiState?) {
+    fun render(exposure: ExposureUiModel) {
         if (exposure == renderedExposure) return
         renderedExposure = exposure
 
-        if (exposure == null) return
+        val range = exposure.range ?: return
 
-        max = exposure.max
-        min = exposure.min
+        max = range.last
+        min = range.first
         progress = exposure.progress
 
         onSizeChanged(width, height, 0, 0)
-    }
-
-    fun showPanel() {
-        togglePanel(View.VISIBLE)
-        closePanelHandler.removeCallbacks(closePanelRunnable)
-        closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
-    }
-
-    fun hidePanel() {
-        togglePanel(View.GONE)
-    }
-
-    private fun togglePanel(visibility: Int) {
-        val transition: Transition = Fade()
-        if (visibility == View.GONE) {
-            transition.duration = 300
-        } else {
-            transition.duration = 0
-        }
-        transition.addTarget(R.id.exposure_bar)
-
-        TransitionManager.beginDelayedTransition(
-            mainActivity.window.decorView.rootView as ViewGroup, transition
-        )
-
-        mainActivity.exposureBarPanel.visibility = visibility
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
@@ -114,11 +64,7 @@ class ExposureBar : AppCompatSeekBar {
                 Log.i("progress", progress.toString())
                 Log.i("max", max.toString())
 
-                mainActivity.viewfinder.onAction(
-                    CameraAction.ExposureSliderDragged(compensationIndex = progress),
-                )
-
-                showPanel()
+                onCompensationDragged(progress)
 
                 onSizeChanged(width, height, 0, 0)
             }

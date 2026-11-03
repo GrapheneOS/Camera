@@ -21,6 +21,8 @@ interface PreviewFrameHolder {
      */
     fun holdCurrentFrame()
 
+    fun currentFrame(): Bitmap?
+
     fun prefetch()
 
     fun clear()
@@ -84,6 +86,10 @@ internal class PreviewFrameHolderImpl(
             Handler(frameCopyLooper()),
             FRAME_COPY_RETRIES,
         )
+    }
+
+    override fun currentFrame(): Bitmap? {
+        return previewView.bitmap ?: lastFrame
     }
 
     override fun clear() {

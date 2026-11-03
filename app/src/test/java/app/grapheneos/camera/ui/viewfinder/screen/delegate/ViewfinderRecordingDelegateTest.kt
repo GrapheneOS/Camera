@@ -7,15 +7,16 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -52,6 +53,7 @@ class ViewfinderRecordingDelegateTest {
         runTest {
             val delegate = createDelegate()
 
+            delegate.requestRecording()
             delegate.setPaused(paused = true)
             recorderEvents.emit(RecordedVideoEvent.Started)
 
@@ -243,7 +245,20 @@ class ViewfinderRecordingDelegateTest {
 
             assertEquals(RecordingPhase.RECORDING, recording().phase)
             assertEquals(5.seconds, recording().duration)
-            assertEquals(listOf(Effect.Recording.PlayStartSound), effects)
+            assertEquals(listOf(Effect.Recording.PlayStartSound(soundEnabled = true)), effects)
+        }
+    }
+
+    @Test
+    fun readyToStart_withCameraSoundsOff_startsSilently() {
+        runTest {
+            createDelegate()
+            val effects = collectEffects(stateHolder)
+            stateHolder.update { it.copy(settings = CameraSettings(enableCameraSounds = false)) }
+
+            recorderEvents.emit(RecordedVideoEvent.ReadyToStart)
+
+            assertEquals(listOf(Effect.Recording.PlayStartSound(soundEnabled = false)), effects)
         }
     }
 
@@ -323,6 +338,31 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
+    fun pause_outsideARecording_isIgnored() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.setPaused(paused = true)
+
+            assertFalse(recording().isPaused)
+            verify(exactly = 0) { videoRecorder.setPaused(any()) }
+        }
+    }
+
+    @Test
+    fun anUnusableOutput_inACaptureSession_leavesTheStorageLocationAlone() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+            stateHolder.update { it.copy(isCaptureSession = true) }
+
+            recorderEvents.emit(RecordedVideoEvent.OutputUnavailable)
+
+            assertTrue(events.isEmpty())
+        }
+    }
+
+    @Test
     fun anUnusableOutput_isHandedOnAndStops() {
         runTest {
             val delegate = createDelegate()
@@ -356,15 +396,18 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
-    fun aSavedRecording_inACaptureSession_isShownForReview() {
+    fun aSavedRecording_inACaptureSession_becomesTheCaptureResult() {
         runTest {
-            createDelegate()
-            val effects = collectEffects(stateHolder)
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
             stateHolder.update { state -> state.copy(isCaptureSession = true) }
 
             recorderEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
 
-            assertEquals(listOf(Effect.Recording.ShowForReview(uri = Uri.EMPTY)), effects)
+            assertEquals(
+                listOf(ViewfinderRecordingEvent.CaptureResultSaved(uri = Uri.EMPTY)),
+                events,
+            )
         }
     }
 
@@ -372,13 +415,13 @@ class ViewfinderRecordingDelegateTest {
     fun aSavedRecording_inACaptureSession_isNotShownOverTheNextOne() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectEvents(delegate)
             stateHolder.update { state -> state.copy(isCaptureSession = true) }
 
             delegate.requestRecording()
             recorderEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
 
-            assertTrue(effects.none { it is Effect.Recording.ShowForReview })
+            assertTrue(events.isEmpty())
         }
     }
 

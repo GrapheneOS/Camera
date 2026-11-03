@@ -9,14 +9,15 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,46 +26,89 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
 
     @Test
-    fun capturedPreviewDismissed_forgetsThePreviewBeforeRebinding() {
+    fun retakeClicked_discardsTheResultBeforeRebinding() {
         runTest {
             every { cameraDelegate.canBeginBind(forced = true) } returns true
 
             val viewModel = createViewModel()
-            viewModel.onAction(CaptureAction.CapturedPreviewDismissed)
+            viewModel.onAction(CaptureAction.RetakeClicked)
 
             verifyOrder {
-                captureDelegate.dismissCapturedPreview()
+                captureDelegate.discardResult()
                 cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
 
     @Test
-    fun capturedPreviewShown_isRecordedAndReleasesTheCamera() {
+    fun photoCaptured_isShownAsTheResultAndReleasesTheCamera() {
         runTest {
-            val viewModel = createViewModel()
-            viewModel.onAction(CaptureAction.CapturedPreviewShown)
+            val photo = createBitmap(1, 1)
+            createViewModel()
+
+            captureEvents.emit(ViewfinderCaptureEvent.PhotoCaptured(photo = photo))
 
             verifyOrder {
-                captureDelegate.showCapturedPreview()
+                captureDelegate.showResult(ViewfinderCaptureResult.Photo(image = photo))
                 cameraDelegate.unbindCamera()
             }
         }
     }
 
     @Test
-    fun capturedPreviewConfirmed_writesWhereTheCallerAsked() {
+    fun captureResultSaved_showsTheRecordingOverItsLastFrameAndReleasesTheCamera() {
         runTest {
-            val viewModel = createViewModel(
-                outputUri = OUTPUT_URI,
-            )
-            val bitmap = createBitmap(1, 1)
+            val frame = createBitmap(1, 1)
+            every { cameraDelegate.currentPreviewFrame() } returns frame
+            createViewModel()
 
-            viewModel.onAction(CaptureAction.CapturedPreviewConfirmed(bitmap))
+            recordingEvents.emit(ViewfinderRecordingEvent.CaptureResultSaved(uri = OUTPUT_URI))
 
-            verify(exactly = 1) {
-                captureDelegate.confirmPreviewPicture(bitmap = bitmap, outputUri = OUTPUT_URI)
+            verifyOrder {
+                captureDelegate.showResult(
+                    ViewfinderCaptureResult.Video(uri = OUTPUT_URI, image = frame),
+                )
+                cameraDelegate.unbindCamera()
             }
+        }
+    }
+
+    @Test
+    fun playResultClicked_playsTheResult() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(CaptureAction.PlayResultClicked)
+
+            verify(exactly = 1) { captureDelegate.playResult() }
+        }
+    }
+
+    @Test
+    fun confirmClicked_writesWhereTheCallerAsked() {
+        runTest {
+            val viewModel = createViewModel(outputUri = OUTPUT_URI)
+            viewModel.onAction(CaptureAction.ConfirmClicked)
+
+            verify(exactly = 1) { captureDelegate.confirmResult(outputUri = OUTPUT_URI) }
+        }
+    }
+
+    @Test
+    fun aCaptureSession_holdsTheShutterFromTheStart() {
+        runTest {
+            createViewModel(entryPoint = cameraEntryPoint(isCaptureSession = true))
+
+            verify(exactly = 1) { captureDelegate.holdShutter() }
+        }
+    }
+
+    @Test
+    fun aRegularSession_leavesTheShutterFree() {
+        runTest {
+            createViewModel()
+
+            verify(exactly = 0) { captureDelegate.holdShutter() }
         }
     }
 
@@ -134,6 +178,19 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CaptureAction.ShutterClicked)
 
             verify(exactly = 0) { captureDelegate.takePicture() }
+        }
+    }
+
+    @Test
+    fun selfTimerFinished_takesThePicture() {
+        runTest {
+            every { cameraDelegate.isCameraReady } returns true
+            createViewModel()
+            stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
+
+            captureEvents.emit(ViewfinderCaptureEvent.SelfTimerFinished)
+
+            verify(exactly = 1) { captureDelegate.takePicture() }
         }
     }
 

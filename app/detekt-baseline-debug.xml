@@ -11,7 +11,6 @@
     <ID>EmptyFunctionBlock:ImageCapturer.kt:ImageCapturer.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener${}</ID>
-    <ID>EmptyFunctionBlock:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ViewfinderEffectHandler.kt:ViewfinderEffectHandlerImpl.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ViewfinderGestureHandler.kt:ViewfinderGestureHandler${}</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val contentResolver = appContext.contentResolver</ID>
@@ -26,7 +25,6 @@
     <ID>LongMethod:CameraSession.kt:CameraSessionImpl$@SuppressLint("RestrictedApi") override fun bind: BindOutcome</ID>
     <ID>LongMethod:MainActivity.kt:MainActivity$@SuppressLint("ClickableViewAccessibility") override fun onCreate</ID>
     <ID>LongMethod:MoreSettings.kt:MoreSettings$override fun onCreate</ID>
-    <ID>LongMethod:SettingsDialog.kt:SettingsDialog$fun selfIllumination</ID>
     <ID>LongMethod:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
     <ID>MagicNumber:App.kt:App$2000</ID>
     <ID>MagicNumber:BlurBitmap.kt:BlurBitmap$0x0000ff</ID>
@@ -42,7 +40,6 @@
     <ID>MagicNumber:CustomGrid.kt:CustomGrid$255</ID>
     <ID>MagicNumber:CustomGrid.kt:CustomGrid$3f</ID>
     <ID>MagicNumber:CustomGrid.kt:CustomGrid$4f</ID>
-    <ID>MagicNumber:ExposureBar.kt:ExposureBar$300</ID>
     <ID>MagicNumber:ExposureBar.kt:ExposureBar$90f</ID>
     <ID>MagicNumber:ImageCapturer.kt:ImageCapturer$200</ID>
     <ID>MagicNumber:MainActivity.kt:MainActivity$0.05f</ID>
@@ -68,8 +65,6 @@
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$270</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$5</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$90</ID>
-    <ID>MagicNumber:SettingsDialog.kt:SettingsDialog$150</ID>
-    <ID>MagicNumber:SettingsDialog.kt:SettingsDialog$300</ID>
     <ID>MagicNumber:VideoCapturer.kt:VideoCapturer$1_000_000_000</ID>
     <ID>MagicNumber:VideoCapturer.kt:VideoCapturer$300</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$270f</ID>
@@ -79,10 +74,8 @@
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$5</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$90f</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$100</ID>
-    <ID>MagicNumber:ZoomBar.kt:ZoomBar$300</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$90f</ID>
     <ID>MatchingDeclarationName:ImageDecoderUtils.kt:ImageResizer : OnHeaderDecodedListener</ID>
-    <ID>NewLineAtEndOfFile:SettingsFrameLayout.kt:app.grapheneos.camera.ui.settings.components.SettingsFrameLayout.kt</ID>
     <ID>NewLineAtEndOfFile:SystemSettingsObserver.kt:app.grapheneos.camera.ktx.SystemSettingsObserver.kt</ID>
     <ID>NewLineAtEndOfFile:VideoCaptureActivity.kt:app.grapheneos.camera.ui.activities.VideoCaptureActivity.kt</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ if (it.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)) { null } else { it } }</ID>
@@ -107,8 +100,6 @@
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$private fun isExtensionUsable: Boolean</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$override fun onSensorChanged</ID>
-    <ID>ReturnCount:SettingsDialog.kt:SettingsDialog$private fun updatePanelRegion: Boolean</ID>
-    <ID>ReturnCount:Utils.kt:fun storageLocationToUiString: String</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$private fun createRecordingContext: RecordingContext?</ID>
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$override fun onTouch: Boolean</ID>
@@ -116,8 +107,6 @@
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$private fun onSwipeRight</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItemIntents.kt:e: ActivityNotFoundException</ID>
-    <ID>SwallowedException:SettingsDialog.kt:SettingsDialog$exception: Exception</ID>
-    <ID>SwallowedException:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$exception: Exception</ID>
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$e: Exception</ID>
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$exception: Exception</ID>
     <ID>ThrowsCount:ImageSaver.kt:ImageSaver$@Throws(ImageSaverException::class) private fun saveImageInner</ID>
@@ -126,8 +115,6 @@
     <ID>TooGenericExceptionCaught:ImageSaver.kt:ImageSaver$deleteException: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageSaver.kt:ImageSaver$e: Exception</ID>
     <ID>TooGenericExceptionCaught:MainActivity.kt:MainActivity$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:SettingsDialog.kt:SettingsDialog$exception: Exception</ID>
-    <ID>TooGenericExceptionCaught:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$exception: Exception</ID>
     <ID>TooGenericExceptionCaught:VideoCapturer.kt:VideoCapturer$e: Exception</ID>
     <ID>TooGenericExceptionCaught:VideoCapturer.kt:VideoCapturer$exception: Exception</ID>
     <ID>TooGenericExceptionCaught:VideoCapturer.kt:e: Exception</ID>
@@ -143,8 +130,6 @@
     <ID>UnsafeCallOnNullableType:MainActivity.kt:MainActivity$cameraPermissionDialog!!</ID>
     <ID>UnsafeCallOnNullableType:QrTile.kt:QrTile$getSystemService&lt;KeyguardManager&gt;()!!</ID>
     <ID>UnsafeCallOnNullableType:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier$wr.get()!!</ID>
-    <ID>UnsafeCallOnNullableType:SettingsDialog.kt:SettingsDialog$Looper.myLooper()!!</ID>
-    <ID>UnsafeCallOnNullableType:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$ev!!</ID>
     <ID>UnsafeCallOnNullableType:VideoCapturer.kt:VideoCapturer$createRecordingContext(recorder, fileName)!!</ID>
     <ID>UnusedPrivateProperty:AutoFinishOnSleep.kt:AutoFinishOnSleep.Companion$private const val TAG = "AutoFinishOnSleep"</ID>
     <ID>UnusedUnaryOperator:BlurBitmap.kt:BlurBitmap$-0x1000000</ID>

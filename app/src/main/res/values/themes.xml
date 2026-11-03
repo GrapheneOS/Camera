@@ -3,6 +3,7 @@
     <!-- Base application theme. -->
     <style name="Theme.Camera" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowFullscreen">true</item>
 
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
@@ -13,11 +14,6 @@
 
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-    </style>
-
-    <style name="Theme.SettingsDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog.Centered">
-        <item name="android:windowMinWidthMinor">100%</item>
-        <item name="android:windowMinWidthMajor">100%</item>
     </style>
 
     <style name="ShapeAppearance.Image.PILL" parent="">

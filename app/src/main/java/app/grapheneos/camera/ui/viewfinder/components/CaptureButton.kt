@@ -10,16 +10,16 @@ import android.util.AttributeSet
 import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.widget.AppCompatImageButton
-import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 
 class CaptureButton @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : AppCompatImageButton(context, attrs) {
 
-    private var rendered: CaptureButtonUiState? = null
+    private var rendered: CaptureButtonUiModel? = null
 
-    fun render(state: CaptureButtonUiState) {
+    fun render(state: CaptureButtonUiModel) {
         val previous = rendered
         rendered = state
 

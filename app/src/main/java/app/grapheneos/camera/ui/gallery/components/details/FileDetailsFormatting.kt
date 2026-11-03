@@ -10,8 +10,8 @@ import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CameraParameters
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
+import app.grapheneos.camera.ui.settingvalues.storageLocationTitle
 import app.grapheneos.camera.util.formatVideoDuration
-import app.grapheneos.camera.util.storageLocationToUiString
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
@@ -119,7 +119,7 @@ internal fun folder(
     details: CapturedItemDetails,
 ): String {
     return when (val relativePath = details.relativePath) {
-        null -> storageLocationToUiString(context, uri)
+        null -> storageLocationTitle(context, uri)
         else -> "${context.getString(R.string.main_storage)}/${relativePath.trimEnd('/')}"
     }
 }

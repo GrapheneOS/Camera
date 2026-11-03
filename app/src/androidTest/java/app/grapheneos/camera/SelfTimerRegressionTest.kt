@@ -10,8 +10,10 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -46,15 +48,15 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
-                activity.cdTimer.startTimer()
-                assertTrue(activity.cdTimer.isRunning)
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(10.seconds))
+                activity.viewfinder.onAction(CaptureAction.SelfTimerStartClicked)
+                assertTrue(isSelfTimerRunning(activity))
             }
 
             scenario.moveToState(Lifecycle.State.CREATED)
 
             scenario.onActivity { activity ->
-                assertFalse(activity.cdTimer.isRunning)
+                assertFalse(isSelfTimerRunning(activity))
                 assertEquals(View.GONE, activity.cdTimer.visibility)
                 assertEquals(View.INVISIBLE, activity.cbCross.visibility)
             }
@@ -78,19 +80,19 @@ class SelfTimerRegressionTest {
             // A countdown has to have run at least once for the bug to be reachable: the guard this
             // replaced asked whether a timer had ever been built, not whether one was up.
             scenario.onActivity { activity ->
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 1))
-                activity.cdTimer.startTimer()
-                activity.cdTimer.cancelTimer()
-                assertFalse(activity.cdTimer.isRunning)
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(1.seconds))
+                activity.viewfinder.onAction(CaptureAction.SelfTimerStartClicked)
+                activity.viewfinder.onAction(CaptureAction.SelfTimerCancelClicked)
+                assertFalse(isSelfTimerRunning(activity))
             }
 
             scenario.onActivity {
                 it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.QR_SCAN))
             }
-            waitUntil(scenario, "QR mode is active") { it.viewfinder.uiState.value.isQrMode }
+            waitUntil(scenario, "QR mode is active") { it.viewfinder.uiState.value.mode.isQr }
 
             scenario.onActivity { activity ->
-                activity.cdTimer.cancelTimer()
+                activity.viewfinder.onAction(CaptureAction.SelfTimerCancelClicked)
 
                 assertEquals(View.INVISIBLE, activity.thirdOption.visibility)
                 assertEquals(View.INVISIBLE, activity.cancelButtonView.visibility)
@@ -108,11 +110,11 @@ class SelfTimerRegressionTest {
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
 
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(5.seconds))
                 assertEquals(View.VISIBLE, activity.cbText.visibility)
                 assertEquals("5s", activity.cbText.text.toString())
 
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 0))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(0.seconds))
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
                 assertEquals("", activity.cbText.text.toString())
             }
@@ -131,21 +133,21 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(10.seconds))
 
                 activity.captureButton.performClick()
 
-                assertTrue(activity.cdTimer.isRunning)
+                assertTrue(isSelfTimerRunning(activity))
                 assertEquals(View.VISIBLE, activity.cdTimer.visibility)
                 assertEquals(View.VISIBLE, activity.cbCross.visibility)
-                assertEquals(View.INVISIBLE, activity.settingsIcon.visibility)
+                assertFalse(activity.viewfinder.uiState.value.isSettingsPanelAvailable)
                 assertEquals(View.INVISIBLE, activity.tabLayout.visibility)
                 assertEquals(
                     activity.getString(R.string.cancel_timer),
                     activity.captureButton.contentDescription
                 )
 
-                activity.cdTimer.cancelTimer()
+                activity.viewfinder.onAction(CaptureAction.SelfTimerCancelClicked)
             }
         }
     }
@@ -158,18 +160,18 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(10.seconds))
                 val shutterDescription = activity.captureButton.contentDescription
 
                 activity.captureButton.performClick()
-                assertTrue(activity.cdTimer.isRunning)
+                assertTrue(isSelfTimerRunning(activity))
 
                 activity.captureButton.performClick()
 
-                assertFalse(activity.cdTimer.isRunning)
+                assertFalse(isSelfTimerRunning(activity))
                 assertEquals(View.GONE, activity.cdTimer.visibility)
                 assertEquals(View.INVISIBLE, activity.cbCross.visibility)
-                assertEquals(View.VISIBLE, activity.settingsIcon.visibility)
+                assertTrue(activity.viewfinder.uiState.value.isSettingsPanelAvailable)
                 assertEquals(View.VISIBLE, activity.tabLayout.visibility)
                 assertEquals(View.VISIBLE, activity.cbText.visibility)
                 assertEquals(shutterDescription, activity.captureButton.contentDescription)
@@ -187,12 +189,16 @@ class SelfTimerRegressionTest {
             waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
 
             scenario.onActivity { activity ->
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(5.seconds))
 
-                assertTrue(activity.viewfinder.uiState.value.isVideoMode)
+                assertTrue(activity.viewfinder.uiState.value.mode.isVideo)
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
             }
         }
+    }
+
+    private fun isSelfTimerRunning(activity: MainActivity): Boolean {
+        return activity.viewfinder.uiState.value.selfTimer.remaining != null
     }
 
     private fun <T : MainActivity> launchRestoringSelfTimer(
@@ -202,12 +208,12 @@ class SelfTimerRegressionTest {
         ActivityScenario.launch(activityClass).use { scenario ->
             lateinit var repository: SettingsRepository
             scenario.onActivity { repository = it.settingsRepository }
-            val stored = repository.settings.value.selfTimerDurationSeconds
+            val stored = repository.settings.value.selfTimerDuration
 
             try {
                 block(scenario)
             } finally {
-                repository.update { it.copy(selfTimerDurationSeconds = stored) }
+                repository.update { it.copy(selfTimerDuration = stored) }
             }
         }
     }

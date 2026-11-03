@@ -1,31 +1,21 @@
 package app.grapheneos.camera.ui.activities
 
-import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.res.Configuration
-import android.graphics.Point
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.Vibrator
-import android.provider.Settings
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
-import android.view.animation.RotateAnimation
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -35,13 +25,16 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.unit.Density
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
-import androidx.core.view.updateMargins
 import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -50,17 +43,30 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.PreviewTarget
-import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
+import app.grapheneos.camera.ui.camerascreen.CameraOverlay
+import app.grapheneos.camera.ui.camerascreen.CameraOverlayInsets
+import app.grapheneos.camera.ui.camerascreen.CameraScreenNavigationHandler
+import app.grapheneos.camera.ui.camerascreen.CameraScreenNavigationHandlerImpl
+import app.grapheneos.camera.ui.camerasettings.navigation.CameraSettingsIntents
 import app.grapheneos.camera.ui.common.TunePlayer
-import app.grapheneos.camera.ui.common.dialog.SettingsDialog
+import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
-import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.gallery.navigation.GalleryIntents
+import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
+import app.grapheneos.camera.ui.navigation.Navigator
+import app.grapheneos.camera.ui.navigation.NavigatorImpl
+import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigatorImpl
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
+import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
+import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -72,32 +78,26 @@ import app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
+import app.grapheneos.camera.ui.viewfinder.screen.SettingsPanelDragCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderOverlay
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
-import app.grapheneos.camera.ui.viewfinder.screen.applyPreviewRatio
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.VolumeKey
-import app.grapheneos.camera.util.setBlurBitmapCompat
-import com.google.android.material.color.DynamicColors
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.tabs.TabLayout
 import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
 import javax.inject.Inject
-import kotlin.math.roundToInt
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -119,6 +119,15 @@ open class MainActivity : AppCompatActivity() {
     lateinit var vibrator: Vibrator
 
     @Inject
+    internal lateinit var capturedItemIntents: CapturedItemIntents
+
+    @Inject
+    internal lateinit var cameraSettingsIntents: CameraSettingsIntents
+
+    @Inject
+    internal lateinit var galleryIntents: GalleryIntents
+
+    @Inject
     internal lateinit var videoPlayerLauncher: VideoPlayerLauncher
 
     internal lateinit var binding: ActivityMainBinding
@@ -127,10 +136,26 @@ open class MainActivity : AppCompatActivity() {
         extrasProducer = { viewfinderCreationExtras() },
     )
 
+    internal val quickSettings: QuickSettingsViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
+    private val statusBar: StatusBarViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
     internal val gestureHandler by lazy {
         ViewfinderGestureHandler(
             context = this,
             onAction = viewfinder::onAction,
+            settingsPanelDrag = SettingsPanelDragCallbacks(
+                isShown = { !quickSettingsSheet.isHidden },
+                onDragStarted = quickSettingsSheet::startDrag,
+                onDragged = { delta -> quickSettingsSheet.drag(delta) },
+                onDragStopped = { velocity ->
+                    showSettingsPanel(quickSettingsSheet.release(velocity))
+                },
+            ),
         )
     }
 
@@ -139,8 +164,6 @@ open class MainActivity : AppCompatActivity() {
 
     @set:VisibleForTesting
     lateinit var tunePlayer: TunePlayer
-
-    lateinit var settingsDialog: SettingsDialog
 
     val threeButtons: View
         get() = binding.threeButtons
@@ -208,9 +231,6 @@ open class MainActivity : AppCompatActivity() {
     val qrOverlay: QROverlay
         get() = binding.qrOverlay
 
-    val settingsIcon: ImageView
-        get() = binding.settingsOption
-
     val mainOverlay: ImageView
         get() = binding.mainOverlay
 
@@ -238,63 +258,40 @@ open class MainActivity : AppCompatActivity() {
     internal val previewFrames: PreviewFrameHolder by lazy {
         PreviewFrameHolderImpl(
             previewView = previewView,
-            onLateFrame = ::showLateTransitionFrame,
+            onLateFrame = { renderer.refreshLastFrame() },
         )
     }
 
-    // Whether the transition still is standing in for the preview.
-    private var transitionShown = false
+    private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
-    private var bottomNavigationBarPadding: Int = 0
+    private val quickSettingsNavigator: QuickSettingsNavigator = QuickSettingsNavigatorImpl(
+        navigator = navigator,
+    )
+
+    private var overlayInsets by mutableStateOf(CameraOverlayInsets())
+
+    private val quickSettingsSheet by lazy {
+        QuickSettingsSheetState(
+            settleVelocity = with(Density(context = this)) { SETTLE_VELOCITY.toPx() },
+        )
+    }
+
+    private val navigationHandler: CameraScreenNavigationHandler by lazy {
+        CameraScreenNavigationHandlerImpl(
+            activity = this,
+            entryPoint = cameraEntryPoint,
+            videoPlayerLauncher = videoPlayerLauncher,
+            cameraSettingsIntents = cameraSettingsIntents,
+            galleryIntents = galleryIntents,
+            onOpenSettingsPanel = quickSettingsNavigator::navigateToQuickSettings,
+            onCloseSettingsPanel = { showSettingsPanel(false) },
+            onCloseScreen = ::finish,
+        )
+    }
+
+    private lateinit var renderer: ViewfinderViewRenderer
 
     private lateinit var snackBar: Snackbar
-
-    private val focusRingHandler: Handler = Handler(Looper.getMainLooper())
-
-    private val focusRingCallback: Runnable = Runnable {
-        binding.focusRing.visibility = View.INVISIBLE
-    }
-
-    // The blurred still that stands in for the preview whenever the camera is not streaming.
-    private fun showPreviewTransition() {
-        transitionShown = true
-        previewGrid.visibility = View.INVISIBLE
-
-        val lastFrame = previewFrames.lastFrame
-        if (lastFrame == null || this is CaptureActivity) return
-
-        // The still is of the camera being left behind, and the box under it takes the new camera's
-        // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's
-        // fitStart, which is there for the captured photo CaptureActivity shows in this same view,
-        // would leave a bar down the side of the preview until the new camera streams.
-        mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
-        setBlurBitmapCompat(mainOverlay, lastFrame)
-        settingsIcon.visibility = View.INVISIBLE
-        settingsIcon.isEnabled = false
-        mainOverlay.visibility = View.VISIBLE
-    }
-
-    private fun showLateTransitionFrame() {
-        if (transitionShown) {
-            showPreviewTransition()
-        }
-    }
-
-    private fun hidePreviewTransition() {
-        transitionShown = false
-        mainOverlay.visibility = View.INVISIBLE
-
-        if (viewfinder.uiState.value.isQrMode) {
-            return
-        }
-
-        previewGrid.visibility = View.VISIBLE
-        if (!settingsDialog.isShowing) {
-            settingsIcon.visibility = View.VISIBLE
-        }
-
-        settingsIcon.isEnabled = true
-    }
 
     // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
     // handed a gesture once the scroll view has taken it back off the tab -- by which point a
@@ -310,88 +307,6 @@ open class MainActivity : AppCompatActivity() {
     override fun onUserInteraction() {
         super.onUserInteraction()
         viewfinder.onAction(LifecycleAction.ScreenInteracted)
-    }
-
-    fun animateFocusRing(x: Float, y: Float) {
-        // Move the focus ring so that its center is at the tap location (x, y)
-        val width = binding.focusRing.width.toFloat()
-        binding.focusRing.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            updateMargins(
-                left = (x - width / 2).roundToInt(),
-                top = (y - width / 2).roundToInt()
-            )
-        }
-
-        // Show focus ring
-        binding.focusRing.visibility = View.VISIBLE
-        binding.focusRing.alpha = 1f
-
-        if (areSystemAnimationsEnabled()) {
-            // Animate the focus ring to disappear
-            binding.focusRing.animate()
-                .setStartDelay(500)
-                .setDuration(300)
-                .alpha(0f)
-                .setListener(object : Animator.AnimatorListener {
-
-                    var isCancelled = false
-
-                    override fun onAnimationStart(animation: Animator) {}
-
-                    override fun onAnimationEnd(animator: Animator) {
-                        if (!isCancelled) {
-                            binding.focusRing.visibility = View.INVISIBLE
-                        }
-
-                        isCancelled = false
-                    }
-
-                    override fun onAnimationCancel(animation: Animator) {
-                        isCancelled = true
-                    }
-
-                    override fun onAnimationRepeat(animation: Animator) {}
-                }).start()
-        } else {
-            focusRingHandler.removeCallbacks(focusRingCallback)
-            focusRingHandler.postDelayed(focusRingCallback, 800)
-        }
-    }
-
-    private fun areSystemAnimationsEnabled(): Boolean {
-        val duration: Float = Settings.Global.getFloat(
-            contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        )
-
-        val transition: Float = Settings.Global.getFloat(
-            contentResolver,
-            Settings.Global.TRANSITION_ANIMATION_SCALE,
-            1f
-        )
-
-        return duration != 0f && transition != 0f
-    }
-
-    fun animateLensSwitch() {
-        val rotation = when {
-            binding.flipCameraIcon.rotation < 180 -> 180f
-            else -> 360f
-        }
-
-        val rotate = RotateAnimation(
-            0f,
-            rotation,
-            Animation.RELATIVE_TO_SELF,
-            0.5f,
-            Animation.RELATIVE_TO_SELF,
-            0.5f,
-        )
-        rotate.duration = LENS_SWITCH_ANIMATION_DURATION
-        rotate.interpolator = LinearInterpolator()
-
-        flipCameraCircle.startAnimation(rotate)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -419,6 +334,8 @@ open class MainActivity : AppCompatActivity() {
         return super.onKeyUp(keyCode, event)
     }
 
+    // Read synchronously: whether the key is consumed has to be answered here, and an unconsumed
+    // volume key changes the volume.
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val volumeKey = volumeKeyOf(keyCode)
         if (volumeKey == null || !viewfinder.uiState.value.handlesVolumeKeys) {
@@ -476,9 +393,6 @@ open class MainActivity : AppCompatActivity() {
         // strip on a mode the camera never entered.
         tabLayout.settleNow()
 
-        // The countdown would otherwise keep ticking while the app is in the background and fire a
-        // capture into a camera that has already been unbound.
-        cdTimer.cancelTimer()
         viewfinder.onAction(LifecycleAction.ScreenPaused)
         previewFrames.clear()
     }
@@ -489,12 +403,14 @@ open class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
-        val renderer = ViewfinderViewRenderer(
+        renderer = ViewfinderViewRenderer(
             activity = this,
+            onAction = viewfinder::onAction,
         )
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
             vibrator = vibrator,
+            capturedItemIntents = capturedItemIntents,
             onAction = viewfinder::onAction,
         )
         viewfinder.onAction(
@@ -516,12 +432,9 @@ open class MainActivity : AppCompatActivity() {
 
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
-        tunePlayer = TunePlayer(
-            cameraSoundPlayer = cameraSoundPlayer,
-            soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
-        )
+        tunePlayer = TunePlayer(cameraSoundPlayer = cameraSoundPlayer)
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.uiState.collect { state ->
                     renderer.render(state)
@@ -529,7 +442,12 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
+            snapshotFlow { quickSettingsSheet.visibleFraction() }
+                .collect(renderer::renderSettingsPanelFraction)
+        }
+
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.zoomUiState.collect { zoom ->
                     renderer.renderZoom(zoom)
@@ -537,7 +455,7 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.levelUiState.collect { level ->
                     renderer.renderLevel(level)
@@ -545,7 +463,7 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.effects.collect { effect ->
                     effectHandler.handle(effect)
@@ -555,7 +473,17 @@ open class MainActivity : AppCompatActivity() {
 
         binding.composeOverlay.setContent {
             CameraTheme {
-                ViewfinderOverlay(screenModel = viewfinder)
+                CameraOverlay(
+                    viewfinder = viewfinder,
+                    statusBar = statusBar,
+                    quickSettings = quickSettings,
+                    sheetState = quickSettingsSheet,
+                    sheet = quickSettingsNavigator.quickSettingsNavKey(),
+                    insets = overlayInsets,
+                    onSheetOpenChange = ::showSettingsPanel,
+                    onQuickSettingsNavigate = navigationHandler::handle,
+                    onStatusBarNavigate = navigationHandler::handle,
+                )
             }
         }
 
@@ -563,8 +491,9 @@ open class MainActivity : AppCompatActivity() {
 
         tabLayout.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
-                val tab = tabLayout.getTabAtX(tabLayout.scrollX)
-                finalizeMode(tab)
+                tabLayout.centredMode()?.let { mode ->
+                    viewfinder.onAction(CameraAction.ModeStripReleased(mode))
+                }
                 return@setOnTouchListener true
             }
 
@@ -572,12 +501,11 @@ open class MainActivity : AppCompatActivity() {
         }
 
         previewView.previewStreamState.observe(this) { state: StreamState ->
-            if (state == StreamState.STREAMING) {
-                hidePreviewTransition()
-                viewfinder.onAction(LifecycleAction.PreviewStreamingStarted)
-            } else {
-                showPreviewTransition()
+            val action = when (state) {
+                StreamState.STREAMING -> LifecycleAction.PreviewStreamingStarted
+                else -> LifecycleAction.PreviewStreamingStopped
             }
+            viewfinder.onAction(action)
         }
 
         var tapDownTimestamp: Long = 0
@@ -627,43 +555,14 @@ open class MainActivity : AppCompatActivity() {
             viewfinder.onAction(CaptureAction.CaptureButtonClicked)
         }
 
-        zoomBar.setMainActivity(this)
-        exposureBar.setMainActivity(this)
-
-        settingsIcon.setOnClickListener {
-            viewfinder.onAction(SettingsAction.SettingsIconClicked)
+        zoomBar.onLinearZoomDragged = { linearZoom ->
+            viewfinder.onAction(CameraAction.ZoomSliderDragged(linearZoom = linearZoom))
         }
-
-        settingsIcon.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                rootView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                val displayCutout = window.decorView.rootWindowInsets.displayCutout
-                val layoutParams = (settingsIcon.layoutParams as RelativeLayout.LayoutParams)
-
-                val rect = if (displayCutout?.boundingRects?.isNotEmpty() == true) {
-                    displayCutout.boundingRects.first()
-                } else {
-                    null
-                }
-
-                val windowsSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    windowManager.currentWindowMetrics.bounds
-                } else {
-                    val size = Point()
-                    // defaultDisplay isn't deprecated below API 30 as highlighted by the IDE
-                    // and this code would only execute if it is (Hint: enclosing if-block)
-                    @Suppress("DEPRECATION")
-                    windowManager.defaultDisplay.getRealSize(size)
-                    Rect(0, 0, size.x, size.y)
-                }
-
-                if (rect == null || rect.left <= 0 || rect.right == windowsSize.right) {
-                    layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
-                } else {
-                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
-                }
-            }
-        })
+        exposureBar.onCompensationDragged = { compensationIndex ->
+            viewfinder.onAction(
+                CameraAction.ExposureSliderDragged(compensationIndex = compensationIndex),
+            )
+        }
 
         var isInsetSet = false
 
@@ -685,14 +584,21 @@ open class MainActivity : AppCompatActivity() {
 
             zoomBarPanel.setPadding(0, 0, 0, insets.bottom)
             exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
-            bottomNavigationBarPadding = insets.bottom
+            binding.bottomRow.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = insets.bottom +
+                    resources.getDimensionPixelSize(R.dimen.bottom_row_above_navigation_bar)
+            }
 
             if (insets.top != 0 && !isInsetSet) {
+                val topBarBelowStatusBar = resources.getDimensionPixelSize(
+                    R.dimen.top_bar_below_status_bar,
+                )
+
                 binding.mainFrame.layoutParams =
                     (binding.mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
                         it.setMargins(
                             it.leftMargin,
-                            (8 * resources.displayMetrics.density.toInt()) + insets.top,
+                            insets.top + topBarBelowStatusBar,
                             it.rightMargin,
                             it.bottomMargin,
                         )
@@ -729,20 +635,8 @@ open class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
 
-        cdTimer.setMainActivity(this)
-
-        val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
-        settingsDialog = SettingsDialog(this, themedContext)
-
-        previewView.viewTreeObserver.addOnPreDrawListener(
-            object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    previewView.viewTreeObserver.removeOnPreDrawListener(this)
-                    repositionTabLayout()
-                    return true
-                }
-            }
-        )
+        setUpNavigation()
+        setUpSettingsPanel()
 
         binding.moreOptions.setOnClickListener {
             showMoreQrFormatOptions(
@@ -770,91 +664,64 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun repositionTabLayout() {
-        threeButtons.visibility = View.VISIBLE
-
-        tabLayout.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                tabLayout.viewTreeObserver
-                    .removeOnPreDrawListener(
-                        this
-                    )
-
-                val previewHeight169 = binding.previewContainer.width * 16 / 9
-
-                val extraHeight169 = binding.previewContainer.height -
-                    previewHeight169 -
-                    tabLayout.height -
-                    10 * resources.displayMetrics.density.toInt()
-
-                // When there's no extra space in 16:9 for even the bottom nav bar to be present without
-                // obscuring the preview or if there's sufficient space for the entire bottom UI to exist
-                val shouldSnapAboveBottomNav = extraHeight169 < bottomNavigationBarPadding ||
-                    extraHeight169 >=
-                    (threeButtons.height + tabLayout.height + tabLayout.marginTop)
-
-                tabLayout.layoutParams =
-                    (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
-                        it.setMargins(
-                            it.leftMargin,
-                            it.topMargin,
-                            it.rightMargin,
-                            if (shouldSnapAboveBottomNav) {
-                                bottomNavigationBarPadding
-                            } else {
-                                extraHeight169
-                            }
-                        )
-
-                        it
-                    }
-
-                return true
-            }
-        })
-    }
-
-    fun finalizeMode(tab: TabLayout.Tab? = null) {
-        // The strip is untouchable during a recording but not while its start sound still plays, and
-        // rebinding the camera there starts the queued recording on a dead recorder. The touch may
-        // already have dragged the strip, so put it back on the mode the camera is really in.
-        if (viewfinder.uiState.value.isRecordingActive) {
-            tabLayout.getTabForMode(viewfinder.uiState.value.mode)?.let {
-                tabLayout.goToTab(it)
-            }
-            return
-        }
-
-        val selectedTab = tab ?: tabLayout.selectedTab
-        if (selectedTab != null) {
-            val mode = selectedTab.tag as CameraMode
-
-            // Blurred while the strip is still gliding, not once the camera has gone: the rebind
-            // holds the main thread for half a second, so a transition left to the stream state
-            // would only reach the screen after the wait it is there to explain. Guarded on the
-            // mode really changing, since nothing would rebind to take it back down again.
-            if (mode != viewfinder.uiState.value.mode) {
-                showPreviewTransition()
-            }
-
-            // switchMode() puts the strip on the mode the camera actually ended up in, which is a
-            // different one when an extension fails to bind.
-            tabLayout.goToTab(selectedTab) {
-                if (mode != viewfinder.uiState.value.mode) {
-                    viewfinder.onAction(CameraAction.ModeSelected(mode))
-                } else if (
-                    transitionShown &&
-                    previewView.previewStreamState.value == StreamState.STREAMING
-                ) {
-                    // A transition raised for a switch this tap has just cancelled, over a camera
-                    // that never stopped streaming: nothing is left to rebind and take it down.
-                    hidePreviewTransition()
+    private fun setUpNavigation() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.navigationEvents.collect { event ->
+                    navigationHandler.handle(event)
                 }
             }
         }
     }
 
+    private fun setUpSettingsPanel() {
+        lifecycleScope.launch {
+            snapshotFlow { quickSettingsNavigator.quickSettingsNavKey() != null }
+                .collect { open -> renderSettingsPanel(open) }
+        }
+
+        trackOverlayInsets()
+    }
+
+    private fun trackOverlayInsets() {
+        val overlay = binding.composeOverlay
+        val overlayParent = overlay.parent as ViewGroup
+        val previewBounds = Rect()
+
+        overlay.viewTreeObserver.addOnGlobalLayoutListener {
+            previewView.getDrawingRect(previewBounds)
+            overlayParent.offsetDescendantRectToMyCoords(previewView, previewBounds)
+
+            overlayInsets = with(Density(context = this)) {
+                CameraOverlayInsets(
+                    previewTop = previewBounds.top.toDp(),
+                    previewBottom = (overlay.height - previewBounds.bottom).toDp(),
+                    shutterRow = (overlay.height - threeButtons.top).toDp(),
+                    bottomRow = (overlay.height - binding.bottomRow.bottom).toDp(),
+                )
+            }
+        }
+    }
+
+    private fun showSettingsPanel(visible: Boolean) {
+        when {
+            visible -> quickSettingsNavigator.navigateToQuickSettings(highlight = null)
+            else -> quickSettingsNavigator.closeQuickSettings()
+        }
+    }
+
+    private fun renderSettingsPanel(open: Boolean) {
+        viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
+    }
+
     private fun viewfinderCreationExtras(): CreationExtras {
+        return cameraEntryPointCreationExtras()
+            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
+                factory.create(outputUri = outputUri)
+            }
+    }
+
+    private fun cameraEntryPointCreationExtras(): CreationExtras {
         val defaults = defaultViewModelCreationExtras
         val arguments = Bundle().apply {
             defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
@@ -863,9 +730,6 @@ open class MainActivity : AppCompatActivity() {
 
         return MutableCreationExtras(defaults)
             .apply { set(DEFAULT_ARGS_KEY, arguments) }
-            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
-                factory.create(outputUri = outputUri)
-            }
     }
 
     fun showMessage(@StringRes message: Int) {
@@ -939,13 +803,7 @@ open class MainActivity : AppCompatActivity() {
         // The preview follows the window; the capture use cases follow the sensor.
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
-        val state = viewfinder.uiState.value
-        state.sensorOrientationDegrees?.let {
-            previewView.applyPreviewRatio(
-                aspectRatio = state.aspectRatio,
-                sensorOrientationDegrees = it,
-            )
-        }
+        renderer.reapplyPreviewRatio()
     }
 
     private fun displayRotation(): Int {
@@ -974,15 +832,6 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         viewfinder.onAction(LifecycleAction.ScreenStopped)
-        // Stop explicitly rather than letting the unbind tear the recording down for us.
-        if (viewfinder.uiState.value.isRecordingActive) {
-            previewFrames.holdCurrentFrame()
-            viewfinder.onAction(RecordingAction.RecordingStopRequested)
-        }
         super.onStop()
-    }
-
-    private companion object {
-        const val LENS_SWITCH_ANIMATION_DURATION = 400L
     }
 }

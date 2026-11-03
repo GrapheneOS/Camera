@@ -1,29 +1,20 @@
 package app.grapheneos.camera.ui.activities
 
-import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
 import android.widget.ImageView
-import androidx.core.graphics.scale
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.util.getParcelableExtra
 
 open class CaptureActivity : MainActivity() {
 
-    var bitmap: Bitmap? = null
-
     private lateinit var retakeIcon: ImageView
-
-    private lateinit var flipCameraContent: ImageView
-    lateinit var confirmButton: ImageButton
+    private lateinit var confirmButton: ImageButton
 
     override val outputUri: Uri?
         get() {
@@ -34,23 +25,7 @@ open class CaptureActivity : MainActivity() {
         super.onCreate(savedInstanceState)
 
         retakeIcon = findViewById(R.id.retake_icon)
-        flipCameraContent = findViewById(R.id.flip_camera_icon_content)
-
         confirmButton = findViewById(R.id.confirm_button)
-
-        // Disable capture button for a while (to avoid picture capture)
-        captureButton.isEnabled = false
-        captureButton.alpha = 0f
-
-        // Enable the capture button after a while
-        Handler(Looper.getMainLooper()).postDelayed({
-            captureButton.animate()
-                .alpha(1f)
-                .setDuration(300)
-                .withEndAction {
-                    captureButton.isEnabled = true
-                }
-        }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
         // Remove the margin so that that the previewView can take some more space
         (previewView.layoutParams as MarginLayoutParams).let {
@@ -76,88 +51,11 @@ open class CaptureActivity : MainActivity() {
         cancelButtonView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
 
         retakeIcon.setOnClickListener {
-            hidePreview()
+            viewfinder.onAction(CaptureAction.RetakeClicked)
         }
 
         confirmButton.setOnClickListener {
-            confirmImage()
+            viewfinder.onAction(CaptureAction.ConfirmClicked)
         }
-    }
-
-    fun showPreview() {
-        viewfinder.onAction(CaptureAction.CapturedPreviewShown)
-
-        // The captured photo covers the preview until the camera streams again, so a retake does
-        // not flash the empty preview the unbind leaves behind. It is taken down from there.
-        mainOverlay.setImageBitmap(bitmap)
-        mainOverlay.visibility = View.VISIBLE
-        settingsIcon.visibility = View.INVISIBLE
-    }
-
-    private fun hidePreview() {
-        viewfinder.onAction(CaptureAction.CapturedPreviewDismissed)
-
-        settingsIcon.visibility = View.VISIBLE
-    }
-
-    fun renderCapturedPreview(visible: Boolean) {
-        flipCameraContent.visibility = when {
-            visible -> View.INVISIBLE
-            else -> View.VISIBLE
-        }
-        retakeIcon.visibility = when {
-            visible -> View.VISIBLE
-            else -> View.INVISIBLE
-        }
-        confirmButton.visibility = when {
-            visible -> View.VISIBLE
-            else -> View.INVISIBLE
-        }
-    }
-
-    private fun confirmImage() {
-        when (val bitmap = bitmap) {
-            null -> finishWithResult(stored = false)
-            else -> viewfinder.onAction(CaptureAction.CapturedPreviewConfirmed(bitmap = bitmap))
-        }
-    }
-
-    fun finishWithResult(stored: Boolean) {
-        val result = when {
-            stored -> RESULT_OK
-            else -> RESULT_CANCELED
-        }
-        setResult(result)
-        finish()
-    }
-
-    fun returnCapturedBitmap(bitmap: Bitmap) {
-        val resized = resizeImage(bitmap)
-        val intent = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, resized)
-
-        this.bitmap = resized
-
-        setResult(RESULT_OK, intent)
-        finish()
-    }
-
-    private fun resizeImage(image: Bitmap): Bitmap {
-        val width = image.width
-        val height = image.height
-
-        val scaleWidth = width / 10
-        val scaleHeight = height / 10
-
-        if (image.byteCount <= 1000000) {
-            return image
-        }
-
-        return image.scale(scaleWidth, scaleHeight, false)
-    }
-
-    private companion object {
-        private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
-        private const val INLINE_DATA = "inline-data"
-        private const val INLINE_DATA_EXTRA = "data"
     }
 }

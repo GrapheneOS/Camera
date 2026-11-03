@@ -8,9 +8,11 @@ import app.grapheneos.camera.data.orientation.repository.DeviceOrientationReposi
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
+import app.grapheneos.camera.ui.core.screen.StateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import io.mockk.every
 import io.mockk.mockk
 import kotlin.time.Duration.Companion.milliseconds
@@ -43,6 +45,8 @@ class ViewfinderOrientationDelegateTest {
         settings = CameraSettings(gyroscopeSuggestions = true),
     )
 
+    private val levelStateHolder = StateHolder(initial = ViewfinderLevelState())
+
     @Test
     fun motion_publishesTheOrientationToTheState() {
         runTest {
@@ -70,12 +74,12 @@ class ViewfinderOrientationDelegateTest {
     @Test
     fun level_disappearsOutsidePhotoMode() {
         runTest {
-            val delegate = startTracking()
+            startTracking()
             motion.emit(motionOf(tilt = 1))
 
             stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
 
-            assertFalse(delegate.levelUiState.value.visible)
+            assertFalse(levelStateHolder.state.value.visible)
         }
     }
 
@@ -131,10 +135,12 @@ class ViewfinderOrientationDelegateTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderOrientationDelegateImpl(
             deviceOrientationRepository = deviceOrientationRepository,
-            levelUiStateMapper = LevelUiStateMapperImpl(),
-            mainDispatcher = dispatcher,
+            levelStateMapper = ViewfinderLevelStateMapperImpl(),
         )
-        delegate.bind(stateHolder)
+        delegate.bind(
+            stateHolder = stateHolder,
+            levelStateHolder = levelStateHolder,
+        )
         backgroundScope.launch(dispatcher) { delegate.trackOrientation() }
 
         return delegate

@@ -10,7 +10,9 @@ import androidx.core.content.ContextCompat
 
 // Finishes the passed [activity] and the ones present below it in the stack if the screen
 // turns off
-class AutoFinishOnSleep(val activity: Activity) {
+class AutoFinishOnSleep(
+    val activity: Activity,
+) {
 
     companion object {
         private const val TAG = "AutoFinishOnSleep"
@@ -20,7 +22,7 @@ class AutoFinishOnSleep(val activity: Activity) {
         }
     }
 
-    private val receiver = object: BroadcastReceiver() {
+    private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 Intent.ACTION_SCREEN_OFF -> {

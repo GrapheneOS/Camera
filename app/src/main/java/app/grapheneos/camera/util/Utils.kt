@@ -2,17 +2,9 @@ package app.grapheneos.camera.util
 
 import android.content.ContentResolver
 import android.content.ContentValues
-import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
-import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.MediaStore
-import androidx.core.net.toUri
-import app.grapheneos.camera.R
-import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
-import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.PrintStream
@@ -20,7 +12,7 @@ import java.util.Locale
 
 fun Throwable.printStackTraceToString(): String {
     val baos = ByteArrayOutputStream(1000)
-    this.printStackTrace(PrintStream(baos));
+    this.printStackTrace(PrintStream(baos))
     return baos.toString()
 }
 
@@ -40,48 +32,6 @@ fun formatVideoDuration(totalSeconds: Long): String {
 fun getTreeDocumentUri(treeUri: Uri): Uri {
     val treeId = DocumentsContract.getTreeDocumentId(treeUri)
     return DocumentsContract.buildDocumentUriUsingTree(treeUri, treeId)
-}
-
-fun storageLocationToUiString(ctx: Context, sl: String): String {
-    if (sl == CapturedItemRepository.MEDIA_STORE_LOCATION) {
-        return "${ctx.getString(R.string.main_storage)}/$MEDIA_STORE_CAPTURE_PATH"
-    }
-
-    val uri = sl.toUri()
-    val indexOfId = if (DocumentsContract.isDocumentUri(ctx, uri)) 3 else 1
-    val locationId = uri.pathSegments[indexOfId]
-
-    if (uri.host == SAF_URI_HOST_EXTERNAL_STORAGE) {
-        val endOfVolumeId = locationId.lastIndexOf(':')
-        val volumeId = locationId.substring(0, endOfVolumeId)
-
-        val volumeName = if (volumeId == "primary") {
-            ctx.getString(R.string.main_storage)
-        } else {
-            val sm = ctx.getSystemService(StorageManager::class.java)
-            sm.storageVolumes.find {
-                volumeId == it.uuid
-            }?.getDescription(ctx) ?: volumeId
-        }
-
-        val path = locationId.substring(endOfVolumeId + 1)
-
-        return "$volumeName/$path"
-    }
-
-    val documentName = try {
-        val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
-
-        val column = DocumentsContract.Document.COLUMN_DISPLAY_NAME
-        ctx.contentResolver.queryFirstRow(
-            uri = docUri,
-            projection = arrayOf(column),
-        ) { it.getStringOrNull(column) }
-    } catch (ignored: Exception) {
-        null
-    }
-
-    return documentName ?: locationId
 }
 
 @Throws(IOException::class)

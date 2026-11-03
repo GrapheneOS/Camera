@@ -1,11 +1,10 @@
 package app.grapheneos.camera.data.camera.model
 
 import androidx.camera.core.featuregroup.GroupableFeature
+import app.grapheneos.camera.data.core.model.LensFacing
 
 sealed interface CameraSessionEvent {
 
-    data object ZoomStateLoaded : CameraSessionEvent
-    data object ZoomStateChanged : CameraSessionEvent
     data object CameraProviderUnavailable : CameraSessionEvent
     data object ExtensionsUnavailable : CameraSessionEvent
 

@@ -1,6 +1,8 @@
 package app.grapheneos.camera.data.settings.mapper
 
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
@@ -19,7 +21,7 @@ class ModeSettingsMapperTest {
 
     @Test
     fun map_settingsNeverConfigured_readAsTheDeclaredDefaults() {
-        val mapped = mapper.map(stored = StoredModeSettings(), isFrontFacing = false)
+        val mapped = mapper.map(stored = StoredModeSettings(), lensFacing = LensFacing.BACK)
 
         assertEquals(SettingsDefaults.FLASH_MODE, mapped.flashMode)
         assertEquals(SettingsDefaults.SELF_ILLUMINATION, mapped.selfIllumination)
@@ -40,7 +42,7 @@ class ModeSettingsMapperTest {
                 selfIllumination = true,
                 videoQuality = VideoQuality.FHD,
             ),
-            mapper.map(stored = stored, isFrontFacing = false),
+            mapper.map(stored = stored, lensFacing = LensFacing.BACK),
         )
     }
 
@@ -51,11 +53,33 @@ class ModeSettingsMapperTest {
             videoQualityBack = StoredVideoQuality.UHD,
         )
 
-        val front = mapper.map(stored = stored, isFrontFacing = true)
-        val back = mapper.map(stored = stored, isFrontFacing = false)
+        val front = mapper.map(stored = stored, lensFacing = LensFacing.FRONT)
+        val back = mapper.map(stored = stored, lensFacing = LensFacing.BACK)
 
         assertEquals(VideoQuality.HD, front.videoQuality)
         assertEquals(VideoQuality.UHD, back.videoQuality)
+    }
+
+    @Test
+    fun map_theSlottedFacing_isTheOnlyFrameRateExposed() {
+        val stored = StoredModeSettings(
+            frameRateFront = 30,
+            frameRateBack = 60,
+        )
+
+        val front = mapper.map(stored = stored, lensFacing = LensFacing.FRONT)
+        val back = mapper.map(stored = stored, lensFacing = LensFacing.BACK)
+
+        assertEquals(VideoFrameRate.FPS_30, front.videoFrameRate)
+        assertEquals(VideoFrameRate.FPS_60, back.videoFrameRate)
+    }
+
+    @Test
+    fun map_anUnknownFrameRate_readsAsTheDefault() {
+        val stored = StoredModeSettings(frameRateBack = 24)
+        val mapped = mapper.map(stored = stored, lensFacing = LensFacing.BACK)
+
+        assertEquals(SettingsDefaults.VIDEO_FRAME_RATE, mapped.videoFrameRate)
     }
 
     @Test
@@ -76,6 +100,10 @@ class ModeSettingsMapperTest {
         assertEquals(FlashMode.AUTO, mappedFlashMode(StoredFlashMode.AUTO))
         assertEquals(FlashMode.ON, mappedFlashMode(StoredFlashMode.ON))
         assertEquals(FlashMode.OFF, mappedFlashMode(StoredFlashMode.OFF))
+        assertEquals(
+            FlashMode.LOW_LIGHT_BOOST,
+            mappedFlashMode(StoredFlashMode.LOW_LIGHT_BOOST),
+        )
     }
 
     @Test
@@ -93,12 +121,12 @@ class ModeSettingsMapperTest {
     private fun mapped(quality: StoredVideoQuality): VideoQuality {
         val stored = StoredModeSettings(videoQualityBack = quality)
 
-        return mapper.map(stored = stored, isFrontFacing = false).videoQuality
+        return mapper.map(stored = stored, lensFacing = LensFacing.BACK).videoQuality
     }
 
     private fun mappedFlashMode(stored: StoredFlashMode): FlashMode {
         val settings = StoredModeSettings(flashMode = stored)
 
-        return mapper.map(stored = settings, isFrontFacing = false).flashMode
+        return mapper.map(stored = settings, lensFacing = LensFacing.BACK).flashMode
     }
 }

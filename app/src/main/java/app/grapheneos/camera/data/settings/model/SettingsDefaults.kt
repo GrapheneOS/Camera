@@ -3,8 +3,10 @@ package app.grapheneos.camera.data.settings.model
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import com.google.zxing.BarcodeFormat
+import kotlin.time.Duration
 
 object SettingsDefaults {
 
@@ -22,9 +24,11 @@ object SettingsDefaults {
 
     val VIDEO_QUALITY = VideoQuality.HIGHEST
 
-    const val FOCUS_TIMEOUT_SECONDS = 5L
+    val VIDEO_FRAME_RATE = VideoFrameRate.FPS_30
 
-    const val SELF_TIMER_DURATION = 0
+    val SELF_TIMER_DURATION = Duration.ZERO
+
+    const val FOCUS_TIMEOUT_SECONDS = 5L
 
     const val TIMER_LIGHT = false
 

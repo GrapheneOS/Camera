@@ -7,8 +7,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.di.preferences.DurableSettingsPrefsEntryPoint
@@ -102,7 +103,7 @@ class SecurePrefsIsolationTest {
         val owners = durable.settingsRepository()
 
         owners.update { ownersSettings }
-        owners.setSelfIllumination(SLOT, ownersSelfIllumination)
+        owners.updateMode(SLOT) { it.copy(selfIllumination = ownersSelfIllumination) }
     }
 
     @Test
@@ -142,11 +143,11 @@ class SecurePrefsIsolationTest {
     @Test
     fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
         asTheOwner { repository ->
-            repository.setSelfIllumination(SLOT, false)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = false) }
         }
 
         asASecureSession { repository ->
-            repository.setSelfIllumination(SLOT, true)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
 
             assertTrue(
                 "The session lost its own mode-scoped write, so it was handed a second copy" +
@@ -180,6 +181,6 @@ class SecurePrefsIsolationTest {
 
         val STORAGE_TIMEOUT = 5.seconds
         val MODE = CameraMode.VIDEO
-        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
+        val SLOT = ModeSlot(mode = MODE, lensFacing = LensFacing.BACK)
     }
 }

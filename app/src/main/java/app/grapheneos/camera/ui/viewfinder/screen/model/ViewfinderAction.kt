@@ -1,22 +1,18 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 
 sealed interface ViewfinderAction {
 
     sealed interface CameraAction : ViewfinderAction {
 
         data object FlipCameraClicked : CameraAction
-
-        data object FlashToggleClicked : CameraAction
-
-        data object TorchToggleClicked : CameraAction
-
-        data object AspectRatioToggleClicked : CameraAction
 
         data object ZoomInKeyPressed : CameraAction
 
@@ -33,6 +29,14 @@ sealed interface ViewfinderAction {
         ) : CameraAction
 
         data class ModeSelected(
+            val mode: CameraMode,
+        ) : CameraAction
+
+        data class ModeStripReleased(
+            val mode: CameraMode,
+        ) : CameraAction
+
+        data class ModeStripSettled(
             val mode: CameraMode,
         ) : CameraAction
 
@@ -84,13 +88,11 @@ sealed interface ViewfinderAction {
 
         data object StorageLocationNotFound : CaptureAction
 
-        data object CapturedPreviewShown : CaptureAction
+        data object RetakeClicked : CaptureAction
 
-        data object CapturedPreviewDismissed : CaptureAction
+        data object ConfirmClicked : CaptureAction
 
-        data class CapturedPreviewConfirmed(
-            val bitmap: Bitmap,
-        ) : CaptureAction
+        data object PlayResultClicked : CaptureAction
 
         sealed interface VolumeKeyEvent : CaptureAction {
 
@@ -135,6 +137,8 @@ sealed interface ViewfinderAction {
 
         data object PreviewStreamingStarted : LifecycleAction
 
+        data object PreviewStreamingStopped : LifecycleAction
+
         data object ScreenDestroyed : LifecycleAction
 
         data class ScreenCreated(
@@ -153,28 +157,21 @@ sealed interface ViewfinderAction {
         ) : PermissionAction
     }
 
+    sealed interface LocationAction : ViewfinderAction {
+
+        data object EnableLocationClicked : LocationAction
+    }
+
     sealed interface SettingsAction : ViewfinderAction {
 
-        data object SettingsIconClicked : SettingsAction
+        data object QuickSettingsButtonClicked : SettingsAction
 
-        data object CameraSettingsClicked : SettingsAction
-
-        data object EnableLocationClicked : SettingsAction
-
-        data class AudioToggled(
-            val enabled: Boolean,
+        data class StatusBarClicked(
+            val setting: QuickSetting,
         ) : SettingsAction
 
-        data class SelfIlluminationToggled(
-            val enabled: Boolean,
-        ) : SettingsAction
-
-        data class SelfTimerSelected(
-            val seconds: Int,
-        ) : SettingsAction
-
-        data class VideoQualitySelected(
-            val quality: VideoQuality,
+        data class SettingsPanelVisibilityChanged(
+            val visible: Boolean,
         ) : SettingsAction
     }
 

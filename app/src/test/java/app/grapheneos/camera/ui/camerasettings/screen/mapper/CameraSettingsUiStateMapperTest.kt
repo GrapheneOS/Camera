@@ -1,16 +1,18 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.camera.model.VideoBitrates
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
@@ -279,7 +281,7 @@ class CameraSettingsUiStateMapperTest {
                     ),
                 ),
                 settings = CameraSettings(photoQuality = 95),
-                videoQuality = VideoQuality.FHD,
+                videoModeSettings = ModeSettings(videoQuality = VideoQuality.FHD),
             ),
         )
 
@@ -292,6 +294,34 @@ class CameraSettingsUiStateMapperTest {
             ),
             uiState.storageSpace,
         )
+    }
+
+    @Test
+    fun storageSpace_atTwiceTheFrameRate_leavesHalfTheVideoMinutes() {
+        val uiState = mapper.map(
+            CameraSettingsState(
+                storageSpace = StorageSpace(
+                    freeBytes = 1_200_000_000L,
+                    totalBytes = 4_800_000_000L,
+                ),
+                isStorageSpaceLoaded = true,
+                capabilities = CameraCapabilities(
+                    videoBitrates = mapOf(
+                        VideoQuality.FHD to VideoBitrates(
+                            videoBitsPerSecond = 31_808_000,
+                            videoFrameRate = 60,
+                            audioBitsPerSecond = 96_000,
+                        ),
+                    ),
+                ),
+                videoModeSettings = ModeSettings(
+                    videoQuality = VideoQuality.FHD,
+                    videoFrameRate = VideoFrameRate.FPS_60,
+                ),
+            ),
+        )
+
+        assertEquals(5L, requireNotNull(uiState.storageSpace).videoMinutes)
     }
 
     @Test
