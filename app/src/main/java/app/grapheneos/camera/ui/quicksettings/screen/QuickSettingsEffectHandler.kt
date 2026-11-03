@@ -6,7 +6,6 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.camerasettings.navigation.openCameraSettings
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 
 @Composable
@@ -30,12 +29,6 @@ internal class QuickSettingsEffectHandlerImpl(
 
     override fun handle(effect: Effect) {
         when (effect) {
-            is Effect.OpenCameraSettings -> openCameraSettings(
-                activity = activity,
-                entryPoint = effect.entryPoint,
-                capabilities = effect.capabilities,
-            )
-
             is Effect.TextCopied -> showTextCopied()
         }
     }

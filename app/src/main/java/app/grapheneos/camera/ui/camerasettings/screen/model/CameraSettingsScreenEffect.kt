@@ -9,6 +9,4 @@ internal sealed interface CameraSettingsScreenEffect {
     data object OpenAppSettings : OutsideSession
 
     data object PickStorageLocation : OutsideSession
-
-    data object OpenLicenses : OutsideSession
 }

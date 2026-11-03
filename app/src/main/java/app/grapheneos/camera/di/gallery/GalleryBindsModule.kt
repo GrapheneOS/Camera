@@ -14,6 +14,8 @@ import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItemImpl
+import app.grapheneos.camera.ui.gallery.navigation.GalleryIntents
+import app.grapheneos.camera.ui.gallery.navigation.GalleryIntentsImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -65,4 +67,10 @@ internal abstract class GalleryBindsModule {
     abstract fun bindGalleryItemsMapper(
         impl: GalleryItemsMapperImpl,
     ): GalleryItemsMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindGalleryIntents(
+        impl: GalleryIntentsImpl,
+    ): GalleryIntents
 }

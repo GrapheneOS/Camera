@@ -21,6 +21,7 @@ import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreen
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreenModel
 import app.grapheneos.camera.ui.viewfinder.components.ViewfinderBottomRow
@@ -38,6 +39,7 @@ internal fun CameraOverlay(
     sheet: QuickSettingsNavKey?,
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
+    onQuickSettingsNavigate: (QuickSettingsNavEvent) -> Unit,
 ) {
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
         val controlsShown = uiState.isSettingsPanelAvailable && !uiState.captureResult.visible
@@ -85,6 +87,7 @@ internal fun CameraOverlay(
                 ),
                 highlight = sheet?.highlight,
                 onVisibleChange = onSheetOpenChange,
+                onNavigate = onQuickSettingsNavigate,
             )
         }
     }

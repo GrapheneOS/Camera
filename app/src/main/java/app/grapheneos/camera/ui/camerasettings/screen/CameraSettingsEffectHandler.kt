@@ -9,7 +9,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.ui.camerasettings.LicensesActivity
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 
 @Composable
@@ -45,7 +44,6 @@ internal class CameraSettingsEffectHandlerImpl(
             is Effect.RequestLocationPermission -> requestLocationPermission()
             is Effect.OpenAppSettings -> openAppSettings()
             is Effect.PickStorageLocation -> storageLocationPicker.launch(null)
-            is Effect.OpenLicenses -> openLicenses()
         }
     }
 
@@ -58,9 +56,5 @@ internal class CameraSettingsEffectHandlerImpl(
             .setData(Uri.fromParts("package", activity.packageName, null))
 
         activity.startActivity(intent)
-    }
-
-    private fun openLicenses() {
-        activity.startActivity(Intent(activity, LicensesActivity::class.java))
     }
 }

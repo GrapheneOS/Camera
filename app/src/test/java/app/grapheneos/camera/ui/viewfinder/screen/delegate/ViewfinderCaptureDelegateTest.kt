@@ -21,10 +21,12 @@ import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
@@ -262,12 +264,12 @@ class ViewfinderCaptureDelegateTest {
     fun playResult_opensTheRecordingInThePlayer() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
             delegate.showResult(ViewfinderCaptureResult.Video(uri = FOREIGN_URI, image = null))
 
             delegate.playResult()
 
-            assertEquals(listOf(Effect.CaptureResult.OpenVideo(uri = FOREIGN_URI)), effects)
+            assertEquals(listOf(NavEvent.OpenVideo(uri = FOREIGN_URI)), events)
         }
     }
 
@@ -275,12 +277,12 @@ class ViewfinderCaptureDelegateTest {
     fun playResult_ofAPhoto_doesNothing() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
             delegate.showResult(ViewfinderCaptureResult.Photo(image = createBitmap(1, 1)))
 
             delegate.playResult()
 
-            assertTrue(effects.isEmpty())
+            assertTrue(events.isEmpty())
         }
     }
 
@@ -297,7 +299,7 @@ class ViewfinderCaptureDelegateTest {
 
             assertFalse(capture().isTakingPicture)
             assertTrue(capture().isSavingPicture)
-            assertEquals(listOf(Effect.Preview.Flash(selfIlluminate = false)), effects)
+            assertEquals(listOf(Effect.FlashPreview(selfIlluminate = false)), effects)
             coVerify(exactly = 1) { playCameraSound(CameraSound.SHUTTER) }
         }
     }

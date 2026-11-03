@@ -323,10 +323,16 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun sidewaysSwipes_moveTheModeStrip() {
         runTest {
             every {
-                swipeOutcomeMapper.map(direction = SwipeDirection.LEFT, state = any())
+                swipeOutcomeMapper.map(
+                    direction = SwipeDirection.LEFT,
+                    state = any(),
+                )
             } returns SwipeOutcome.SelectAdjacentMode(offset = 1)
             every {
-                swipeOutcomeMapper.map(direction = SwipeDirection.RIGHT, state = any())
+                swipeOutcomeMapper.map(
+                    direction = SwipeDirection.RIGHT,
+                    state = any(),
+                )
             } returns SwipeOutcome.SelectAdjacentMode(offset = -1)
             val viewModel = createViewModel()
             stateHolder.update { it.copy(showsCameraModeTabs = true) }
@@ -345,7 +351,10 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun swipeUp_inQrMode_offersTheBarcodeFormats() {
         runTest {
             every {
-                swipeOutcomeMapper.map(direction = SwipeDirection.UP, state = any())
+                swipeOutcomeMapper.map(
+                    direction = SwipeDirection.UP,
+                    state = any(),
+                )
             } returns SwipeOutcome.ShowQrFormats
             val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
@@ -353,7 +362,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
 
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
 
-            assertEquals(listOf(ViewfinderScreenEffect.Settings.ShowQrFormats), effects)
+            assertEquals(listOf(ViewfinderScreenEffect.ShowQrFormats), effects)
             verify(exactly = 0) { modeSwitchDelegate.onAdjacentModeSwiped(any()) }
         }
     }

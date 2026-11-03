@@ -54,11 +54,12 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPagerUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
+import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
+import app.grapheneos.camera.ui.mediaactions.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.components.HdrColorModeEffect
 import app.grapheneos.camera.ui.mediaviewer.components.SystemBarsVisibilityEffect
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerLeftEffect
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState
-import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import java.time.LocalDateTime
 import kotlin.math.max
 import kotlin.time.Duration
@@ -70,6 +71,7 @@ private const val PREVIEW_PAGE_KEY = "content://media/external/images/media/1"
 @Composable
 internal fun GalleryScreen(
     systemGalleryLauncher: SystemGalleryLauncher,
+    capturedItemIntents: CapturedItemIntents,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     screenModel: GalleryScreenModel = hiltViewModel<GalleryViewModel>(),
@@ -80,6 +82,7 @@ internal fun GalleryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val effectHandler = rememberGalleryEffectHandler(
         systemGalleryLauncher = systemGalleryLauncher,
+        capturedItemIntents = capturedItemIntents,
         onShowMessage = { shownMessage -> message = shownMessage },
     )
 

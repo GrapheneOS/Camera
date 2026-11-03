@@ -14,14 +14,13 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
-import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
-import app.grapheneos.camera.ui.mediaviewer.navigation.editCapturedItem
-import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
-import app.grapheneos.camera.ui.mediaviewer.navigation.useCapturedItemAs
+import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
+import app.grapheneos.camera.ui.mediaactions.SystemGalleryLauncher
 
 @Composable
 internal fun rememberGalleryEffectHandler(
     systemGalleryLauncher: SystemGalleryLauncher,
+    capturedItemIntents: CapturedItemIntents,
     onShowMessage: (GalleryMessage) -> Unit,
 ): GalleryEffectHandler {
     val currentOnShowMessage by rememberUpdatedState(onShowMessage)
@@ -29,10 +28,11 @@ internal fun rememberGalleryEffectHandler(
         "The gallery needs a hosting activity"
     }
 
-    return remember(activity, systemGalleryLauncher) {
+    return remember(activity, systemGalleryLauncher, capturedItemIntents) {
         GalleryEffectHandlerImpl(
             activity = activity,
             systemGalleryLauncher = systemGalleryLauncher,
+            capturedItemIntents = capturedItemIntents,
             showMessage = { message -> currentOnShowMessage(message) },
         )
     }
@@ -45,6 +45,7 @@ internal interface GalleryEffectHandler {
 internal class GalleryEffectHandlerImpl(
     private val activity: Activity,
     private val systemGalleryLauncher: SystemGalleryLauncher,
+    private val capturedItemIntents: CapturedItemIntents,
     private val showMessage: (GalleryMessage) -> Unit,
 ) : GalleryEffectHandler {
 
@@ -68,7 +69,7 @@ internal class GalleryEffectHandlerImpl(
     }
 
     private fun edit(effect: Effect.Edit) {
-        val error = editCapturedItem(
+        val error = capturedItemIntents.edit(
             activity = activity,
             item = effect.item,
             useDefaultEditor = effect.usesDefaultEditor,
@@ -78,7 +79,7 @@ internal class GalleryEffectHandlerImpl(
     }
 
     private fun share(effect: Effect.Share) {
-        val error = shareCapturedItem(
+        val error = capturedItemIntents.share(
             activity = activity,
             item = effect.item,
         )
@@ -87,7 +88,7 @@ internal class GalleryEffectHandlerImpl(
     }
 
     private fun useAs(effect: Effect.UseAs) {
-        val error = useCapturedItemAs(
+        val error = capturedItemIntents.useAs(
             activity = activity,
             item = effect.item,
         )

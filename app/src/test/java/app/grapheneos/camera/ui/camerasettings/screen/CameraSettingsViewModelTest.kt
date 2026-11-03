@@ -23,6 +23,7 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapperImpl
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
+import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,6 +31,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -67,8 +69,8 @@ class CameraSettingsViewModelTest {
 
         viewModel.onAction(Action.CameraSoundsToggled(enabled = false))
 
-        assertEquals(false, storedSettings.value.enableCameraSounds)
-        assertEquals(false, viewModel.uiState.value.cameraSounds.checked)
+        assertFalse(storedSettings.value.enableCameraSounds)
+        assertFalse(viewModel.uiState.value.cameraSounds.checked)
     }
 
     @Test
@@ -109,12 +111,29 @@ class CameraSettingsViewModelTest {
         runTest {
             val viewModel = createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
 
+            val navigation = mutableListOf<NavEvent>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                viewModel.navigationEvents.collect { navigation += it }
+            }
+
             viewModel.onAction(Action.LocationSettingsClicked)
             viewModel.onAction(Action.StorageLocationClicked)
             viewModel.onAction(Action.LicensesClicked)
             viewModel.onAction(Action.GeoTaggingToggled(enabled = true))
 
             assertEquals(Effect.RequestLocationPermission, viewModel.effects.first())
+            assertTrue(navigation.isEmpty())
+        }
+    }
+
+    @Test
+    fun licensesClicked_navigatesWithinAnOrdinarySession() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(Action.LicensesClicked)
+
+            assertEquals(NavEvent.OpenLicenses, viewModel.navigationEvents.first())
         }
     }
 
@@ -148,7 +167,7 @@ class CameraSettingsViewModelTest {
 
         viewModel.onAction(Action.RemoveExifToggled(enabled = false))
 
-        assertEquals(true, storedSettings.value.removeExifAfterCapture)
+        assertTrue(storedSettings.value.removeExifAfterCapture)
     }
 
     @Test
@@ -164,7 +183,7 @@ class CameraSettingsViewModelTest {
         )
 
         assertEquals(77, storedSettings.value.photoQuality)
-        assertEquals(true, storedSettings.value.selectHighestResolution)
+        assertTrue(storedSettings.value.selectHighestResolution)
         assertNull(viewModel.uiState.value.dialog)
     }
 

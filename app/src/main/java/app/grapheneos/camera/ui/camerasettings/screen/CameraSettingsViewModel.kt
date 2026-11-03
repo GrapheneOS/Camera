@@ -20,6 +20,7 @@ import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapper
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsDialog as Dialog
+import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
@@ -34,6 +35,7 @@ internal interface CameraSettingsScreenModel {
     val uiState: StateFlow<CameraSettingsUiState>
 
     val effects: Flow<Effect>
+    val navigationEvents: Flow<NavEvent>
 
     fun onAction(action: Action)
 }
@@ -70,6 +72,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     override val uiState: StateFlow<CameraSettingsUiState> = stateHolder.derive(uiStateMapper::map)
 
     override val effects: Flow<Effect> = stateHolder.effects
+    override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents
 
     private val state: CameraSettingsState
         get() = stateHolder.state.value
@@ -101,7 +104,7 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.StorageLocationClicked -> stateHolder.send(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
-            is Action.LicensesClicked -> stateHolder.send(Effect.OpenLicenses)
+            is Action.LicensesClicked -> stateHolder.postNavEvent(NavEvent.OpenLicenses)
         }
     }
 
