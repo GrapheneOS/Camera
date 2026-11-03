@@ -598,12 +598,6 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun cameraSounds_followTheSetting() {
-        assertTrue(map().cameraSoundsEnabled)
-        assertFalse(map(settings = CameraSettings(enableCameraSounds = false)).cameraSoundsEnabled)
-    }
-
-    @Test
     fun screenWake_keepsTheScreenOnWithoutARecording() {
         assertTrue(map(keepsScreenAwake = true).keepScreenOn)
     }

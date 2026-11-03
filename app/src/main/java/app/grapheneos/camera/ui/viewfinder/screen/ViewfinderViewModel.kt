@@ -283,7 +283,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is RecordingAction.RecordingRequested -> startRecording()
             is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
             is RecordingAction.MuteToggleClicked -> recordingDelegate.toggleMute()
-            is RecordingAction.RecordingPauseToggled -> setRecordingPaused(action.paused)
+            is RecordingAction.RecordingPauseToggled -> recordingDelegate.setPaused(action.paused)
 
             is RecordingAction.StartSoundPlayed -> {
                 recordingDelegate.onStartSoundPlayed(action.recordingId)
@@ -302,7 +302,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             }
 
             is LifecycleAction.ScreenStarted -> captureDelegate.onScreenStarted()
-            is LifecycleAction.ScreenStopped -> captureDelegate.onScreenStopped()
+            is LifecycleAction.ScreenStopped -> onScreenStopped()
 
             is LifecycleAction.ScreenResumed -> onScreenResumed()
             is LifecycleAction.ScreenPaused -> onScreenPaused()
@@ -427,8 +427,15 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onRecordingEvent(event: ViewfinderRecordingEvent) {
         when (event) {
-            is ViewfinderRecordingEvent.OutputUnavailable -> onRecordingOutputUnavailable()
-            is ViewfinderRecordingEvent.ReadyToStart -> startPreparedRecording()
+            // Audio can still be switched on while the output is being created.
+            is ViewfinderRecordingEvent.ReadyToStart -> when {
+                permissionDelegate.requestMissingMicrophone() -> recordingDelegate.requestStop()
+                else -> recordingDelegate.startPreparedRecording()
+            }
+
+            is ViewfinderRecordingEvent.OutputUnavailable -> {
+                galleryDelegate.onStorageLocationNotFound()
+            }
 
             is ViewfinderRecordingEvent.CaptureResultSaved -> {
                 showCaptureResult(
@@ -488,7 +495,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         when {
             state.isQrMode() -> settingsDelegate.toggleScanAllCodes()
-            state.recording.isActive() -> setRecordingPaused(!state.recording.isPaused)
+            state.recording.isActive() -> recordingDelegate.setPaused(!state.recording.isPaused)
 
             else -> {
                 if (cameraDelegate.switchLens(state.mode.extensionMode)) {
@@ -595,8 +602,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         recordingDelegate.requestRecording()
 
-        if (state.lacksMicrophone()) {
-            requestMicrophone()
+        if (permissionDelegate.requestMissingMicrophone()) {
             recordingDelegate.markStopped()
             return
         }
@@ -604,25 +610,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         recordingDelegate.prepareRecording(
             includeLocation = state.includesLocation(),
             outputUri = outputUri,
-        )
-    }
-
-    // Audio can still be switched on while the output is being created.
-    private fun startPreparedRecording() {
-        when {
-            state().lacksMicrophone() -> {
-                requestMicrophone()
-                recordingDelegate.requestStop()
-            }
-
-            else -> recordingDelegate.startPreparedRecording()
-        }
-    }
-
-    private fun requestMicrophone() {
-        permissionDelegate.request(
-            permission = AppPermission.MICROPHONE,
-            explainsFirst = false,
         )
     }
 
@@ -645,18 +632,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         startRecording()
     }
 
-    private fun setRecordingPaused(paused: Boolean) {
-        if (state().recording.isActive()) {
-            recordingDelegate.setPaused(paused)
-        }
-    }
-
-    private fun onRecordingOutputUnavailable() {
-        if (!entryPoint.isCaptureSession) {
-            galleryDelegate.onStorageLocationNotFound()
-        }
-    }
-
     private fun onScreenCreated(host: ViewfinderHost) {
         cameraDelegate.onScreenCreated(host)
         captureDelegate.onScreenCreated(host)
@@ -668,6 +643,16 @@ class ViewfinderViewModel @AssistedInject constructor(
         captureDelegate.onScreenDestroyed()
         galleryDelegate.onScreenDestroyed()
         recordingDelegate.onScreenDestroyed()
+    }
+
+    private fun onScreenStopped() {
+        captureDelegate.onScreenStopped()
+
+        // Stop explicitly rather than letting the unbind tear the recording down for us.
+        if (state().recording.isActive()) {
+            cameraDelegate.holdPreviewFrame()
+            recordingDelegate.requestStop()
+        }
     }
 
     private fun onScreenResumed() {

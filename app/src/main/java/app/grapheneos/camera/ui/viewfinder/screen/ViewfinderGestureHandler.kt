@@ -22,6 +22,8 @@ internal class ViewfinderGestureHandler(
 
     val gestureDetector = GestureDetector(context, this)
 
+    var isSettingsPanelAvailable = false
+
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
 
     private val dragTracker = PreviewDragTracker(
@@ -114,7 +116,7 @@ internal class ViewfinderGestureHandler(
                 dragTracker.down(
                     x = event.x,
                     y = event.y,
-                    canDragVertically = settingsPanelDrag.isAvailable(),
+                    canDragVertically = isSettingsPanelAvailable,
                 )
             }
 

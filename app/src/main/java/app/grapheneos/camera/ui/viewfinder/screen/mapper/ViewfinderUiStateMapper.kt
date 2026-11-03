@@ -54,7 +54,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             isSelfIlluminating = state.selfIlluminates(),
             isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
-            cameraSoundsEnabled = state.settings.enableCameraSounds,
             dialog = state.dialog,
         )
     }
