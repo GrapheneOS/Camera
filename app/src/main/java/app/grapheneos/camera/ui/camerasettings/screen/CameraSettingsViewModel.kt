@@ -4,8 +4,8 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
@@ -248,7 +248,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun videoModeSettings(lensFacing: LensFacing): ModeSettings {
         val slot = ModeSlot(
             mode = CameraMode.VIDEO,
-            isFrontFacing = lensFacing == LensFacing.FRONT,
+            lensFacing = lensFacing,
         )
 
         return settingsRepository.modeSettings(slot)

@@ -6,11 +6,11 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.HighFrameRateProbeKey
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.VideoBindSettings
 import app.grapheneos.camera.data.camera.model.VideoFeatureGroup
 import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import javax.inject.Inject
 

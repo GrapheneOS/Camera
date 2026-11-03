@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.camera.model
 
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoQuality
 
 // Every setting that reaches one of the three probed SessionConfigs has to appear in the
