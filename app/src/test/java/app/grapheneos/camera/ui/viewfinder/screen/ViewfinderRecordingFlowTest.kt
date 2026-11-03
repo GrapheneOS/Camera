@@ -390,7 +390,6 @@ class ViewfinderRecordingFlowTest {
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,
             volumeKeyActionMapper = mockk(relaxed = true),
-            swipeOutcomeMapper = mockk(relaxed = true),
         )
     }
 

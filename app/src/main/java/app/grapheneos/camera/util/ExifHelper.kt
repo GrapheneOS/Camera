@@ -5,14 +5,13 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-
 private val exifAttributes = arrayOf(
     ExifInterface.TAG_IMAGE_WIDTH,
     ExifInterface.TAG_IMAGE_LENGTH,
     ExifInterface.TAG_BITS_PER_SAMPLE,
     ExifInterface.TAG_COMPRESSION,
     ExifInterface.TAG_PHOTOMETRIC_INTERPRETATION,
-    //ExifInterface.TAG_ORIENTATION,
+    // ExifInterface.TAG_ORIENTATION,
     ExifInterface.TAG_SAMPLES_PER_PIXEL,
     ExifInterface.TAG_PLANAR_CONFIGURATION,
     ExifInterface.TAG_Y_CB_CR_SUB_SAMPLING,
@@ -144,7 +143,7 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_INTEROPERABILITY_INDEX,
     ExifInterface.TAG_THUMBNAIL_IMAGE_LENGTH,
     ExifInterface.TAG_THUMBNAIL_IMAGE_WIDTH,
-    //TAG_THUMBNAIL_ORIENTATION,
+    // TAG_THUMBNAIL_ORIENTATION,
     ExifInterface.TAG_DNG_VERSION,
     ExifInterface.TAG_DEFAULT_CROP_SIZE,
     ExifInterface.TAG_ORF_THUMBNAIL_IMAGE,
@@ -188,7 +187,7 @@ fun ExifInterface.clearExif(keepXmp: Boolean) {
 }
 
 // TODO: (Re-)use this code later to implement custom EXIF removal setting
-//fun clearExif(context: Context, uri : Uri) {
+// fun clearExif(context: Context, uri : Uri) {
 //
 //    val inStream = context.contentResolver.openFileDescriptor(
 //        uri,
@@ -241,7 +240,7 @@ fun ExifInterface.clearExif(keepXmp: Boolean) {
 //    exifInterface.removeAttribute(ExifInterface.TAG_SCENE_TYPE)
 //
 //    exifInterface.saveAttributes()
-//}
+// }
 
 fun ExifInterface.removeAttribute(tag: String) {
     setAttribute(tag, null)

@@ -1,87 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
-    <file name="build.gradle.kts">
-        <error line="143" column="27" source="standard:argument-list-wrapping" />
-        <error line="143" column="50" source="standard:argument-list-wrapping" />
-        <error line="143" column="81" source="standard:argument-list-wrapping" />
-        <error line="143" column="84" source="standard:argument-list-wrapping" />
-        <error line="143" column="101" source="standard:max-line-length" />
-        <error line="143" column="104" source="standard:argument-list-wrapping" />
-    </file>
-    <file name="src/androidTest/java/app/grapheneos/camera/BottomTabLayoutRegressionTest.kt">
-        <error line="69" column="28" source="standard:argument-list-wrapping" />
-        <error line="69" column="87" source="standard:binary-expression-wrapping" />
-        <error line="69" column="87" source="standard:argument-list-wrapping" />
-        <error line="69" column="95" source="standard:binary-expression-wrapping" />
-        <error line="69" column="101" source="standard:max-line-length" />
-        <error line="69" column="102" source="standard:argument-list-wrapping" />
-        <error line="71" column="26" source="standard:argument-list-wrapping" />
-        <error line="71" column="65" source="standard:argument-list-wrapping" />
-        <error line="71" column="89" source="standard:argument-list-wrapping" />
-        <error line="71" column="101" source="standard:argument-list-wrapping" />
-        <error line="71" column="101" source="standard:max-line-length" />
-        <error line="257" column="30" source="standard:argument-list-wrapping" />
-        <error line="257" column="67" source="standard:argument-list-wrapping" />
-        <error line="257" column="76" source="standard:argument-list-wrapping" />
-        <error line="257" column="82" source="standard:argument-list-wrapping" />
-        <error line="257" column="88" source="standard:argument-list-wrapping" />
-        <error line="257" column="91" source="standard:argument-list-wrapping" />
-        <error line="257" column="100" source="standard:max-line-length" />
-        <error line="257" column="103" source="standard:argument-list-wrapping" />
-        <error line="417" column="29" source="standard:argument-list-wrapping" />
-        <error line="417" column="33" source="standard:argument-list-wrapping" />
-        <error line="417" column="67" source="standard:argument-list-wrapping" />
-        <error line="422" column="101" source="standard:max-line-length" />
-        <error line="423" column="1" source="standard:indent" />
-        <error line="425" column="1" source="standard:indent" />
-        <error line="434" column="20" source="standard:wrapping" />
-        <error line="434" column="20" source="standard:argument-list-wrapping" />
-        <error line="435" column="30" source="standard:wrapping" />
-        <error line="435" column="31" source="standard:argument-list-wrapping" />
-        <error line="449" column="39" source="standard:argument-list-wrapping" />
-        <error line="449" column="53" source="standard:argument-list-wrapping" />
-        <error line="449" column="60" source="standard:argument-list-wrapping" />
-        <error line="449" column="86" source="standard:argument-list-wrapping" />
-        <error line="449" column="99" source="standard:argument-list-wrapping" />
-        <error line="449" column="100" source="standard:argument-list-wrapping" />
-        <error line="449" column="100" source="standard:max-line-length" />
-        <error line="449" column="101" source="standard:argument-list-wrapping" />
-    </file>
-    <file name="src/androidTest/java/app/grapheneos/camera/CameraModeTabsRegressionTest.kt">
-        <error line="3" column="1" source="standard:import-ordering" />
-        <error line="73" column="33" source="standard:function-literal" />
-        <error line="73" column="91" source="standard:argument-list-wrapping" />
-        <error line="73" column="99" source="standard:argument-list-wrapping" />
-        <error line="73" column="101" source="standard:function-literal" />
-        <error line="73" column="101" source="standard:max-line-length" />
-    </file>
-    <file name="src/androidTest/java/app/grapheneos/camera/Fling.kt">
-        <error line="36" column="23" source="standard:argument-list-wrapping" />
-        <error line="36" column="50" source="standard:argument-list-wrapping" />
-        <error line="36" column="58" source="standard:argument-list-wrapping" />
-        <error line="36" column="82" source="standard:argument-list-wrapping" />
-        <error line="36" column="86" source="standard:argument-list-wrapping" />
-    </file>
     <file name="src/androidTest/java/app/grapheneos/camera/data/location/mapper/OptimalLocationMapperTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
-    </file>
-    <file name="src/androidTest/java/app/grapheneos/camera/ScreenAwakeRule.kt">
-        <error line="37" column="1" source="standard:indent" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/activities/AutoFinishOnSleep.kt">
-        <error line="13" column="25" source="standard:class-signature" />
-        <error line="13" column="47" source="standard:class-signature" />
-        <error line="23" column="34" source="standard:colon-spacing" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/util/BlurBitmap.kt">
-        <error line="174" column="1" source="standard:no-empty-first-line-in-method-block" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/util/ExifHelper.kt">
-        <error line="8" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="15" column="5" source="standard:comment-spacing" />
-        <error line="147" column="5" source="standard:comment-spacing" />
-        <error line="191" column="1" source="standard:comment-spacing" />
-        <error line="244" column="1" source="standard:comment-spacing" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/moresettings/NumInputFilter.kt">
         <error line="8" column="22" source="standard:class-signature" />
@@ -111,36 +31,9 @@
         <error line="19" column="50" source="standard:trailing-comma-on-declaration-site" />
         <error line="31" column="22" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/CustomGrid.kt">
-        <error line="14" column="22" source="standard:trailing-comma-on-declaration-site" />
-        <error line="43" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="54" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="56" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="72" column="21" source="standard:argument-list-wrapping" />
-        <error line="73" column="34" source="standard:argument-list-wrapping" />
-        <error line="73" column="54" source="standard:argument-list-wrapping" />
-        <error line="86" column="25" source="standard:argument-list-wrapping" />
-        <error line="87" column="38" source="standard:argument-list-wrapping" />
-        <error line="87" column="58" source="standard:argument-list-wrapping" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/qr/QROverlay.kt">
-        <error line="14" column="17" source="standard:class-signature" />
-        <error line="14" column="35" source="standard:class-signature" />
-        <error line="14" column="54" source="standard:class-signature" />
-        <error line="65" column="1" source="standard:no-blank-line-before-rbrace" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/qr/QRToggle.kt">
-        <error line="10" column="23" source="standard:parameter-list-wrapping" />
-        <error line="10" column="23" source="standard:class-signature" />
-        <error line="10" column="50" source="standard:trailing-comma-on-declaration-site" />
-        <error line="41" column="35" source="standard:wrapping" />
-        <error line="42" column="53" source="standard:argument-list-wrapping" />
-        <error line="43" column="13" source="standard:wrapping" />
-        <error line="55" column="27" source="standard:property-naming" />
-        <error line="56" column="27" source="standard:property-naming" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/activities/QrTile.kt">
-        <error line="28" column="64" source="standard:no-semi" />
+        <error line="59" column="27" source="standard:property-naming" />
+        <error line="60" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/ImageDecoderUtils.kt">
         <error line="6" column="20" source="standard:class-signature" />
@@ -152,14 +45,5 @@
         <error line="7" column="87" source="standard:parameter-list-wrapping" />
         <error line="7" column="101" source="standard:max-line-length" />
         <error line="7" column="114" source="standard:parameter-list-wrapping" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/util/Utils.kt">
-        <error line="23" column="44" source="standard:no-semi" />
-        <error line="73" column="66" source="standard:argument-list-wrapping" />
-        <error line="73" column="71" source="standard:argument-list-wrapping" />
-        <error line="73" column="101" source="standard:max-line-length" />
-        <error line="73" column="107" source="standard:argument-list-wrapping" />
-        <error line="73" column="110" source="standard:argument-list-wrapping" />
-        <error line="73" column="111" source="standard:argument-list-wrapping" />
     </file>
 </baseline>

@@ -23,7 +23,7 @@ internal class ViewfinderModeStripRenderer(
         tabs.setModes(
             modes = state.availableModes,
             currentMode = state.selectedMode,
-            onModeTouched = { mode -> onAction(CameraAction.ModeStripReleased(mode)) },
+            onModeTouched = { mode -> onAction(CameraAction.ModeStrip.Released(mode)) },
         )
 
         if (previous == null) return
@@ -33,7 +33,7 @@ internal class ViewfinderModeStripRenderer(
 
         if (selectionChanged) {
             tabs.goToMode(state.selectedMode) {
-                onAction(CameraAction.ModeStripSettled(state.selectedMode))
+                onAction(CameraAction.ModeStrip.Settled(state.selectedMode))
             }
         }
     }

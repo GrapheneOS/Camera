@@ -11,7 +11,10 @@ import android.util.AttributeSet
 import android.view.View
 import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 
-class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
+class QROverlay(
+    context: Context,
+    attrs: AttributeSet,
+) : View(context, attrs) {
     private val boxPaint: Paint = Paint().apply {
         color = 0Xffffff
         style = Paint.Style.STROKE
@@ -62,5 +65,4 @@ class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
             canvas.drawRoundRect(it, boxCornerRadius, boxCornerRadius, boxPaint)
         }
     }
-
 }

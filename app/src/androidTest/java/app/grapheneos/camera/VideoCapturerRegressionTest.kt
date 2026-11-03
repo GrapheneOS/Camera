@@ -418,7 +418,7 @@ class VideoCapturerRegressionTest {
                     )
 
                     // What both of the strip's touch listeners do with a tap
-                    activity.viewfinder.onAction(CameraAction.ModeStripReleased(CameraMode.CAMERA))
+                    activity.viewfinder.onAction(CameraAction.ModeStrip.Released(CameraMode.CAMERA))
 
                     mode = activity.viewfinder.uiState.value.mode
                     highlighted = activity.tabLayout.selectedMode

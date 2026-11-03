@@ -70,7 +70,9 @@ class CameraModeTabsRegressionTest {
             // reads false between frames -- exactly where a sample would land.
             val passes = AtomicInteger()
             val listener = ViewTreeObserver.OnGlobalLayoutListener { passes.incrementAndGet() }
-            scenario.onActivity { it.tabLayout.viewTreeObserver.addOnGlobalLayoutListener(listener) }
+            scenario.onActivity {
+                it.tabLayout.viewTreeObserver.addOnGlobalLayoutListener(listener)
+            }
             Thread.sleep(WINDOW_MS)
             scenario.onActivity {
                 it.tabLayout.viewTreeObserver.removeOnGlobalLayoutListener(listener)

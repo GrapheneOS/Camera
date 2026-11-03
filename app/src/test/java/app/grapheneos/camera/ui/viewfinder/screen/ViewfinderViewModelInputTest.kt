@@ -12,7 +12,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
@@ -320,50 +319,17 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun sidewaysSwipes_moveTheModeStrip() {
+    fun previewSwipes_reachTheModeStrip() {
         runTest {
-            every {
-                swipeOutcomeMapper.map(
-                    direction = SwipeDirection.LEFT,
-                    state = any(),
-                )
-            } returns SwipeOutcome.SelectAdjacentMode(offset = 1)
-            every {
-                swipeOutcomeMapper.map(
-                    direction = SwipeDirection.RIGHT,
-                    state = any(),
-                )
-            } returns SwipeOutcome.SelectAdjacentMode(offset = -1)
             val viewModel = createViewModel()
-            stateHolder.update { it.copy(showsCameraModeTabs = true) }
 
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
-
-            verifyOrder {
-                modeSwitchDelegate.onAdjacentModeSwiped(1)
-                modeSwitchDelegate.onAdjacentModeSwiped(-1)
-            }
-        }
-    }
-
-    @Test
-    fun swipeUp_inQrMode_offersTheBarcodeFormats() {
-        runTest {
-            every {
-                swipeOutcomeMapper.map(
-                    direction = SwipeDirection.UP,
-                    state = any(),
-                )
-            } returns SwipeOutcome.ShowQrFormats
-            val viewModel = createViewModel()
-            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
-            val effects = collectEffects(viewModel)
-
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
 
-            assertEquals(listOf(ViewfinderScreenEffect.ShowQrFormats), effects)
-            verify(exactly = 0) { modeSwitchDelegate.onAdjacentModeSwiped(any()) }
+            verifyOrder {
+                modeSwitchDelegate.onPreviewSwiped(SwipeDirection.LEFT)
+                modeSwitchDelegate.onPreviewSwiped(SwipeDirection.UP)
+            }
         }
     }
 

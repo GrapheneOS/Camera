@@ -5,23 +5,17 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.LensFacing
-import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderModeStripState
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -30,7 +24,6 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -291,7 +284,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 )
             }
 
-            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+            viewModel.onAction(CameraAction.ModeStrip.Settled(CameraMode.VIDEO))
 
             verifyOrder {
                 modeDelegate.select(CameraMode.VIDEO)
@@ -309,7 +302,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.CAMERA))
             }
 
-            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.CAMERA))
+            viewModel.onAction(CameraAction.ModeStrip.Settled(CameraMode.CAMERA))
 
             verify(exactly = 1) { modeSwitchDelegate.cancelSwitch() }
             verify(exactly = 0) { modeDelegate.select(any()) }
@@ -321,7 +314,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+            viewModel.onAction(CameraAction.ModeStrip.Settled(CameraMode.VIDEO))
 
             stateHolder.update {
                 it.copy(
@@ -332,7 +325,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 )
             }
 
-            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.PORTRAIT))
+            viewModel.onAction(CameraAction.ModeStrip.Settled(CameraMode.PORTRAIT))
 
             verify(exactly = 0) { modeDelegate.select(any()) }
             verify(exactly = 0) { modeSwitchDelegate.cancelSwitch() }
@@ -350,7 +343,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 )
             }
 
-            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+            viewModel.onAction(CameraAction.ModeStrip.Settled(CameraMode.VIDEO))
 
             verify(exactly = 1) { modeSwitchDelegate.cancelSwitch() }
             verify(exactly = 0) { modeDelegate.select(any()) }

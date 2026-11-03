@@ -12,6 +12,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import java.time.Duration
+import kotlinx.collections.immutable.persistentSetOf
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -33,7 +34,7 @@ class ViewfinderModeStripRendererTest {
     private val actions = mutableListOf<ViewfinderAction>()
     private val initial = ModeTabsUiModel(
         visible = true,
-        availableModes = linkedSetOf(CameraMode.CAMERA, CameraMode.VIDEO),
+        availableModes = persistentSetOf(CameraMode.CAMERA, CameraMode.VIDEO),
     )
     private val target = initial.copy(
         selectedMode = CameraMode.VIDEO,
@@ -78,7 +79,11 @@ class ViewfinderModeStripRendererTest {
         renderer.render(target)
         renderer.render(
             target.copy(
-                availableModes = linkedSetOf(CameraMode.NIGHT, CameraMode.CAMERA, CameraMode.VIDEO),
+                availableModes = persistentSetOf(
+                    CameraMode.NIGHT,
+                    CameraMode.CAMERA,
+                    CameraMode.VIDEO,
+                ),
             ),
         )
         layOut()
@@ -102,7 +107,11 @@ class ViewfinderModeStripRendererTest {
         renderer.render(target)
         renderer.render(
             target.copy(
-                availableModes = linkedSetOf(CameraMode.CAMERA, CameraMode.VIDEO, CameraMode.NIGHT),
+                availableModes = persistentSetOf(
+                    CameraMode.CAMERA,
+                    CameraMode.VIDEO,
+                    CameraMode.NIGHT,
+                ),
             ),
         )
         tabs.settleNow()
@@ -117,14 +126,18 @@ class ViewfinderModeStripRendererTest {
         renderer.render(target)
         renderer.render(
             target.copy(
-                availableModes = linkedSetOf(CameraMode.NIGHT, CameraMode.CAMERA, CameraMode.VIDEO),
+                availableModes = persistentSetOf(
+                    CameraMode.NIGHT,
+                    CameraMode.CAMERA,
+                    CameraMode.VIDEO,
+                ),
             ),
         )
         layOut()
         renderer.render(initial.copy(selectionId = 2))
         finishSettling()
 
-        assertEquals(listOf(CameraAction.ModeStripSettled(CameraMode.CAMERA)), actions)
+        assertEquals(listOf(CameraAction.ModeStrip.Settled(CameraMode.CAMERA)), actions)
         assertEquals(CameraMode.CAMERA, tabs.selectedMode)
     }
 
@@ -134,18 +147,18 @@ class ViewfinderModeStripRendererTest {
         renderer.render(initial.copy(selectionId = target.selectionId))
         finishSettling()
 
-        assertEquals(listOf(CameraAction.ModeStripSettled(CameraMode.CAMERA)), actions)
+        assertEquals(listOf(CameraAction.ModeStrip.Settled(CameraMode.CAMERA)), actions)
         assertEquals(CameraMode.CAMERA, tabs.selectedMode)
     }
 
     @Test
     fun removingThePendingMode_stillReportsItsCompletionForTheModelToCancel() {
         renderer.render(target)
-        renderer.render(target.copy(availableModes = setOf(CameraMode.CAMERA)))
+        renderer.render(target.copy(availableModes = persistentSetOf(CameraMode.CAMERA)))
         layOut()
         finishSettling()
 
-        assertEquals(listOf(CameraAction.ModeStripSettled(CameraMode.VIDEO)), actions)
+        assertEquals(listOf(CameraAction.ModeStrip.Settled(CameraMode.VIDEO)), actions)
     }
 
     @Test
@@ -180,7 +193,7 @@ class ViewfinderModeStripRendererTest {
     }
 
     private fun assertSettledVideo() {
-        assertEquals(listOf(CameraAction.ModeStripSettled(CameraMode.VIDEO)), actions)
+        assertEquals(listOf(CameraAction.ModeStrip.Settled(CameraMode.VIDEO)), actions)
         assertEquals(CameraMode.VIDEO, tabs.selectedMode)
     }
 }
