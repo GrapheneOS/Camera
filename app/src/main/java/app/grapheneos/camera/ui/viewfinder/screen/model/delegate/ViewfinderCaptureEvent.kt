@@ -9,6 +9,10 @@ sealed interface ViewfinderCaptureEvent {
 
     data object SelfTimerFinished : ViewfinderCaptureEvent
 
+    data class PhotoCaptured(
+        val photo: Bitmap,
+    ) : ViewfinderCaptureEvent
+
     data class ThumbnailReady(
         val thumbnail: Bitmap?,
     ) : ViewfinderCaptureEvent

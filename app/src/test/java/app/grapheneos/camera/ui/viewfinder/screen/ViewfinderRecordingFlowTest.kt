@@ -333,6 +333,7 @@ class ViewfinderRecordingFlowTest {
                 blinkTimerLight = mockk(relaxed = true),
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
+                defaultDispatcher = mainDispatcher,
             ),
             permissionDelegate = mockk(relaxed = true),
             recordingDelegate = ViewfinderRecordingDelegateImpl(

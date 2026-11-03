@@ -9,6 +9,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
@@ -34,40 +35,22 @@ interface ViewfinderUiStateMapper {
 internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiStateMapper {
 
     override fun map(state: ViewfinderState): ViewfinderUiState {
-        val isRecordingActive = state.recording.isActive()
-
         return ViewfinderUiState(
             mode = state.mode,
-            preview = PreviewUiModel(
-                aspectRatio = state.aspectRatio(),
-                sensorOrientationDegrees = state.session.sensorOrientationDegrees,
-                gridType = state.settings.gridType,
-                isStreaming = state.preview.isStreaming,
-                lastFrameVisible = state.preview.isLastFrameShown,
-            ),
-            modeTabs = ModeTabsUiModel(
-                visible = modeTabsVisible(state),
-                availableModes = state.session.availableModes,
-                selectedMode = state.modeStripTarget(),
-                selectionId = state.modeStrip.selectionId,
-            ),
+            preview = preview(state),
+            modeTabs = modeTabs(state),
             captureButton = captureButton(state),
             flipCamera = flipCamera(state),
             thirdOption = thirdOption(state),
-            cancelButtonVisible = !state.isQrMode() &&
-                !state.capture.isSelfTimerRunning() &&
-                !state.recording.isRecording(),
+            cancelButtonVisible = cancelButtonVisible(state),
             selfTimer = selfTimer(state),
             recording = recording(state),
-            qr = QrUiModel(
-                overlayVisible = state.isQrMode(),
-                scanTogglesVisible = state.isQrMode() && !state.settings.scanAllCodes,
-            ),
+            qr = qr(state),
             focusRing = focusRing(state),
             exposure = exposure(state),
             rotation = rotation(state),
-            capturedPreviewVisible = state.capture.isCapturedPreviewShown,
-            keepScreenOn = isRecordingActive || state.keepsScreenAwake,
+            captureResult = captureResult(state),
+            keepScreenOn = keepScreenOn(state),
             isSelfIlluminating = state.selfIlluminates(),
             isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
@@ -98,10 +81,36 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
+    private fun preview(state: ViewfinderState): PreviewUiModel {
+        return PreviewUiModel(
+            aspectRatio = state.aspectRatio(),
+            sensorOrientationDegrees = state.session.sensorOrientationDegrees,
+            gridType = state.settings.gridType,
+            isStreaming = state.preview.isStreaming,
+            lastFrameVisible = state.preview.isLastFrameShown,
+            blursLastFrame = !state.isCaptureSession,
+        )
+    }
+
+    private fun modeTabs(state: ViewfinderState): ModeTabsUiModel {
+        return ModeTabsUiModel(
+            visible = modeTabsVisible(state),
+            availableModes = state.session.availableModes,
+            selectedMode = state.modeStripTarget(),
+            selectionId = state.modeStrip.selectionId,
+        )
+    }
+
+    private fun modeTabsVisible(state: ViewfinderState): Boolean {
+        return state.showsCameraModeTabs &&
+            !state.recording.isRecording() &&
+            !state.capture.isSelfTimerRunning()
+    }
+
     private fun captureButton(state: ViewfinderState): CaptureButtonUiModel {
         val isTorchOn = state.session.isTorchOn
         val common = CaptureButtonUiModel(
-            visible = !state.capture.isCapturedPreviewShown,
+            visible = !state.capture.hasResult() && !state.capture.isShutterHeld,
             enabled = !state.capture.isTakingPicture,
             recording = state.recording.isActive(),
         )
@@ -204,6 +213,28 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
+    /**
+     * The third circle opens the gallery, which a capture session must not reach; a video capture
+     * session shows it only to play back the recording under review.
+     */
+    private fun thirdOptionVisible(state: ViewfinderState): Boolean {
+        return when {
+            state.isCaptureSession -> {
+                state.requiresVideoModeOnly && state.capture.hasResult()
+            }
+
+            state.requiresVideoModeOnly -> !state.recording.isRecording()
+
+            else -> true
+        }
+    }
+
+    private fun cancelButtonVisible(state: ViewfinderState): Boolean {
+        return !state.isQrMode() &&
+            !state.capture.isSelfTimerRunning() &&
+            !state.recording.isRecording()
+    }
+
     private fun selfTimer(state: ViewfinderState): SelfTimerUiModel {
         if (state.isQrMode()) return SelfTimerUiModel()
 
@@ -232,6 +263,13 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             micOffIconVisible = !state.isQrMode() && state.isVideoMode() && !includeAudio,
             timerVisible = !state.isQrMode() && recording.isRecording(),
             timerText = formatVideoDuration(recording.duration.inWholeSeconds),
+        )
+    }
+
+    private fun qr(state: ViewfinderState): QrUiModel {
+        return QrUiModel(
+            overlayVisible = state.isQrMode(),
+            scanTogglesVisible = state.isQrMode() && !state.settings.scanAllCodes,
         )
     }
 
@@ -286,26 +324,15 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         }
     }
 
-    private fun modeTabsVisible(state: ViewfinderState): Boolean {
-        return state.showsCameraModeTabs &&
-            !state.recording.isRecording() &&
-            !state.capture.isSelfTimerRunning()
+    private fun captureResult(state: ViewfinderState): CaptureResultUiModel {
+        return CaptureResultUiModel(
+            visible = state.capture.hasResult(),
+            image = state.capture.result?.image,
+        )
     }
 
-    /**
-     * The third circle opens the gallery, which a capture session must not reach; a video capture
-     * session shows it only to play back the recording under review.
-     */
-    private fun thirdOptionVisible(state: ViewfinderState): Boolean {
-        return when {
-            state.isCaptureSession -> {
-                state.requiresVideoModeOnly && state.capture.isCapturedPreviewShown
-            }
-
-            state.requiresVideoModeOnly -> !state.recording.isRecording()
-
-            else -> true
-        }
+    private fun keepScreenOn(state: ViewfinderState): Boolean {
+        return state.recording.isActive() || state.keepsScreenAwake
     }
 
     private companion object {

@@ -48,6 +48,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptu
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import dagger.assisted.Assisted
@@ -129,6 +130,13 @@ class ViewfinderViewModel @AssistedInject constructor(
     private var resumedWork: Job? = null
 
     init {
+        bindDelegates()
+        prepareCaptureSession()
+        trackSources()
+        collectDelegateEvents()
+    }
+
+    private fun bindDelegates() {
         modeDelegate.bind(stateHolder)
         permissionDelegate.bind(stateHolder)
         screenWakeDelegate.bind(stateHolder)
@@ -159,7 +167,15 @@ class ViewfinderViewModel @AssistedInject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
+    }
 
+    private fun prepareCaptureSession() {
+        if (entryPoint.isCaptureSession) {
+            captureDelegate.holdShutter()
+        }
+    }
+
+    private fun trackSources() {
         viewModelScope.launch { cameraDelegate.trackSession() }
         viewModelScope.launch { cameraControlsDelegate.trackZoom() }
         viewModelScope.launch { settingsDelegate.trackSettings() }
@@ -168,7 +184,9 @@ class ViewfinderViewModel @AssistedInject constructor(
         viewModelScope.launch { locationDelegate.trackGeoTagging() }
         viewModelScope.launch { recordingDelegate.trackRecorder() }
         viewModelScope.launch { galleryDelegate.trackLastCapturedItem() }
+    }
 
+    private fun collectDelegateEvents() {
         viewModelScope.launch {
             cameraDelegate.cameraEvents.collect { event ->
                 onCameraEvent(event)
@@ -243,14 +261,11 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.SelfTimerStartClicked -> captureDelegate.startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> captureDelegate.cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> galleryDelegate.onStorageLocationNotFound()
-            is CaptureAction.CapturedPreviewShown -> showCapturedPreview()
-            is CaptureAction.CapturedPreviewDismissed -> dismissCapturedPreview()
+            is CaptureAction.RetakeClicked -> retake()
+            is CaptureAction.ConfirmClicked -> captureDelegate.confirmResult(outputUri)
 
-            is CaptureAction.CapturedPreviewConfirmed -> {
-                captureDelegate.confirmPreviewPicture(
-                    bitmap = action.bitmap,
-                    outputUri = outputUri,
-                )
+            is CaptureAction.RecordingResultShown -> {
+                showCaptureResult(ViewfinderCaptureResult.Video(image = action.image))
             }
 
             is CaptureAction.VolumeKeyEvent -> {
@@ -389,6 +404,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onCaptureEvent(event: ViewfinderCaptureEvent) {
         when (event) {
             is ViewfinderCaptureEvent.SelfTimerFinished -> takePicture()
+
+            is ViewfinderCaptureEvent.PhotoCaptured -> {
+                showCaptureResult(ViewfinderCaptureResult.Photo(image = event.photo))
+            }
 
             is ViewfinderCaptureEvent.Saved -> {
                 galleryDelegate.recordCapturedItem(event.item)
@@ -545,14 +564,13 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun showCapturedPreview() {
-        captureDelegate.showCapturedPreview()
+    private fun showCaptureResult(result: ViewfinderCaptureResult) {
+        captureDelegate.showResult(result)
         cameraDelegate.unbindCamera()
     }
 
-    private fun dismissCapturedPreview() {
-        captureDelegate.dismissCapturedPreview()
-
+    private fun retake() {
+        captureDelegate.discardResult()
         startCamera(forced = true)
     }
 

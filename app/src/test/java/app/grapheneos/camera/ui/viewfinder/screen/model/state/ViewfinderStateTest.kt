@@ -83,7 +83,11 @@ class ViewfinderStateTest {
                 .isReviewingRecordedVideo(),
         )
         assertTrue(
-            session.copy(capture = ViewfinderCaptureState(isCapturedPreviewShown = true))
+            session.copy(
+                capture = ViewfinderCaptureState(
+                    result = ViewfinderCaptureResult.Video(image = null),
+                ),
+            )
                 .isReviewingRecordedVideo(),
         )
     }

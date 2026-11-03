@@ -26,7 +26,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.LensFacing
-import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
@@ -35,6 +34,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraA
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
@@ -76,6 +76,9 @@ internal class ViewfinderViewRenderer(
     private var renderedModeSelectionId: Int? = null
     private var renderedLastFrameVisible: Boolean? = null
     private var renderedStreaming: Boolean? = null
+    private var blursLastFrame = true
+    private var renderedResultVisible = false
+    private var renderedResultImage: Bitmap? = null
     private var isFocusRingRendered = false
     private var focusRingTimeout: Job? = null
 
@@ -113,12 +116,37 @@ internal class ViewfinderViewRenderer(
     }
 
     private fun renderPreview(state: ViewfinderUiState) {
-        activity.previewView.visibility = visibleOrInvisible(!state.capturedPreviewVisible)
-        (activity as? CaptureActivity)?.renderCapturedPreview(state.capturedPreviewVisible)
+        val result = state.captureResult
+
+        activity.previewView.visibility = visibleOrInvisible(!result.visible)
         activity.previewGrid.gridType = state.preview.gridType
 
         renderBoundPreview(state.preview)
-        renderLastFrame(preview = state.preview, isQrMode = state.mode.isQr)
+        renderCaptureResult(result)
+        renderLastFrame(
+            preview = state.preview,
+            isQrMode = state.mode.isQr,
+            isResultShown = result.visible,
+        )
+    }
+
+    private fun renderCaptureResult(result: CaptureResultUiModel) {
+        val binding = activity.binding
+        binding.flipCameraIconContent.visibility = visibleOrInvisible(!result.visible)
+        binding.retakeIcon.visibility = visibleOrInvisible(result.visible)
+        binding.confirmButton.visibility = visibleOrInvisible(result.visible)
+
+        val isNewResult = result.visible &&
+            (!renderedResultVisible || result.image !== renderedResultImage)
+        renderedResultVisible = result.visible
+        renderedResultImage = result.image
+
+        if (!isNewResult) return
+
+        // The captured image covers the preview until the camera streams again, so a retake does
+        // not flash the empty preview the unbind leaves behind. It is taken down from there.
+        activity.mainOverlay.setImageBitmap(result.image)
+        activity.mainOverlay.visibility = View.VISIBLE
     }
 
     fun refreshLastFrame() {
@@ -130,6 +158,7 @@ internal class ViewfinderViewRenderer(
     private fun renderLastFrame(
         preview: PreviewUiModel,
         isQrMode: Boolean,
+        isResultShown: Boolean,
     ) {
         // A camera that stops streaming under a frame already up puts the still up again, now over
         // the frame held for the bind.
@@ -137,10 +166,14 @@ internal class ViewfinderViewRenderer(
             preview.isStreaming == renderedStreaming
         renderedLastFrameVisible = preview.lastFrameVisible
         renderedStreaming = preview.isStreaming
+        blursLastFrame = preview.blursLastFrame
 
         when {
             isUnchanged -> Unit
             preview.lastFrameVisible -> showLastFrame()
+            // The overlay holds the captured image, which a camera streaming again behind the
+            // result, after a pause, must not take down.
+            isResultShown -> Unit
             else -> hideLastFrame(isQrMode)
         }
     }
@@ -150,7 +183,7 @@ internal class ViewfinderViewRenderer(
         activity.previewGrid.visibility = View.INVISIBLE
 
         val lastFrame = activity.previewFrames.lastFrame
-        if (lastFrame == null || activity is CaptureActivity) return
+        if (lastFrame == null || !blursLastFrame) return
 
         // The still is of the camera being left behind, and the box under it takes the new camera's
         // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's

@@ -70,7 +70,7 @@ data class ViewfinderState(
     }
 
     fun isReviewingRecordedVideo(): Boolean {
-        val isAwaitingReview = capture.isCapturedPreviewShown || recording.isSaving
+        val isAwaitingReview = capture.hasResult() || recording.isSaving
 
         return isCaptureSession && requiresVideoModeOnly && isAwaitingReview
     }

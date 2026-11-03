@@ -45,7 +45,7 @@ internal fun CameraOverlay(
 
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
         val controlsShown = uiState.isSettingsPanelAvailable &&
-            !uiState.capturedPreviewVisible &&
+            !uiState.captureResult.visible &&
             !uiState.preview.lastFrameVisible
 
         Box(modifier = Modifier.fillMaxSize()) {

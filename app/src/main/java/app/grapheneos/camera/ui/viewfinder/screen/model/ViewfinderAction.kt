@@ -89,12 +89,12 @@ sealed interface ViewfinderAction {
 
         data object StorageLocationNotFound : CaptureAction
 
-        data object CapturedPreviewShown : CaptureAction
+        data object RetakeClicked : CaptureAction
 
-        data object CapturedPreviewDismissed : CaptureAction
+        data object ConfirmClicked : CaptureAction
 
-        data class CapturedPreviewConfirmed(
-            val bitmap: Bitmap,
+        data class RecordingResultShown(
+            val image: Bitmap?,
         ) : CaptureAction
 
         sealed interface VolumeKeyEvent : CaptureAction {
