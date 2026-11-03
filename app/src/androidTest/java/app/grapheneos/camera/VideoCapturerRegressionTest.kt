@@ -413,14 +413,16 @@ class VideoCapturerRegressionTest {
                     activity.viewfinder.onAction(RecordingAction.RecordingRequested)
                     assertTrue(isRecording(activity))
 
-                    val cameraTab = activity.tabLayout.getTabForMode(CameraMode.CAMERA)
-                    assertNotNull("no CAMERA tab to tap", cameraTab)
+                    assertTrue(
+                        "no CAMERA tab to tap",
+                        CameraMode.CAMERA in activity.tabLayout.getAllModes(),
+                    )
 
                     // What both of the strip's touch listeners do with a tap
-                    activity.finalizeMode(cameraTab)
+                    activity.viewfinder.onAction(CameraAction.ModeStripReleased(CameraMode.CAMERA))
 
                     mode = activity.viewfinder.uiState.value.mode
-                    highlighted = activity.tabLayout.selectedTab?.tag as CameraMode?
+                    highlighted = activity.tabLayout.selectedMode
                 }
 
                 waitForStartSound(scenario, deferred)

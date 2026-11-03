@@ -43,17 +43,6 @@ sealed interface ViewfinderScreenEffect {
         ) : Settings
     }
 
-    sealed interface ModeTab : ViewfinderScreenEffect {
-
-        data class SelectAdjacent(
-            val offset: Int,
-        ) : ModeTab
-
-        data class GoTo(
-            val mode: CameraMode,
-        ) : ModeTab
-    }
-
     sealed interface Gallery : ViewfinderScreenEffect {
 
         data class Open(

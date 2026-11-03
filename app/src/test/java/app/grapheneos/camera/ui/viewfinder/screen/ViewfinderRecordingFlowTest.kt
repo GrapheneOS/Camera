@@ -345,12 +345,13 @@ class ViewfinderRecordingFlowTest {
             screenWakeDelegate = mockk(relaxed = true),
             galleryDelegate = mockk(relaxed = true),
             dialogDelegate = mockk(relaxed = true),
-            gestureDelegate = mockk(relaxed = true),
+            modeSwitchDelegate = mockk(relaxed = true),
             previewControlsDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,
             volumeKeyActionMapper = mockk(relaxed = true),
+            swipeOutcomeMapper = mockk(relaxed = true),
         )
     }
 

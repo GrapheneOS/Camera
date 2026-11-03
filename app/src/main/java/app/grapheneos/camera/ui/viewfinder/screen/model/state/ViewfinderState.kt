@@ -20,6 +20,8 @@ data class ViewfinderState(
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
     val session: ViewfinderSessionState = ViewfinderSessionState(),
+    val modeStrip: ViewfinderModeStripState = ViewfinderModeStripState(),
+    val preview: ViewfinderPreviewState = ViewfinderPreviewState(),
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
     val gallery: ViewfinderGalleryState = ViewfinderGalleryState(),
@@ -40,6 +42,10 @@ data class ViewfinderState(
 
     fun isVideoMode(): Boolean {
         return mode.isVideo
+    }
+
+    fun modeStripTarget(): CameraMode {
+        return modeStrip.pendingMode ?: mode
     }
 
     fun isPhotoMode(): Boolean {

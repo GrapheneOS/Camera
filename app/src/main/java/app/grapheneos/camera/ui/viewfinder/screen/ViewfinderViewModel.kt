@@ -16,9 +16,9 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
@@ -26,6 +26,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
@@ -45,6 +46,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import dagger.assisted.Assisted
@@ -86,10 +89,11 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val galleryDelegate: ViewfinderGalleryDelegate,
     private val dialogDelegate: ViewfinderDialogDelegate,
-    private val gestureDelegate: ViewfinderGestureDelegate,
+    private val modeSwitchDelegate: ViewfinderModeSwitchDelegate,
     private val previewControlsDelegate: ViewfinderPreviewControlsDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
+    private val swipeOutcomeMapper: SwipeOutcomeMapper,
     uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
     ViewfinderScreenModel {
@@ -132,7 +136,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         locationDelegate.bind(stateHolder)
         recordingDelegate.bind(stateHolder)
         dialogDelegate.bind(stateHolder)
-        gestureDelegate.bind(stateHolder)
+        modeSwitchDelegate.bind(stateHolder)
         cameraDelegate.bind(stateHolder)
 
         orientationDelegate.bind(
@@ -206,6 +210,8 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onCameraAction(action: CameraAction) {
         when (action) {
             is CameraAction.ModeSelected -> switchMode(action.mode)
+            is CameraAction.ModeStripReleased -> modeSwitchDelegate.onStripReleased(action.mode)
+            is CameraAction.ModeStripSettled -> onModeStripSettled(action.mode)
             is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
             is CameraAction.ZoomStepKey -> onZoomStepKey(action)
             is CameraAction.Preview -> onPreviewAction(action)
@@ -272,11 +278,18 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is LifecycleAction.ScreenCreated -> onScreenCreated(action.host)
             is LifecycleAction.ScreenDestroyed -> onScreenDestroyed()
+
             is LifecycleAction.PreviewStreamingStarted -> onPreviewStreamingStarted()
+            is LifecycleAction.PreviewStreamingStopped -> {
+                modeSwitchDelegate.onPreviewStreaming(false)
+            }
+
             is LifecycleAction.ScreenStarted -> captureDelegate.onScreenStarted()
             is LifecycleAction.ScreenStopped -> captureDelegate.onScreenStopped()
+
             is LifecycleAction.ScreenResumed -> onScreenResumed()
             is LifecycleAction.ScreenPaused -> onScreenPaused()
+
             is LifecycleAction.ScreenInteracted -> screenWakeDelegate.onScreenInteracted()
         }
     }
@@ -341,7 +354,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPreviewAction(action: CameraAction.Preview) {
         when (action) {
             is CameraAction.Preview.Pinched -> cameraControlsDelegate.scaleZoom(action.scaleFactor)
-            is CameraAction.Preview.Swiped -> gestureDelegate.onPreviewSwiped(action.direction)
+            is CameraAction.Preview.Swiped -> onPreviewSwiped(action.direction)
             is CameraAction.Preview.Tapped -> when {
                 state().isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
                 else -> focusAt(x = action.x, y = action.y)
@@ -413,11 +426,29 @@ class ViewfinderViewModel @AssistedInject constructor(
         startCamera(forced = true)
 
         // A mode can change with no touch involved, so the strip follows the camera and not the
-        // other way round - currentMode, because an extension that fails to bind falls back to
-        // another mode from inside startCamera(). Left until after that rebind, which blocks the
-        // main thread for long enough to swallow the animation whole.
-        if (entryPoint.showsCameraModeTabs) {
-            emitEffect(Effect.ModeTab.GoTo(state().mode))
+        // other way round - the camera's mode, because an extension that fails to bind falls back
+        // to another mode from inside startCamera(). Left until after that rebind, which blocks
+        // the main thread for long enough to swallow the animation whole.
+        modeSwitchDelegate.followCamera()
+    }
+
+    private fun onPreviewSwiped(direction: SwipeDirection) {
+        when (val outcome = swipeOutcomeMapper.map(direction = direction, state = state())) {
+            null -> Unit
+            is SwipeOutcome.ShowQrFormats -> emitEffect(Effect.Settings.ShowQrFormats)
+            is SwipeOutcome.SelectAdjacentMode -> {
+                modeSwitchDelegate.onAdjacentModeSwiped(outcome.offset)
+            }
+        }
+    }
+
+    private fun onModeStripSettled(mode: CameraMode) {
+        val state = state()
+
+        when {
+            state.modeStrip.pendingMode != mode -> Unit
+            mode != state.mode -> switchMode(mode)
+            else -> modeSwitchDelegate.cancelSwitch()
         }
     }
 
@@ -661,6 +692,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onPreviewStreamingStarted() {
+        modeSwitchDelegate.onPreviewStreaming(true)
         applyModeSettings()
 
         if (recordingDelegate.takeRetry()) {

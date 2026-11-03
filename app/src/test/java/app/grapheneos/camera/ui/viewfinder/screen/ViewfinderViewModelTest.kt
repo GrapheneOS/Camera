@@ -19,6 +19,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderModeStripState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -269,13 +270,77 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
 
             assertEquals(CameraMode.CAMERA, stateHolder.state.value.mode)
             assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
-                    ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
-                    ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
-                ),
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable)),
                 effects,
             )
+            verify(exactly = 2) { modeSwitchDelegate.followCamera() }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_onAnotherMode_switchesTheCameraAndTheStripFollows() {
+        runTest {
+            val viewModel = createViewModel()
+            every { modeDelegate.select(any()) } returns true
+            stateHolder.update {
+                it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO))
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+
+            verifyOrder {
+                modeDelegate.select(CameraMode.VIDEO)
+                cameraDelegate.canBeginBind(forced = true)
+                modeSwitchDelegate.followCamera()
+            }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_backOnTheCurrentMode_cancelsTheSwitch() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.CAMERA))
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.CAMERA))
+
+            verify(exactly = 1) { modeSwitchDelegate.cancelSwitch() }
+            verify(exactly = 0) { modeDelegate.select(any()) }
+        }
+    }
+
+    @Test
+    fun modeStripSettled_somewhereTheStripIsNotHeaded_isIgnored() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.VIDEO))
+
+            stateHolder.update {
+                it.copy(modeStrip = ViewfinderModeStripState(pendingMode = CameraMode.VIDEO))
+            }
+
+            viewModel.onAction(CameraAction.ModeStripSettled(CameraMode.PORTRAIT))
+
+            verify(exactly = 0) { modeDelegate.select(any()) }
+            verify(exactly = 0) { modeSwitchDelegate.cancelSwitch() }
+        }
+    }
+
+    @Test
+    fun previewStreaming_reachesTheModeStrip() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStopped)
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verifyOrder {
+                modeSwitchDelegate.onPreviewStreaming(false)
+                modeSwitchDelegate.onPreviewStreaming(true)
+            }
         }
     }
 

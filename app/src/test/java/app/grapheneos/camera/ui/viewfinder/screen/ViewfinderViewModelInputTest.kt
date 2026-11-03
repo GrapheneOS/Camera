@@ -253,21 +253,49 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun settingsPanel_followsTheStatusBarTheButtonSwipesAndTheHost() {
+    fun settingsPanel_followsTheStatusBarTheButtonAndTheHost() {
         runTest {
             val viewModel = createViewModel()
 
             viewModel.onAction(SettingsAction.StatusBarClicked(QuickSetting.SELF_TIMER))
             viewModel.onAction(SettingsAction.QuickSettingsButtonClicked)
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
             viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
 
             verifyOrder {
                 settingsDelegate.openSettingsPanel(QuickSetting.SELF_TIMER)
                 settingsDelegate.openSettingsPanel()
-                gestureDelegate.onPreviewSwiped(SwipeDirection.UP)
                 settingsDelegate.onSettingsPanelVisibilityChanged(true)
             }
+        }
+    }
+
+    @Test
+    fun sidewaysSwipes_moveTheModeStrip() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(showsCameraModeTabs = true) }
+
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
+
+            verifyOrder {
+                modeSwitchDelegate.onAdjacentModeSwiped(1)
+                modeSwitchDelegate.onAdjacentModeSwiped(-1)
+            }
+        }
+    }
+
+    @Test
+    fun swipeUp_inQrMode_offersTheBarcodeFormats() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
+
+            assertEquals(listOf(ViewfinderScreenEffect.Settings.ShowQrFormats), effects)
+            verify(exactly = 0) { modeSwitchDelegate.onAdjacentModeSwiped(any()) }
         }
     }
 

@@ -65,7 +65,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.CloseScreen -> activity.finish()
             is Effect.Preview -> handlePreview(effect)
             is Effect.Settings -> handleSettings(effect)
-            is Effect.ModeTab -> handleModeTab(effect)
             is Effect.Gallery -> handleGallery(effect)
             is Effect.Location -> handleLocation(effect)
             is Effect.Picture -> handlePicture(effect)
@@ -162,25 +161,6 @@ internal class ViewfinderEffectHandlerImpl(
             activity = activity,
             barcodeFormats = activity.barcodeFormats,
         )
-    }
-
-    private fun handleModeTab(effect: Effect.ModeTab) {
-        when (effect) {
-            is Effect.ModeTab.SelectAdjacent -> selectAdjacentModeTab(effect.offset)
-            is Effect.ModeTab.GoTo -> goToModeTab(effect.mode)
-        }
-    }
-
-    private fun selectAdjacentModeTab(offset: Int) {
-        val tabLayout = activity.tabLayout
-
-        tabLayout.getTabAt(tabLayout.selectedTabPosition + offset)?.let(activity::finalizeMode)
-    }
-
-    private fun goToModeTab(mode: CameraMode) {
-        activity.tabLayout.getTabForMode(mode)?.let { tab ->
-            activity.tabLayout.goToTab(tab)
-        }
     }
 
     private fun handleGallery(effect: Effect.Gallery) {

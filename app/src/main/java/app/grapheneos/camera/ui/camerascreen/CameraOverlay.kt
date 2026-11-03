@@ -36,7 +36,6 @@ internal fun CameraOverlay(
     quickSettings: QuickSettingsScreenModel,
     sheetState: QuickSettingsSheetState,
     sheet: QuickSettingsNavKey?,
-    isTransitionShown: Boolean,
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
 ) {
@@ -47,7 +46,7 @@ internal fun CameraOverlay(
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
         val controlsShown = uiState.isSettingsPanelAvailable &&
             !uiState.capturedPreviewVisible &&
-            !isTransitionShown
+            !uiState.preview.lastFrameVisible
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (controlsShown) {

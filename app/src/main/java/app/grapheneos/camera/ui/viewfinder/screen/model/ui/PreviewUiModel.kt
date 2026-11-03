@@ -7,4 +7,6 @@ data class PreviewUiModel(
     val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,
     val sensorOrientationDegrees: Int? = null,
     val gridType: GridType = GridType.NONE,
+    val isStreaming: Boolean = false,
+    val lastFrameVisible: Boolean = false,
 )

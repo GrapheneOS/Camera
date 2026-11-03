@@ -12,9 +12,9 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
@@ -22,6 +22,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -57,7 +58,7 @@ open class ViewfinderViewModelTestBase {
     protected val screenWakeDelegate = mockk<ViewfinderScreenWakeDelegate>(relaxed = true)
     protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
     protected val dialogDelegate = mockk<ViewfinderDialogDelegate>(relaxed = true)
-    protected val gestureDelegate = mockk<ViewfinderGestureDelegate>(relaxed = true)
+    protected val modeSwitchDelegate = mockk<ViewfinderModeSwitchDelegate>(relaxed = true)
     protected val cameraControlsDelegate = mockk<ViewfinderCameraControlsDelegate>(
         relaxed = true,
     )
@@ -68,6 +69,7 @@ open class ViewfinderViewModelTestBase {
     protected val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true)
     protected val cameraBindSettingsMapper = mockk<CameraBindSettingsMapper>(relaxed = true)
     protected val volumeKeyActionMapper = mockk<VolumeKeyActionMapper>(relaxed = true)
+    private val swipeOutcomeMapper = SwipeOutcomeMapperImpl()
 
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
@@ -112,11 +114,12 @@ open class ViewfinderViewModelTestBase {
             screenWakeDelegate = screenWakeDelegate,
             galleryDelegate = galleryDelegate,
             dialogDelegate = dialogDelegate,
-            gestureDelegate = gestureDelegate,
+            modeSwitchDelegate = modeSwitchDelegate,
             previewControlsDelegate = previewControlsDelegate,
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,
             volumeKeyActionMapper = volumeKeyActionMapper,
+            swipeOutcomeMapper = swipeOutcomeMapper,
         )
 
         viewModels += viewModel

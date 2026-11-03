@@ -43,7 +43,6 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.PreviewTarget
-import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -250,7 +249,7 @@ open class MainActivity : AppCompatActivity() {
     internal val previewFrames: PreviewFrameHolder by lazy {
         PreviewFrameHolderImpl(
             previewView = previewView,
-            onLateFrame = ::showLateTransitionFrame,
+            onLateFrame = { renderer.refreshLastFrame() },
         )
     }
 
@@ -268,44 +267,9 @@ open class MainActivity : AppCompatActivity() {
         )
     }
 
-    // Whether the transition still is standing in for the preview.
-    private var transitionShown by mutableStateOf(false)
+    private lateinit var renderer: ViewfinderViewRenderer
 
     private lateinit var snackBar: Snackbar
-
-    // The blurred still that stands in for the preview whenever the camera is not streaming.
-    private fun showPreviewTransition() {
-        transitionShown = true
-        previewGrid.visibility = View.INVISIBLE
-
-        val lastFrame = previewFrames.lastFrame
-        if (lastFrame == null || this is CaptureActivity) return
-
-        // The still is of the camera being left behind, and the box under it takes the new camera's
-        // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's
-        // fitStart, which is there for the captured photo CaptureActivity shows in this same view,
-        // would leave a bar down the side of the preview until the new camera streams.
-        mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
-        setBlurBitmapCompat(mainOverlay, lastFrame)
-        mainOverlay.visibility = View.VISIBLE
-    }
-
-    private fun showLateTransitionFrame() {
-        if (transitionShown) {
-            showPreviewTransition()
-        }
-    }
-
-    private fun hidePreviewTransition() {
-        transitionShown = false
-        mainOverlay.visibility = View.INVISIBLE
-
-        if (viewfinder.uiState.value.mode.isQr) {
-            return
-        }
-
-        previewGrid.visibility = View.VISIBLE
-    }
 
     // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
     // handed a gesture once the scroll view has taken it back off the tab -- by which point a
@@ -415,8 +379,9 @@ open class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
-        val renderer = ViewfinderViewRenderer(
+        renderer = ViewfinderViewRenderer(
             activity = this,
+            onAction = viewfinder::onAction,
         )
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
@@ -492,7 +457,6 @@ open class MainActivity : AppCompatActivity() {
                     quickSettings = quickSettings,
                     sheetState = quickSettingsSheet,
                     sheet = quickSettingsNavigator.quickSettingsNavKey(),
-                    isTransitionShown = transitionShown,
                     insets = overlayInsets,
                     onSheetOpenChange = ::showSettingsPanel,
                 )
@@ -503,8 +467,9 @@ open class MainActivity : AppCompatActivity() {
 
         tabLayout.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
-                val tab = tabLayout.getTabAtX(tabLayout.scrollX)
-                finalizeMode(tab)
+                tabLayout.centredMode()?.let { mode ->
+                    viewfinder.onAction(CameraAction.ModeStripReleased(mode))
+                }
                 return@setOnTouchListener true
             }
 
@@ -512,12 +477,11 @@ open class MainActivity : AppCompatActivity() {
         }
 
         previewView.previewStreamState.observe(this) { state: StreamState ->
-            if (state == StreamState.STREAMING) {
-                hidePreviewTransition()
-                viewfinder.onAction(LifecycleAction.PreviewStreamingStarted)
-            } else {
-                showPreviewTransition()
+            val action = when (state) {
+                StreamState.STREAMING -> LifecycleAction.PreviewStreamingStarted
+                else -> LifecycleAction.PreviewStreamingStopped
             }
+            viewfinder.onAction(action)
         }
 
         var tapDownTimestamp: Long = 0
@@ -726,46 +690,6 @@ open class MainActivity : AppCompatActivity() {
 
     private fun renderSettingsPanel(open: Boolean) {
         viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
-    }
-
-    fun finalizeMode(tab: TabLayout.Tab? = null) {
-        // The strip is untouchable during a recording but not while its start sound still plays, and
-        // rebinding the camera there starts the queued recording on a dead recorder. The touch may
-        // already have dragged the strip, so put it back on the mode the camera is really in.
-        if (viewfinder.uiState.value.recording.isActive) {
-            tabLayout.getTabForMode(viewfinder.uiState.value.mode)?.let {
-                tabLayout.goToTab(it)
-            }
-            return
-        }
-
-        val selectedTab = tab ?: tabLayout.selectedTab
-        if (selectedTab != null) {
-            val mode = selectedTab.tag as CameraMode
-
-            // Blurred while the strip is still gliding, not once the camera has gone: the rebind
-            // holds the main thread for half a second, so a transition left to the stream state
-            // would only reach the screen after the wait it is there to explain. Guarded on the
-            // mode really changing, since nothing would rebind to take it back down again.
-            if (mode != viewfinder.uiState.value.mode) {
-                showPreviewTransition()
-            }
-
-            // switchMode() puts the strip on the mode the camera actually ended up in, which is a
-            // different one when an extension fails to bind.
-            tabLayout.goToTab(selectedTab) {
-                if (mode != viewfinder.uiState.value.mode) {
-                    viewfinder.onAction(CameraAction.ModeSelected(mode))
-                } else if (
-                    transitionShown &&
-                    previewView.previewStreamState.value == StreamState.STREAMING
-                ) {
-                    // A transition raised for a switch this tap has just cancelled, over a camera
-                    // that never stopped streaming: nothing is left to rebind and take it down.
-                    hidePreviewTransition()
-                }
-            }
-        }
     }
 
     private fun viewfinderCreationExtras(): CreationExtras {

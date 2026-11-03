@@ -11,6 +11,7 @@ import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
+import android.widget.ImageView
 import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -29,18 +30,22 @@ import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
+import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.color.MaterialColors
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -51,6 +56,7 @@ import kotlinx.coroutines.launch
 
 internal class ViewfinderViewRenderer(
     private val activity: MainActivity,
+    private val onAction: (ViewfinderAction) -> Unit,
 ) {
 
     private var renderedThumbnailLoaderVisible = false
@@ -67,6 +73,9 @@ internal class ViewfinderViewRenderer(
     private var renderedThumbnail: Bitmap? = null
     private var renderedFocusRingId: Int? = null
     private var renderedLensFacing: LensFacing? = null
+    private var renderedModeSelectionId: Int? = null
+    private var renderedLastFrameVisible: Boolean? = null
+    private var renderedStreaming: Boolean? = null
     private var isFocusRingRendered = false
     private var focusRingTimeout: Job? = null
 
@@ -109,6 +118,52 @@ internal class ViewfinderViewRenderer(
         activity.previewGrid.gridType = state.preview.gridType
 
         renderBoundPreview(state.preview)
+        renderLastFrame(preview = state.preview, isQrMode = state.mode.isQr)
+    }
+
+    fun refreshLastFrame() {
+        if (renderedLastFrameVisible == true) {
+            showLastFrame()
+        }
+    }
+
+    private fun renderLastFrame(
+        preview: PreviewUiModel,
+        isQrMode: Boolean,
+    ) {
+        // A camera that stops streaming under a frame already up puts the still up again, now over
+        // the frame held for the bind.
+        val isUnchanged = preview.lastFrameVisible == renderedLastFrameVisible &&
+            preview.isStreaming == renderedStreaming
+        renderedLastFrameVisible = preview.lastFrameVisible
+        renderedStreaming = preview.isStreaming
+
+        when {
+            isUnchanged -> Unit
+            preview.lastFrameVisible -> showLastFrame()
+            else -> hideLastFrame(isQrMode)
+        }
+    }
+
+    // The blurred still that stands in for the preview whenever the camera is not streaming.
+    private fun showLastFrame() {
+        activity.previewGrid.visibility = View.INVISIBLE
+
+        val lastFrame = activity.previewFrames.lastFrame
+        if (lastFrame == null || activity is CaptureActivity) return
+
+        // The still is of the camera being left behind, and the box under it takes the new camera's
+        // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's
+        // fitStart, which is there for the captured photo CaptureActivity shows in this same view,
+        // would leave a bar down the side of the preview until the new camera streams.
+        activity.mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
+        setBlurBitmapCompat(activity.mainOverlay, lastFrame)
+        activity.mainOverlay.visibility = View.VISIBLE
+    }
+
+    private fun hideLastFrame(isQrMode: Boolean) {
+        activity.mainOverlay.visibility = View.INVISIBLE
+        activity.previewGrid.visibility = visibleOrInvisible(!isQrMode)
     }
 
     private fun renderQr(qr: QrUiModel) {
@@ -371,15 +426,34 @@ internal class ViewfinderViewRenderer(
     private fun renderModeTabs(state: ViewfinderUiState) {
         activity.tabLayout.visibility = visibleOrInvisible(state.modeTabs.visible)
 
-        val availableModes = state.modeTabs.availableModes
+        renderModes(availableModes = state.modeTabs.availableModes, currentMode = state.mode)
+        renderModeSelection(state.modeTabs)
+    }
+
+    private fun renderModes(
+        availableModes: Set<CameraMode>,
+        currentMode: CameraMode,
+    ) {
         if (availableModes == renderedModes) return
         renderedModes = availableModes
 
         activity.tabLayout.setModes(
             modes = availableModes,
-            currentMode = state.mode,
-            onTabTouched = activity::finalizeMode,
+            currentMode = currentMode,
+            onModeTouched = { mode -> onAction(CameraAction.ModeStripReleased(mode)) },
         )
+    }
+
+    private fun renderModeSelection(modeTabs: ModeTabsUiModel) {
+        val isNewSelection = renderedModeSelectionId != null &&
+            modeTabs.selectionId != renderedModeSelectionId
+        renderedModeSelectionId = modeTabs.selectionId
+
+        if (!isNewSelection) return
+
+        activity.tabLayout.goToMode(modeTabs.selectedMode) {
+            onAction(CameraAction.ModeStripSettled(modeTabs.selectedMode))
+        }
     }
 
     private fun renderBoundPreview(preview: PreviewUiModel) {
