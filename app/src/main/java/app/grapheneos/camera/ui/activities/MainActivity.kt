@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpRect
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -710,13 +711,19 @@ open class MainActivity : AppCompatActivity() {
         overlay.viewTreeObserver.addOnGlobalLayoutListener {
             previewView.getDrawingRect(previewBounds)
             overlayParent.offsetDescendantRectToMyCoords(previewView, previewBounds)
+            previewBounds.offset(-overlay.left, -overlay.top)
 
             overlayInsets = with(Density(context = this)) {
                 CameraOverlayInsets(
-                    previewTop = previewBounds.top.toDp(),
+                    previewBounds = DpRect(
+                        left = previewBounds.left.toDp(),
+                        top = previewBounds.top.toDp(),
+                        right = previewBounds.right.toDp(),
+                        bottom = previewBounds.bottom.toDp(),
+                    ),
                     previewBottom = (overlay.height - previewBounds.bottom).toDp(),
-                    shutterRow = (overlay.height - threeButtons.top).toDp(),
-                    bottomRow = (overlay.height - binding.bottomRow.bottom).toDp(),
+                    shutterRow = (overlay.bottom - threeButtons.top).toDp(),
+                    bottomRow = (overlay.bottom - binding.bottomRow.bottom).toDp(),
                 )
             }
         }

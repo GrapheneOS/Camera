@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.components.motion.FADE_IN
 import app.grapheneos.camera.ui.components.motion.FADE_OUT
 import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
+import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysScreen
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
@@ -50,6 +51,10 @@ internal fun CameraOverlay(
             !isModeSwitching
 
         Box(modifier = Modifier.fillMaxSize()) {
+            PreviewOverlaysScreen(
+                previewBounds = insets.previewBounds,
+            )
+
             AnimatedVisibility(
                 visible = statusBarVisible,
                 enter = FADE_IN,
@@ -59,7 +64,7 @@ internal fun CameraOverlay(
                     statusBar = statusBar,
                     sheetState = sheetState,
                     enabled = controlsEnabled && statusBarVisible,
-                    height = insets.previewTop,
+                    height = insets.previewBounds.top,
                     onItemClick = { setting ->
                         viewfinder.onAction(SettingsAction.StatusBarClicked(setting))
                     },
@@ -81,7 +86,7 @@ internal fun CameraOverlay(
                 sheetState = sheetState,
                 visible = sheet != null,
                 insets = QuickSettingsInsets(
-                    previewTop = insets.previewTop,
+                    previewTop = insets.previewBounds.top,
                     previewBottom = insets.previewBottom,
                     shutterRow = insets.shutterRow,
                 ),
