@@ -12,9 +12,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
-import android.view.animation.RotateAnimation
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -324,26 +321,6 @@ open class MainActivity : AppCompatActivity() {
     override fun onUserInteraction() {
         super.onUserInteraction()
         viewfinder.onAction(LifecycleAction.ScreenInteracted)
-    }
-
-    fun animateLensSwitch() {
-        val rotation = when {
-            binding.flipCameraIcon.rotation < 180 -> 180f
-            else -> 360f
-        }
-
-        val rotate = RotateAnimation(
-            0f,
-            rotation,
-            Animation.RELATIVE_TO_SELF,
-            0.5f,
-            Animation.RELATIVE_TO_SELF,
-            0.5f,
-        )
-        rotate.duration = LENS_SWITCH_ANIMATION_DURATION
-        rotate.interpolator = LinearInterpolator()
-
-        flipCameraCircle.startAnimation(rotate)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -921,9 +898,5 @@ open class MainActivity : AppCompatActivity() {
             viewfinder.onAction(RecordingAction.RecordingStopRequested)
         }
         super.onStop()
-    }
-
-    private companion object {
-        const val LENS_SWITCH_ANIMATION_DURATION = 400L
     }
 }

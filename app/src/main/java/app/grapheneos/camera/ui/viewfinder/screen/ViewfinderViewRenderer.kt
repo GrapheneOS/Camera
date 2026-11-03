@@ -8,7 +8,9 @@ import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
+import android.view.animation.RotateAnimation
 import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -63,6 +65,7 @@ internal class ViewfinderViewRenderer(
     private val panelTextColor by lazy { panelTextColor() }
     private var renderedThumbnail: Bitmap? = null
     private var renderedFocusRingId: Int? = null
+    private var renderedLensSwitchFlipped: Boolean? = null
     private var isFocusRingRendered = false
     private var focusRingTimeout: Job? = null
 
@@ -126,6 +129,26 @@ internal class ViewfinderViewRenderer(
             icon = flipCamera.icon,
             description = flipCamera.description,
         )
+
+        if (renderedLensSwitchFlipped != null && flipCamera.flipped != renderedLensSwitchFlipped) {
+            spinFlipCamera()
+        }
+        renderedLensSwitchFlipped = flipCamera.flipped
+    }
+
+    private fun spinFlipCamera() {
+        val spin = RotateAnimation(
+            0f,
+            HALF_TURN_DEGREES,
+            Animation.RELATIVE_TO_SELF,
+            0.5f,
+            Animation.RELATIVE_TO_SELF,
+            0.5f,
+        )
+        spin.duration = LENS_SWITCH_DURATION
+        spin.interpolator = LinearInterpolator()
+
+        activity.flipCameraCircle.startAnimation(spin)
     }
 
     private fun renderThirdOption(thirdOption: ThirdOptionUiModel) {
@@ -504,6 +527,8 @@ internal class ViewfinderViewRenderer(
         private const val PANEL_FADE_OUT_DURATION = 300L
         private const val FOCUS_RING_FADE_DELAY = 500L
         private const val FOCUS_RING_FADE_DURATION = 300L
+        private const val LENS_SWITCH_DURATION = 400L
+        private const val HALF_TURN_DEGREES = 180f
         private const val LEVEL_LINE_THICKNESS_DP = 4
         private const val TILTED_LINE_THICKNESS_DP = 2
         private const val HORIZON_RANGE_DEGREES = 45

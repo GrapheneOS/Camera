@@ -219,6 +219,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun switchLens(extensionMode: ExtensionMode?): Boolean {
+        stateHolder.update { it.copy(isLensSwitchFlipped = !it.isLensSwitchFlipped) }
+
         val lensFacing = session.lensFacing.opposite()
         val isSupported = session.isLensFacingSupported(
             lensFacing = lensFacing,

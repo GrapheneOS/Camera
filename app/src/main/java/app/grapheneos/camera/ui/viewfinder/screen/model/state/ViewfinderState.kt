@@ -21,6 +21,7 @@ data class ViewfinderState(
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
     val session: ViewfinderSessionState = ViewfinderSessionState(),
+    val isLensSwitchFlipped: Boolean = false,
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
     val gallery: ViewfinderGalleryState = ViewfinderGalleryState(),
