@@ -433,8 +433,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             state.recording.isActive() -> setRecordingPaused(!state.recording.isPaused)
 
             else -> {
-                emitEffect(Effect.AnimateLensSwitch)
-
                 if (cameraDelegate.switchLens(state.mode.extensionMode)) {
                     startCamera(forced = true)
                 }

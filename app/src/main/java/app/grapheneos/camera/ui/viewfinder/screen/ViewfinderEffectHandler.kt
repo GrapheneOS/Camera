@@ -61,7 +61,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ShowMessage -> activity.showMessage(effect.message)
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
             is Effect.ShowQrResult -> showQrResult(effect.text)
-            is Effect.AnimateLensSwitch -> activity.animateLensSwitch()
             is Effect.PlayLevelHaptic -> playLevelHaptic()
             is Effect.CloseScreen -> activity.finish()
             is Effect.Preview -> handlePreview(effect)
