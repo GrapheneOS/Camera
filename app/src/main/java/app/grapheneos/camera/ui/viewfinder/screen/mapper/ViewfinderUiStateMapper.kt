@@ -135,8 +135,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
 
     private fun flipCamera(state: ViewfinderState): FlipCameraUiModel {
         val visible = !state.capture.isSelfTimerRunning()
-
-        return when {
+        val button = when {
             state.isQrMode() -> scanAllCodesToggle(state.settings.scanAllCodes)
 
             state.recording.isRecording() -> recordingPauseToggle(
@@ -146,6 +145,8 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
 
             else -> FlipCameraUiModel(visible = visible)
         }
+
+        return button.copy(flipped = state.isLensSwitchFlipped)
     }
 
     private fun scanAllCodesToggle(scanAllCodes: Boolean): FlipCameraUiModel {
