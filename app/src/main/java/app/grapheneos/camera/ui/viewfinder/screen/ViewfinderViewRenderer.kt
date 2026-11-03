@@ -97,6 +97,7 @@ internal class ViewfinderViewRenderer(
         renderKeepScreenOn(state.keepScreenOn)
         renderSelfIllumination(state.isSelfIlluminating)
         renderRotation(state.rotation)
+        renderSettingsPanelAvailability(state.isSettingsPanelAvailable)
     }
 
     fun renderZoom(zoom: ZoomUiState) {
@@ -146,6 +147,16 @@ internal class ViewfinderViewRenderer(
         // not flash the empty preview the unbind leaves behind. It is taken down from there.
         activity.mainOverlay.setImageBitmap(result.image)
         activity.mainOverlay.visibility = View.VISIBLE
+    }
+
+    fun reapplyPreviewRatio() {
+        val aspectRatio = renderedAspectRatio ?: return
+        val sensorOrientationDegrees = renderedSensorOrientationDegrees ?: return
+
+        activity.previewView.applyPreviewRatio(
+            aspectRatio = aspectRatio,
+            sensorOrientationDegrees = sensorOrientationDegrees,
+        )
     }
 
     fun refreshLastFrame() {
@@ -397,6 +408,10 @@ internal class ViewfinderViewRenderer(
             }
             start()
         }
+    }
+
+    private fun renderSettingsPanelAvailability(available: Boolean) {
+        activity.gestureHandler.isSettingsPanelAvailable = available
     }
 
     fun renderSettingsPanelFraction(fraction: Float) {

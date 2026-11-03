@@ -175,7 +175,7 @@ class ViewfinderRecordingFlowTest {
 
             assertEquals(0, recordingSession.startCount)
             assertFalse(state().recording.isActive())
-            assertFalse(ViewfinderScreenEffect.Recording.PlayStartSound in effects)
+            assertFalse(effects.any { it is ViewfinderScreenEffect.Recording.PlayStartSound })
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
     }
@@ -187,7 +187,7 @@ class ViewfinderRecordingFlowTest {
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(RecordingAction.RecordingRequested)
-            assertTrue(ViewfinderScreenEffect.Recording.PlayStartSound in effects)
+            assertTrue(effects.any { it is ViewfinderScreenEffect.Recording.PlayStartSound })
 
             viewModel.onAction(RecordingAction.RecordingStopRequested)
             viewModel.onAction(RecordingAction.StartSoundPlayed)

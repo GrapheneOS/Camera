@@ -64,6 +64,8 @@ interface ViewfinderCameraDelegate {
     fun dismissQrResult()
 
     fun capabilities(): CameraCapabilities
+
+    fun holdPreviewFrame()
     fun currentPreviewFrame(): Bitmap?
 }
 
@@ -267,6 +269,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     override fun capabilities(): CameraCapabilities {
         return session.capabilities()
+    }
+
+    override fun holdPreviewFrame() {
+        host?.previewFrames?.holdCurrentFrame()
     }
 
     override fun currentPreviewFrame(): Bitmap? {

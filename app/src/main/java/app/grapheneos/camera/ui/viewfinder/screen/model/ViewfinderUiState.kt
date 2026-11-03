@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
@@ -34,6 +33,5 @@ data class ViewfinderUiState(
     val isSelfIlluminating: Boolean = false,
     val isSettingsPanelAvailable: Boolean = false,
     val handlesVolumeKeys: Boolean = true,
-    val cameraSoundsEnabled: Boolean = SettingsDefaults.CAMERA_SOUNDS,
     val dialog: ViewfinderDialog? = null,
 )

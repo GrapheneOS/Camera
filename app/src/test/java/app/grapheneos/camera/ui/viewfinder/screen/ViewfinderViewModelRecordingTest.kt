@@ -135,17 +135,6 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun pause_outsideARecording_isIgnored() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-
-            verify(exactly = 0) { recordingDelegate.setPaused(paused = any()) }
-        }
-    }
-
-    @Test
     fun anUnusableOutput_isHandedToTheGallery() {
         runTest {
             createViewModel()
@@ -157,15 +146,30 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun anUnusableOutput_inACaptureSession_leavesTheStorageLocationAlone() {
+    fun screenStopped_whileRecording_holdsTheFrameAndStops() {
         runTest {
-            createViewModel(
-                entryPoint = cameraEntryPoint(isCaptureSession = true),
-            )
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
+            }
 
-            recordingEvents.emit(ViewfinderRecordingEvent.OutputUnavailable)
+            viewModel.onAction(LifecycleAction.ScreenStopped)
 
-            verify(exactly = 0) { galleryDelegate.onStorageLocationNotFound() }
+            verifyOrder {
+                cameraDelegate.holdPreviewFrame()
+                recordingDelegate.requestStop()
+            }
+        }
+    }
+
+    @Test
+    fun screenStopped_withoutARecording_leavesTheCameraAlone() {
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.onAction(LifecycleAction.ScreenStopped)
+
+            verify(exactly = 0) { cameraDelegate.holdPreviewFrame() }
+            verify(exactly = 0) { recordingDelegate.requestStop() }
         }
     }
 

@@ -139,7 +139,6 @@ open class MainActivity : AppCompatActivity() {
             context = this,
             onAction = viewfinder::onAction,
             settingsPanelDrag = SettingsPanelDragCallbacks(
-                isAvailable = { viewfinder.uiState.value.isSettingsPanelAvailable },
                 isShown = { !quickSettingsSheet.isHidden },
                 onDragStarted = quickSettingsSheet::startDrag,
                 onDragged = { delta -> quickSettingsSheet.drag(delta) },
@@ -312,6 +311,8 @@ open class MainActivity : AppCompatActivity() {
         return super.onKeyUp(keyCode, event)
     }
 
+    // Read synchronously: whether the key is consumed has to be answered here, and an unconsumed
+    // volume key changes the volume.
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val volumeKey = volumeKeyOf(keyCode)
         if (volumeKey == null || !viewfinder.uiState.value.handlesVolumeKeys) {
@@ -407,10 +408,7 @@ open class MainActivity : AppCompatActivity() {
 
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
-        tunePlayer = TunePlayer(
-            cameraSoundPlayer = cameraSoundPlayer,
-            soundsEnabled = { viewfinder.uiState.value.cameraSoundsEnabled },
-        )
+        tunePlayer = TunePlayer(cameraSoundPlayer = cameraSoundPlayer)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -781,13 +779,7 @@ open class MainActivity : AppCompatActivity() {
         // The preview follows the window; the capture use cases follow the sensor.
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
-        val preview = viewfinder.uiState.value.preview
-        preview.sensorOrientationDegrees?.let {
-            previewView.applyPreviewRatio(
-                aspectRatio = preview.aspectRatio,
-                sensorOrientationDegrees = it,
-            )
-        }
+        renderer.reapplyPreviewRatio()
     }
 
     private fun displayRotation(): Int {
@@ -816,11 +808,6 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         viewfinder.onAction(LifecycleAction.ScreenStopped)
-        // Stop explicitly rather than letting the unbind tear the recording down for us.
-        if (viewfinder.uiState.value.recording.isActive) {
-            previewFrames.holdCurrentFrame()
-            viewfinder.onAction(RecordingAction.RecordingStopRequested)
-        }
         super.onStop()
     }
 }

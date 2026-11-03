@@ -14,8 +14,8 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.permission.model.AppPermission
@@ -35,6 +35,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Locatio
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import kotlinx.coroutines.launch
 
 internal interface ViewfinderEffectHandler {
     fun handle(effect: Effect)
@@ -285,11 +286,7 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handleRecording(effect: Effect.Recording) {
         when (effect) {
-            is Effect.Recording.PlayStartSound -> {
-                activity.tunePlayer.playVRStartSound {
-                    onAction(RecordingAction.StartSoundPlayed)
-                }
-            }
+            is Effect.Recording.PlayStartSound -> playStartSound(effect.soundEnabled)
 
             is Effect.Recording.SaveFailed -> {
                 activity.showMessage(
@@ -302,6 +299,13 @@ internal class ViewfinderEffectHandlerImpl(
                     activity.getString(R.string.error_during_recording, effect.errorCode),
                 )
             }
+        }
+    }
+
+    private fun playStartSound(soundEnabled: Boolean) {
+        activity.lifecycleScope.launch {
+            activity.tunePlayer.playRecordingStartSound(soundEnabled)
+            onAction(RecordingAction.StartSoundPlayed)
         }
     }
 

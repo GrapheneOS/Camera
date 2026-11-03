@@ -114,9 +114,11 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         )
     }
 
-    // Not tied to the recording phase: the user may have paused before the recording actually
+    // Any active phase, not only RECORDING: the user may have paused before the recording actually
     // started.
     override fun setPaused(paused: Boolean) {
+        if (!stateHolder.state.value.recording.isActive()) return
+
         update { it.copy(isPaused = paused) }
         videoRecorder.setPaused(paused)
     }
@@ -164,10 +166,14 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
             is RecordedVideoEvent.OutputUnavailable -> onOutputUnavailable()
             is RecordedVideoEvent.Abandoned -> markStopped()
             is RecordedVideoEvent.Started -> update { it.copy(phase = RecordingPhase.RECORDING) }
-            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
-            is RecordedVideoEvent.ReadyToStart -> postEffect(Effect.Recording.PlayStartSound)
             is RecordedVideoEvent.Progressed -> update { it.copy(duration = event.duration) }
+            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
             is RecordedVideoEvent.Saved -> onRecordingSaved(event)
+
+            is RecordedVideoEvent.ReadyToStart -> {
+                val soundEnabled = stateHolder.state.value.settings.enableCameraSounds
+                postEffect(Effect.Recording.PlayStartSound(soundEnabled = soundEnabled))
+            }
 
             is RecordedVideoEvent.LocationUnavailable -> {
                 postEffect(Effect.ShowMessage(R.string.location_unavailable))
@@ -181,7 +187,9 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
     }
 
     private fun onOutputUnavailable() {
-        _recordingEvents.trySend(ViewfinderRecordingEvent.OutputUnavailable)
+        if (!stateHolder.state.value.isCaptureSession) {
+            _recordingEvents.trySend(ViewfinderRecordingEvent.OutputUnavailable)
+        }
 
         postEffect(Effect.ShowMessage(R.string.unable_to_access_output_file))
         markStopped()

@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
@@ -52,6 +53,7 @@ class ViewfinderRecordingDelegateTest {
         runTest {
             val delegate = createDelegate()
 
+            delegate.requestRecording()
             delegate.setPaused(paused = true)
             recorderEvents.emit(RecordedVideoEvent.Started)
 
@@ -243,7 +245,20 @@ class ViewfinderRecordingDelegateTest {
 
             assertEquals(RecordingPhase.RECORDING, recording().phase)
             assertEquals(5.seconds, recording().duration)
-            assertEquals(listOf(Effect.Recording.PlayStartSound), effects)
+            assertEquals(listOf(Effect.Recording.PlayStartSound(soundEnabled = true)), effects)
+        }
+    }
+
+    @Test
+    fun readyToStart_withCameraSoundsOff_startsSilently() {
+        runTest {
+            createDelegate()
+            val effects = collectEffects(stateHolder)
+            stateHolder.update { it.copy(settings = CameraSettings(enableCameraSounds = false)) }
+
+            recorderEvents.emit(RecordedVideoEvent.ReadyToStart)
+
+            assertEquals(listOf(Effect.Recording.PlayStartSound(soundEnabled = false)), effects)
         }
     }
 
@@ -319,6 +334,31 @@ class ViewfinderRecordingDelegateTest {
             )
 
             assertTrue(Effect.Recording.Interrupted(errorCode = 7) in effects)
+        }
+    }
+
+    @Test
+    fun pause_outsideARecording_isIgnored() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.setPaused(paused = true)
+
+            assertFalse(recording().isPaused)
+            verify(exactly = 0) { videoRecorder.setPaused(any()) }
+        }
+    }
+
+    @Test
+    fun anUnusableOutput_inACaptureSession_leavesTheStorageLocationAlone() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+            stateHolder.update { it.copy(isCaptureSession = true) }
+
+            recorderEvents.emit(RecordedVideoEvent.OutputUnavailable)
+
+            assertTrue(events.isEmpty())
         }
     }
 
