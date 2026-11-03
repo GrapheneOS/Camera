@@ -6,10 +6,14 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Vibrator
 import android.provider.MediaStore
+import android.view.animation.Transformation
+import android.widget.ImageView
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect.CaptureResult
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect.FlashPreview
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verifyOrder
@@ -19,17 +23,30 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderEffectHandlerTest {
 
     private val activity = mockk<MainActivity>(relaxed = true)
+    private val flashVisibility = mutableListOf<Boolean>()
     private val handler = ViewfinderEffectHandlerImpl(
         activity = activity,
         vibrator = mockk<Vibrator>(),
         capturedItemIntents = mockk(),
         onAction = {},
+        onPreviewFlashVisibilityChanged = { visible -> flashVisibility += visible },
     )
+
+    @Test
+    fun previewFlash_notifiesTheHostWhileTheOverlayIsVisible() {
+        verifyPreviewFlash(selfIlluminate = false)
+    }
+
+    @Test
+    fun selfIlluminatedFlash_notifiesTheHostWhileTheOverlayIsVisible() {
+        verifyPreviewFlash(selfIlluminate = true)
+    }
 
     @Test
     fun storedPhoto_returnsSuccessAndFinishes() {
@@ -39,6 +56,20 @@ class ViewfinderEffectHandlerTest {
             activity.setResult(Activity.RESULT_OK)
             activity.finish()
         }
+    }
+
+    private fun verifyPreviewFlash(selfIlluminate: Boolean) {
+        val overlay = ImageView(RuntimeEnvironment.getApplication())
+        every { activity.mainOverlay } returns overlay
+
+        handler.handle(FlashPreview(selfIlluminate = selfIlluminate))
+        val animation = requireNotNull(overlay.animation)
+
+        animation.getTransformation(0, Transformation())
+        assertEquals(listOf(true), flashVisibility)
+
+        animation.getTransformation(animation.duration, Transformation())
+        assertEquals(listOf(true, false), flashVisibility)
     }
 
     @Test

@@ -36,7 +36,9 @@ internal class StatusBarViewModel @Inject constructor(
         ),
     )
 
-    override val uiState: StateFlow<StatusBarUiState> = stateHolder.derive(uiStateMapper::map)
+    override val uiState: StateFlow<StatusBarUiState> = stateHolder.derive { state ->
+        uiStateMapper.map(state)
+    }
 
     init {
         viewModelScope.launch {

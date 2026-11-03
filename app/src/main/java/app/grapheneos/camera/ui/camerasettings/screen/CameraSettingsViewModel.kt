@@ -72,7 +72,9 @@ internal class CameraSettingsViewModel @Inject constructor(
         },
     )
 
-    override val uiState: StateFlow<CameraSettingsUiState> = stateHolder.derive(uiStateMapper::map)
+    override val uiState: StateFlow<CameraSettingsUiState> = stateHolder.derive { state ->
+        uiStateMapper.map(state)
+    }
 
     override val effects: Flow<Effect> = stateHolder.effects
     override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents

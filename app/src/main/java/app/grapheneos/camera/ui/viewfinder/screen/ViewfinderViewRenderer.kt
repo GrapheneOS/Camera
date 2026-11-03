@@ -122,14 +122,10 @@ internal class ViewfinderViewRenderer(
         val result = state.captureResult
 
         activity.previewView.visibility = visibleOrInvisible(!result.visible)
-        activity.previewGrid.gridType = state.preview.gridType
 
         renderBoundPreview(state.preview)
         renderCaptureResult(result)
-        renderLastFrame(
-            preview = state.preview,
-            isQrMode = state.mode.isQr,
-        )
+        renderLastFrame(state.preview)
     }
 
     private fun renderCaptureResult(result: CaptureResultUiModel) {
@@ -167,10 +163,7 @@ internal class ViewfinderViewRenderer(
         }
     }
 
-    private fun renderLastFrame(
-        preview: PreviewUiModel,
-        isQrMode: Boolean,
-    ) {
+    private fun renderLastFrame(preview: PreviewUiModel) {
         // A camera that stops streaming under a frame already up puts the still up again, now over
         // the frame held for the bind.
         val isUnchanged = preview.lastFrameVisible == renderedLastFrameVisible &&
@@ -182,14 +175,12 @@ internal class ViewfinderViewRenderer(
         when {
             isUnchanged -> Unit
             preview.lastFrameVisible -> showLastFrame()
-            else -> hideLastFrame(isQrMode)
+            else -> hideLastFrame()
         }
     }
 
     // The blurred still that stands in for the preview whenever the camera is not streaming.
     private fun showLastFrame() {
-        activity.previewGrid.visibility = View.INVISIBLE
-
         val lastFrame = activity.previewFrames.lastFrame
         if (lastFrame == null || !blursLastFrame) return
 
@@ -202,9 +193,8 @@ internal class ViewfinderViewRenderer(
         activity.mainOverlay.visibility = View.VISIBLE
     }
 
-    private fun hideLastFrame(isQrMode: Boolean) {
+    private fun hideLastFrame() {
         activity.mainOverlay.visibility = View.INVISIBLE
-        activity.previewGrid.visibility = visibleOrInvisible(!isQrMode)
     }
 
     private fun renderQr(qr: QrUiModel) {

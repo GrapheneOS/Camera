@@ -17,6 +17,7 @@ import app.grapheneos.camera.ui.components.motion.FADE_OUT
 import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysScreen
+import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysScreenModel
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
@@ -34,6 +35,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 @Composable
 internal fun CameraOverlay(
     viewfinder: ViewfinderScreenModel,
+    previewOverlays: PreviewOverlaysScreenModel,
     statusBar: StatusBarScreenModel,
     quickSettings: QuickSettingsScreenModel,
     sheetState: QuickSettingsSheetState,
@@ -53,6 +55,7 @@ internal fun CameraOverlay(
         Box(modifier = Modifier.fillMaxSize()) {
             PreviewOverlaysScreen(
                 previewBounds = insets.previewBounds,
+                screenModel = previewOverlays,
             )
 
             AnimatedVisibility(

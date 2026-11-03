@@ -60,7 +60,9 @@ internal class QuickSettingsViewModel @Inject constructor(
         ),
     )
 
-    override val uiState: StateFlow<QuickSettingsUiState> = stateHolder.derive(uiStateMapper::map)
+    override val uiState: StateFlow<QuickSettingsUiState> = stateHolder.derive { state ->
+        uiStateMapper.map(state)
+    }
 
     override val effects: Flow<Effect> = stateHolder.effects
 
