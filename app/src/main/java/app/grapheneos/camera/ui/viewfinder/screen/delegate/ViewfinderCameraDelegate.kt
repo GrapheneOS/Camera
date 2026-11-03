@@ -7,11 +7,11 @@ import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -219,8 +219,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun switchLens(extensionMode: ExtensionMode?): Boolean {
-        stateHolder.update { it.copy(isLensSwitchFlipped = !it.isLensSwitchFlipped) }
-
         val lensFacing = session.lensFacing.opposite()
         val isSupported = session.isLensFacingSupported(
             lensFacing = lensFacing,

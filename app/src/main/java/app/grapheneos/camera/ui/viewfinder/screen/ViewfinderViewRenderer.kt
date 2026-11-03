@@ -24,6 +24,7 @@ import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
@@ -65,7 +66,7 @@ internal class ViewfinderViewRenderer(
     private val panelTextColor by lazy { panelTextColor() }
     private var renderedThumbnail: Bitmap? = null
     private var renderedFocusRingId: Int? = null
-    private var renderedLensSwitchFlipped: Boolean? = null
+    private var renderedLensFacing: LensFacing? = null
     private var isFocusRingRendered = false
     private var focusRingTimeout: Job? = null
 
@@ -130,10 +131,10 @@ internal class ViewfinderViewRenderer(
             description = flipCamera.description,
         )
 
-        if (renderedLensSwitchFlipped != null && flipCamera.flipped != renderedLensSwitchFlipped) {
+        if (renderedLensFacing != null && flipCamera.lensFacing != renderedLensFacing) {
             spinFlipCamera()
         }
-        renderedLensSwitchFlipped = flipCamera.flipped
+        renderedLensFacing = flipCamera.lensFacing
     }
 
     private fun spinFlipCamera() {

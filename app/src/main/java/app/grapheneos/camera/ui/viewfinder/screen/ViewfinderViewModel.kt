@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -743,7 +743,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         settingsDelegate.selectModeSlot(
             ModeSlot(
                 mode = state().mode,
-                isFrontFacing = cameraDelegate.lensFacing == LensFacing.FRONT,
+                lensFacing = cameraDelegate.lensFacing,
             ),
         )
     }

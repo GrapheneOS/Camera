@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
 import android.view.Surface
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -21,7 +20,6 @@ data class ViewfinderState(
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
     val session: ViewfinderSessionState = ViewfinderSessionState(),
-    val isLensSwitchFlipped: Boolean = false,
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
     val gallery: ViewfinderGalleryState = ViewfinderGalleryState(),
@@ -79,9 +77,8 @@ data class ViewfinderState(
         return settings.gyroscopeSuggestions && isPhotoMode()
     }
 
-    fun selfIlluminate(): Boolean {
-        return modeSettings.selfIllumination &&
-            session.lensFacing == LensFacing.FRONT
+    fun selfIlluminates(): Boolean {
+        return modeSettings.selfIlluminates(session.lensFacing)
     }
 
     fun isSettingsPanelAvailable(): Boolean {

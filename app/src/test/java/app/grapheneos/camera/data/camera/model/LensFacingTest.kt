@@ -1,5 +1,6 @@
 package app.grapheneos.camera.data.camera.model
 
+import app.grapheneos.camera.data.core.model.LensFacing
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

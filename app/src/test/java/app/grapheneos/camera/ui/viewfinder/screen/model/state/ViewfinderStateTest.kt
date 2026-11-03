@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -102,9 +102,9 @@ class ViewfinderStateTest {
         val front = ViewfinderSessionState(lensFacing = LensFacing.FRONT)
         val back = ViewfinderSessionState(lensFacing = LensFacing.BACK)
 
-        assertTrue(state(modeSettings = enabled, session = front).selfIlluminate())
-        assertFalse(state(modeSettings = enabled, session = back).selfIlluminate())
-        assertFalse(state(session = front).selfIlluminate())
+        assertTrue(state(modeSettings = enabled, session = front).selfIlluminates())
+        assertFalse(state(modeSettings = enabled, session = back).selfIlluminates())
+        assertFalse(state(session = front).selfIlluminates())
     }
 
     @Test

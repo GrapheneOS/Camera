@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.settings.mapper
 
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -12,28 +13,22 @@ import javax.inject.Inject
 
 internal interface ModeSettingsMapper {
 
-    fun map(stored: StoredModeSettings, isFrontFacing: Boolean): ModeSettings
+    fun map(stored: StoredModeSettings, lensFacing: LensFacing): ModeSettings
 
     fun map(flashMode: FlashMode): StoredFlashMode
 }
 
 internal class ModeSettingsMapperImpl @Inject constructor() : ModeSettingsMapper {
 
-    override fun map(stored: StoredModeSettings, isFrontFacing: Boolean): ModeSettings {
-        val storedQuality = when {
-            isFrontFacing -> stored.videoQualityFront
-            else -> stored.videoQualityBack
-        }
-        val storedFrameRate = when {
-            isFrontFacing -> stored.frameRateFront
-            else -> stored.frameRateBack
-        }
-
+    override fun map(
+        stored: StoredModeSettings,
+        lensFacing: LensFacing,
+    ): ModeSettings {
         return ModeSettings(
             flashMode = mapFlashMode(stored.flashMode),
             selfIllumination = stored.selfIllumination ?: SettingsDefaults.SELF_ILLUMINATION,
-            videoQuality = mapVideoQuality(storedQuality),
-            videoFrameRate = mapVideoFrameRate(storedFrameRate),
+            videoQuality = mapVideoQuality(stored.videoQuality(lensFacing)),
+            videoFrameRate = mapVideoFrameRate(stored.frameRate(lensFacing)),
         )
     }
 

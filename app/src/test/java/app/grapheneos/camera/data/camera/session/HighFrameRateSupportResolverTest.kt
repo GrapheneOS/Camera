@@ -9,8 +9,8 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateProbeKey
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.LensFacing
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals

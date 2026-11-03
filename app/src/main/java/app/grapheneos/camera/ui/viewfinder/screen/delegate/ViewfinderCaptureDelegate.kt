@@ -353,7 +353,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             playCameraSound(CameraSound.SHUTTER)
         }
 
-        postEffect(Effect.Preview.Flash(stateHolder.state.value.selfIlluminate()))
+        postEffect(Effect.Preview.Flash(stateHolder.state.value.selfIlluminates()))
     }
 
     private fun onPictureThumbnailReady(thumbnail: Bitmap?) {

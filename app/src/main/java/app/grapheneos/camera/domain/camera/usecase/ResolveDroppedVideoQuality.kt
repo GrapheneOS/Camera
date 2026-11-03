@@ -2,7 +2,7 @@ package app.grapheneos.camera.domain.camera.usecase
 
 import androidx.camera.core.featuregroup.GroupableFeature
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
-import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoQuality
 import javax.inject.Inject
 

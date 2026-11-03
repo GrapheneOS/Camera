@@ -2,9 +2,9 @@ package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
@@ -29,8 +29,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
 
         return QuickSettingsUiState(
             isVideoMode = camera.isVideoMode,
-            isSelfIlluminating = camera.lensFacing == LensFacing.FRONT &&
-                state.modeSettings.selfIllumination,
+            isSelfIlluminating = state.modeSettings.selfIlluminates(camera.lensFacing),
             flash = flash(
                 state = state,
                 camera = camera,

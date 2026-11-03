@@ -151,13 +151,11 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun flipCameraClicked_towardsAnUnavailableLens_doesNotRebind() {
         runTest {
             val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
             every { cameraDelegate.switchLens(extensionMode = any()) } returns false
 
             viewModel.onAction(CameraAction.FlipCameraClicked)
 
             verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
-            assertEquals(listOf(ViewfinderScreenEffect.AnimateLensSwitch), effects)
         }
     }
 

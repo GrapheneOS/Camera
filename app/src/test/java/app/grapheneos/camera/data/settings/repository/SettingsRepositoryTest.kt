@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
@@ -64,7 +65,7 @@ class SettingsRepositoryTest {
     private val dataStore: DataStore<SettingsPrefs> = InMemoryDataStore(SettingsPrefs())
 
     private val modeSettingsMapper: ModeSettingsMapper = mockk {
-        every { map(stored = any(), isFrontFacing = any()) } returns ModeSettings()
+        every { map(stored = any(), lensFacing = any()) } returns ModeSettings()
     }
 
     private val storedVideoQualityMapper: StoredVideoQualityMapper = mockk {
@@ -223,13 +224,13 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             every {
-                modeSettingsMapper.map(stored = any(), isFrontFacing = any())
+                modeSettingsMapper.map(stored = any(), lensFacing = any())
             } returns MAPPER_RESULT
 
             val selected = repository.modeSettings(FRONT_SLOT)
 
             verify(exactly = 1) {
-                modeSettingsMapper.map(stored = StoredModeSettings(), isFrontFacing = true)
+                modeSettingsMapper.map(stored = StoredModeSettings(), lensFacing = LensFacing.FRONT)
             }
             confirmVerified(modeSettingsMapper)
             assertEquals(MAPPER_RESULT, selected)
@@ -335,7 +336,7 @@ class SettingsRepositoryTest {
     @Test
     fun observeModeSettings_followsWritesToThatSlotOnly() {
         runTest {
-            every { modeSettingsMapper.map(stored = any(), isFrontFacing = any()) } answers {
+            every { modeSettingsMapper.map(stored = any(), lensFacing = any()) } answers {
                 val stored = firstArg<StoredModeSettings>()
 
                 ModeSettings(selfIllumination = stored.selfIllumination == true)
@@ -408,7 +409,7 @@ class SettingsRepositoryTest {
 
     private fun lastMappedMode(): StoredModeSettings {
         val mapped = mutableListOf<StoredModeSettings>()
-        verify { modeSettingsMapper.map(stored = capture(mapped), isFrontFacing = any()) }
+        verify { modeSettingsMapper.map(stored = capture(mapped), lensFacing = any()) }
         return mapped.last()
     }
 
@@ -435,9 +436,9 @@ class SettingsRepositoryTest {
         val MODE = CameraMode.VIDEO
         val OTHER_MODE = CameraMode.CAMERA
 
-        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
-        val FRONT_SLOT = ModeSlot(mode = MODE, isFrontFacing = true)
-        val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, isFrontFacing = false)
+        val SLOT = ModeSlot(mode = MODE, lensFacing = LensFacing.BACK)
+        val FRONT_SLOT = ModeSlot(mode = MODE, lensFacing = LensFacing.FRONT)
+        val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, lensFacing = LensFacing.BACK)
 
         val MAPPER_RESULT = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
 

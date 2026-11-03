@@ -64,7 +64,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             rotation = rotation(state),
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
             keepScreenOn = isRecordingActive || state.keepsScreenAwake,
-            isSelfIlluminating = state.selfIlluminate(),
+            isSelfIlluminating = state.selfIlluminates(),
             isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
             cameraSoundsEnabled = state.settings.enableCameraSounds,
@@ -146,7 +146,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             else -> FlipCameraUiModel(visible = visible)
         }
 
-        return button.copy(flipped = state.isLensSwitchFlipped)
+        return button.copy(lensFacing = state.session.lensFacing)
     }
 
     private fun scanAllCodesToggle(scanAllCodes: Boolean): FlipCameraUiModel {

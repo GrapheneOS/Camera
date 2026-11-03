@@ -5,11 +5,11 @@ import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -286,8 +286,8 @@ class QuickSettingsViewModelTest {
             videoQualities = listOf(VideoQuality.FHD, VideoQuality.HD),
         )
 
-        val PHOTO_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
-        val FRONT_VIDEO_SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = true)
+        val PHOTO_SLOT = ModeSlot(mode = CameraMode.CAMERA, lensFacing = LensFacing.BACK)
+        val FRONT_VIDEO_SLOT = ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.FRONT)
 
         val STORED_FRONT_VIDEO = ModeSettings(videoQuality = VideoQuality.HD)
     }

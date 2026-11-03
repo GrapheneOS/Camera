@@ -35,7 +35,6 @@ import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
@@ -47,6 +46,7 @@ import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityReposit
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.di.core.CameraSessionScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.di.core.MainLooperDispatcher

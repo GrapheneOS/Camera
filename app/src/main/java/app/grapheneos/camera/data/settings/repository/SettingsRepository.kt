@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.settings.repository
 
 import androidx.datastore.core.DataStore
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
@@ -98,7 +99,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
                     stored = prefs.mode(slot.mode),
                     current = current,
                     updated = updated,
-                    isFrontFacing = slot.isFrontFacing,
+                    lensFacing = slot.lensFacing,
                 ),
             )
         }
@@ -121,7 +122,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
         stored: StoredModeSettings,
         current: ModeSettings,
         updated: ModeSettings,
-        isFrontFacing: Boolean,
+        lensFacing: LensFacing,
     ): StoredModeSettings {
         val framesPerSecond = updated.videoFrameRate.framesPerSecond
         val flashMode = when (updated.flashMode) {
@@ -136,22 +137,20 @@ internal class SettingsRepositoryImpl @Inject constructor(
             flashMode = flashMode,
             selfIllumination = selfIllumination,
         )
-        val withQuality = when {
-            updated.videoQuality == current.videoQuality -> withSwitches
-
-            isFrontFacing -> withSwitches.copy(
-                videoQualityFront = storedVideoQualityMapper.map(updated.videoQuality),
-            )
-
-            else -> withSwitches.copy(
-                videoQualityBack = storedVideoQualityMapper.map(updated.videoQuality),
+        val withQuality = when (updated.videoQuality) {
+            current.videoQuality -> withSwitches
+            else -> withSwitches.withVideoQuality(
+                lensFacing = lensFacing,
+                quality = storedVideoQualityMapper.map(updated.videoQuality),
             )
         }
 
-        return when {
-            updated.videoFrameRate == current.videoFrameRate -> withQuality
-            isFrontFacing -> withQuality.copy(frameRateFront = framesPerSecond)
-            else -> withQuality.copy(frameRateBack = framesPerSecond)
+        return when (updated.videoFrameRate) {
+            current.videoFrameRate -> withQuality
+            else -> withQuality.withFrameRate(
+                lensFacing = lensFacing,
+                framesPerSecond = framesPerSecond,
+            )
         }
     }
 
@@ -161,7 +160,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
     ): ModeSettings {
         return modeSettingsMapper.map(
             stored = prefs.mode(slot.mode),
-            isFrontFacing = slot.isFrontFacing,
+            lensFacing = slot.lensFacing,
         )
     }
 

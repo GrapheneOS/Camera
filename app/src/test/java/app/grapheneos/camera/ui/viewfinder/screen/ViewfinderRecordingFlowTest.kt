@@ -3,13 +3,13 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.net.Uri
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -250,7 +250,7 @@ class ViewfinderRecordingFlowTest {
 
     private fun TestScope.assertVideoOnlyModeAndSettings(isCaptureSession: Boolean) {
         prepareVideoOnlyCamera()
-        val videoSlot = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = true)
+        val videoSlot = ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.FRONT)
         val videoSettings = ModeSettings(
             flashMode = FlashMode.ON,
             selfIllumination = true,
@@ -274,7 +274,7 @@ class ViewfinderRecordingFlowTest {
         viewModel.onAction(LifecycleAction.ScreenResumed)
         viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
-        assertTrue(state().selfIlluminate())
+        assertTrue(state().selfIlluminates())
         verify { settingsRepository.modeSettings(videoSlot) }
         verify(exactly = 0) {
             settingsRepository.modeSettings(match { it.mode != CameraMode.VIDEO })

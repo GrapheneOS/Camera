@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.statusbar.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
@@ -19,8 +18,7 @@ internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiSta
 
     override fun map(state: StatusBarState): StatusBarUiState {
         val camera = state.boundCamera ?: return StatusBarUiState()
-        val isSelfIlluminating = camera.lensFacing == LensFacing.FRONT &&
-            state.modeSettings.selfIllumination
+        val isSelfIlluminating = state.modeSettings.selfIlluminates(camera.lensFacing)
 
         return StatusBarUiState(
             items = items(

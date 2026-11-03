@@ -2,12 +2,12 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -373,8 +373,8 @@ class ViewfinderSettingsDelegateTest {
             ),
         )
 
-        val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
-        val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
+        val SLOT = ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.BACK)
+        val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, lensFacing = LensFacing.BACK)
         val SLOTTED = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
     }
 }
