@@ -4,7 +4,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.testutil.cameraEntryPoint
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -12,6 +12,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
@@ -148,6 +149,55 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
+    fun heldShutter_blocksPhotoInputsUntilReleased() {
+        runTest {
+            every { cameraDelegate.isCameraReady } returns true
+            val viewModel = createViewModel(entryPoint = cameraEntryPoint(isCaptureSession = true))
+            stateHolder.update {
+                it.copy(
+                    session = it.session.copy(canTakePicture = true),
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
+            }
+
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+            viewModel.onAction(CaptureAction.ShutterClicked)
+
+            verify(exactly = 0) { captureDelegate.takePreviewPicture() }
+            verify(exactly = 0) { captureDelegate.takePicture() }
+
+            stateHolder.update { it.copy(capture = it.capture.copy(isShutterHeld = false)) }
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+
+            verify(exactly = 1) { captureDelegate.takePreviewPicture() }
+        }
+    }
+
+    @Test
+    fun heldShutter_blocksStartingTheCountdown() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(
+                    settings = CameraSettings(selfTimerDuration = 3.seconds),
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
+            }
+
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+
+            verify(exactly = 0) { captureDelegate.startSelfTimer() }
+
+            stateHolder.update { it.copy(capture = it.capture.copy(isShutterHeld = false)) }
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+
+            verify(exactly = 1) { captureDelegate.startSelfTimer() }
+        }
+    }
+
+    @Test
     fun flipCameraClicked_towardsAnUnavailableLens_doesNotRebind() {
         runTest {
             val viewModel = createViewModel()
@@ -272,6 +322,12 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun sidewaysSwipes_moveTheModeStrip() {
         runTest {
+            every {
+                swipeOutcomeMapper.map(direction = SwipeDirection.LEFT, state = any())
+            } returns SwipeOutcome.SelectAdjacentMode(offset = 1)
+            every {
+                swipeOutcomeMapper.map(direction = SwipeDirection.RIGHT, state = any())
+            } returns SwipeOutcome.SelectAdjacentMode(offset = -1)
             val viewModel = createViewModel()
             stateHolder.update { it.copy(showsCameraModeTabs = true) }
 
@@ -288,6 +344,9 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun swipeUp_inQrMode_offersTheBarcodeFormats() {
         runTest {
+            every {
+                swipeOutcomeMapper.map(direction = SwipeDirection.UP, state = any())
+            } returns SwipeOutcome.ShowQrFormats
             val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
             val effects = collectEffects(viewModel)

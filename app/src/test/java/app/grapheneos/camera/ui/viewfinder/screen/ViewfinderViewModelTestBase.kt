@@ -22,7 +22,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -69,7 +69,7 @@ open class ViewfinderViewModelTestBase {
     protected val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true)
     protected val cameraBindSettingsMapper = mockk<CameraBindSettingsMapper>(relaxed = true)
     protected val volumeKeyActionMapper = mockk<VolumeKeyActionMapper>(relaxed = true)
-    private val swipeOutcomeMapper = SwipeOutcomeMapperImpl()
+    protected val swipeOutcomeMapper = mockk<SwipeOutcomeMapper>()
 
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()

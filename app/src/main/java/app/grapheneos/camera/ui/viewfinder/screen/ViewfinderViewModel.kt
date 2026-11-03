@@ -485,7 +485,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         when {
             state.modeStrip.pendingMode != mode -> Unit
-            mode != state.mode -> switchMode(mode)
+            mode != state.mode && mode in state.session.availableModes -> switchMode(mode)
             else -> modeSwitchDelegate.cancelSwitch()
         }
     }
@@ -509,6 +509,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         val state = state()
 
         when {
+            state.capture.isShutterHeld -> Unit
             state.isVideoMode() -> toggleRecording(state)
             state.isQrMode() -> cameraDelegate.toggleTorch()
             state.settings.selfTimerDuration == Duration.ZERO -> takePicture()
@@ -564,7 +565,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         val state = state()
 
         when {
-            !cameraDelegate.isCameraReady -> Unit
+            state.capture.isShutterHeld || !cameraDelegate.isCameraReady -> Unit
 
             !state.session.canTakePicture -> {
                 emitEffect(
@@ -596,7 +597,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun startRecording() {
         val state = state()
 
-        if (!cameraDelegate.canRecord || state.recording.isActive()) {
+        if (state.capture.isShutterHeld || !cameraDelegate.canRecord || state.recording.isActive()) {
             return
         }
 

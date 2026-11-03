@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 
 internal class ViewfinderNavigationCallbacks(

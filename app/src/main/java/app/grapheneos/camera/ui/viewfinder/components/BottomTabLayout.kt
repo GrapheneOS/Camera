@@ -25,6 +25,7 @@ class BottomTabLayout @JvmOverloads constructor(
     private var suppressScroll = false
 
     private var onSettled: Runnable? = null
+    private val settleCompletion = Runnable { completeSettle() }
 
     private val scroller = ValueAnimator().apply {
         interpolator = AnimationUtils.loadInterpolator(
@@ -72,14 +73,14 @@ class BottomTabLayout @JvmOverloads constructor(
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            cancelSettle()
+            pauseSettle()
         }
 
         val isHandled = super.dispatchTouchEvent(ev)
 
         // Only a lifted finger commits a mode, so nothing else would put the strip back.
         if (ev.actionMasked == MotionEvent.ACTION_CANCEL) {
-            selectedTab?.let(::goToTab)
+            selectedTab?.let { goToTab(tab = it, onSettled = onSettled) }
         }
 
         return isHandled
@@ -88,7 +89,10 @@ class BottomTabLayout @JvmOverloads constructor(
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
-        if (tabCount == 0) return
+        if (tabCount == 0) {
+            postSettleCompletion()
+            return
+        }
 
         val tabParent = getChildAt(0) as ViewGroup
         tabParent.setPaddingRelative(
@@ -113,8 +117,9 @@ class BottomTabLayout @JvmOverloads constructor(
         // there is nothing to animate from.
         tabCenters.clear()
         tabCenters.addAll(centers)
-        cancelSettle()
+        pauseSettle()
         setScrollPosition(selectedTabPosition, 0f, true)
+        postSettleCompletion()
     }
 
     override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
@@ -145,16 +150,17 @@ class BottomTabLayout @JvmOverloads constructor(
         drawSelectionAtScroll(scrollX)
 
         cancelSettle()
+        this.onSettled = onSettled
 
         val target = tabCenters.getOrNull(tab.position) ?: run {
-            onSettled?.run()
+            requestLayout()
             return
         }
 
         val duration = settleDuration(abs(target - scrollX))
         if (duration == 0L || !ValueAnimator.areAnimatorsEnabled()) {
             scrollTo(target, 0)
-            onSettled?.run()
+            completeSettle()
             return
         }
 
@@ -162,9 +168,8 @@ class BottomTabLayout @JvmOverloads constructor(
         scroller.setIntValues(scrollX, target)
         scroller.start()
 
-        onSettled?.let {
-            this.onSettled = it
-            postDelayed(it, duration)
+        if (onSettled != null) {
+            postDelayed(settleCompletion, duration)
         }
     }
 
@@ -173,16 +178,30 @@ class BottomTabLayout @JvmOverloads constructor(
             scroller.end()
         }
 
-        val settled = onSettled ?: return
-        onSettled = null
-        removeCallbacks(settled)
+        completeSettle()
+    }
 
-        settled.run()
+    private fun completeSettle() {
+        val settled = onSettled
+        onSettled = null
+        removeCallbacks(settleCompletion)
+        settled?.run()
+    }
+
+    private fun postSettleCompletion() {
+        if (onSettled != null) {
+            removeCallbacks(settleCompletion)
+            post(settleCompletion)
+        }
+    }
+
+    private fun pauseSettle() {
+        scroller.cancel()
+        removeCallbacks(settleCompletion)
     }
 
     private fun cancelSettle() {
-        scroller.cancel()
-        onSettled?.let { removeCallbacks(it) }
+        pauseSettle()
         onSettled = null
     }
 
@@ -247,6 +266,8 @@ class BottomTabLayout @JvmOverloads constructor(
 
         Log.i(TAG, "Refreshing tabs...")
 
+        pauseSettle()
+        tabCenters.clear()
         removeAllTabs()
 
         modes.forEach { mode ->
@@ -261,8 +282,6 @@ class BottomTabLayout @JvmOverloads constructor(
                 }
                 tab.tag = mode
 
-                // Highlight the mode the camera is really in, not the default one: the tabs are
-                // also rebuilt long after startup, once the extension probes report back.
                 addTab(tab, mode == currentMode)
             }
         }

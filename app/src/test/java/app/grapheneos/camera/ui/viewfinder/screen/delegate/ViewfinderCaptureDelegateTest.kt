@@ -524,6 +524,27 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun heldShutter_blocksDirectTimerStartsUntilReleased() {
+        runTest {
+            val delegate = createDelegate()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
+            }
+            delegate.holdShutter()
+
+            delegate.startSelfTimer()
+
+            assertFalse(capture().isSelfTimerRunning())
+
+            advanceTimeBy(1.seconds)
+            runCurrent()
+            delegate.startSelfTimer()
+
+            assertEquals(SELF_TIMER, capture().selfTimerRemaining)
+        }
+    }
+
+    @Test
     fun selfTimer_withTimerLight_blinksOnceThenTwiceAndLeavesTheLastSecondDark() {
         runTest {
             val delegate = createDelegate()
