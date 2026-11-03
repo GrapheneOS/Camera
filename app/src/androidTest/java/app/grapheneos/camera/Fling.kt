@@ -33,7 +33,12 @@ private fun fling(activity: MainActivity, startX: Float, stepPx: Float) {
     for (step in 1..STEPS) {
         val action = if (step == STEPS) MotionEvent.ACTION_UP else MotionEvent.ACTION_MOVE
         events += MotionEvent.obtain(
-            downTime, downTime + step * STEP_MS, action, startX + step * stepPx, 0f, 0
+            downTime,
+            downTime + step * STEP_MS,
+            action,
+            startX + step * stepPx,
+            0f,
+            0
         )
     }
 

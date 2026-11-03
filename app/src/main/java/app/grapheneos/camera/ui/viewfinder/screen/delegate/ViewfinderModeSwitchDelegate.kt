@@ -2,13 +2,18 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 
 interface ViewfinderModeSwitchDelegate {
 
     fun bind(stateHolder: ViewfinderStateHolder)
 
-    fun onAdjacentModeSwiped(offset: Int)
+    fun onPreviewSwiped(direction: SwipeDirection)
     fun onStripDragged()
     fun onStripTouchCancelled()
     fun onStripReleased(mode: CameraMode)
@@ -19,17 +24,37 @@ interface ViewfinderModeSwitchDelegate {
     fun onPreviewStreaming(streaming: Boolean)
 }
 
-internal class ViewfinderModeSwitchDelegateImpl @Inject constructor() :
-    ViewfinderModeSwitchDelegate {
+internal class ViewfinderModeSwitchDelegateImpl @Inject constructor(
+    private val swipeOutcomeMapper: SwipeOutcomeMapper,
+) : ViewfinderModeSwitchDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
+
+    private val state: ViewfinderState
+        get() = stateHolder.state.value
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
         this.stateHolder = stateHolder
     }
 
-    override fun onAdjacentModeSwiped(offset: Int) {
-        adjacentMode(offset)?.let(::onStripReleased)
+    override fun onPreviewSwiped(direction: SwipeDirection) {
+        val outcome = swipeOutcomeMapper.map(
+            direction = direction,
+            state = state,
+        )
+
+        when (outcome) {
+            null -> Unit
+
+            is SwipeOutcome.ShowQrFormats -> {
+                stateHolder.postEffect(Effect.ShowQrFormats)
+            }
+
+            is SwipeOutcome.SelectAdjacentMode -> {
+                val cameraMode = adjacentMode(outcome.offset) ?: return
+                onStripReleased(cameraMode)
+            }
+        }
     }
 
     override fun onStripDragged() {
@@ -45,8 +70,6 @@ internal class ViewfinderModeSwitchDelegateImpl @Inject constructor() :
     }
 
     override fun onStripReleased(mode: CameraMode) {
-        val state = stateHolder.state.value
-
         // The strip is untouchable during a recording but not while its start sound still plays,
         // and rebinding the camera there starts the queued recording on a dead recorder. The touch
         // may already have dragged the strip, so put it back on the mode the camera is really in.
@@ -108,7 +131,6 @@ internal class ViewfinderModeSwitchDelegateImpl @Inject constructor() :
     }
 
     private fun adjacentMode(offset: Int): CameraMode? {
-        val state = stateHolder.state.value
         val modes = state.session.availableModes.toList()
         val index = modes.indexOf(state.modeStripTarget()).takeIf { it >= 0 } ?: return null
 

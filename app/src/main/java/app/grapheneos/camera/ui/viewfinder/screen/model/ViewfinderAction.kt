@@ -32,18 +32,6 @@ sealed interface ViewfinderAction {
             val mode: CameraMode,
         ) : CameraAction
 
-        data object ModeStripDragged : CameraAction
-
-        data object ModeStripTouchCancelled : CameraAction
-
-        data class ModeStripReleased(
-            val mode: CameraMode,
-        ) : CameraAction
-
-        data class ModeStripSettled(
-            val mode: CameraMode,
-        ) : CameraAction
-
         data class DisplayRotationChanged(
             val rotation: Int,
         ) : CameraAction
@@ -55,6 +43,21 @@ sealed interface ViewfinderAction {
             ) : ZoomStepKey
 
             data object Released : ZoomStepKey
+        }
+
+        sealed interface ModeStrip : CameraAction {
+
+            data object Dragged : ModeStrip
+
+            data object TouchCancelled : ModeStrip
+
+            data class Released(
+                val mode: CameraMode,
+            ) : ModeStrip
+
+            data class Settled(
+                val mode: CameraMode,
+            ) : ModeStrip
         }
 
         sealed interface Preview : CameraAction {

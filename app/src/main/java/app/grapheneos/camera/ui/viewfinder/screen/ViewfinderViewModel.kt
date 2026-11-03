@@ -26,7 +26,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
@@ -46,8 +45,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
@@ -94,7 +91,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val previewControlsDelegate: ViewfinderPreviewControlsDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
-    private val swipeOutcomeMapper: SwipeOutcomeMapper,
     uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
     ViewfinderScreenModel {
@@ -126,6 +122,9 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     override val effects: Flow<Effect> = stateHolder.effects
     override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents
+
+    private val state: ViewfinderState
+        get() = stateHolder.state.value
 
     private var resumedWork: Job? = null
 
@@ -228,10 +227,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onCameraAction(action: CameraAction) {
         when (action) {
             is CameraAction.ModeSelected -> switchMode(action.mode)
-            is CameraAction.ModeStripDragged -> modeSwitchDelegate.onStripDragged()
-            is CameraAction.ModeStripTouchCancelled -> modeSwitchDelegate.onStripTouchCancelled()
-            is CameraAction.ModeStripReleased -> modeSwitchDelegate.onStripReleased(action.mode)
-            is CameraAction.ModeStripSettled -> onModeStripSettled(action.mode)
+            is CameraAction.ModeStrip -> onModeStripAction(action)
             is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
             is CameraAction.ZoomStepKey -> onZoomStepKey(action)
             is CameraAction.Preview -> onPreviewAction(action)
@@ -271,7 +267,7 @@ class ViewfinderViewModel @AssistedInject constructor(
                 volumeKeyActionMapper
                     .map(
                         event = action,
-                        volumeKeyAction = state().settings.volumeKeyAction,
+                        volumeKeyAction = state.settings.volumeKeyAction,
                     )
                     ?.let(::onAction)
             }
@@ -368,12 +364,21 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
+    private fun onModeStripAction(action: CameraAction.ModeStrip) {
+        when (action) {
+            is CameraAction.ModeStrip.Dragged -> modeSwitchDelegate.onStripDragged()
+            is CameraAction.ModeStrip.TouchCancelled -> modeSwitchDelegate.onStripTouchCancelled()
+            is CameraAction.ModeStrip.Released -> modeSwitchDelegate.onStripReleased(action.mode)
+            is CameraAction.ModeStrip.Settled -> onModeStripSettled(action.mode)
+        }
+    }
+
     private fun onPreviewAction(action: CameraAction.Preview) {
         when (action) {
             is CameraAction.Preview.Pinched -> cameraControlsDelegate.scaleZoom(action.scaleFactor)
-            is CameraAction.Preview.Swiped -> onPreviewSwiped(action.direction)
+            is CameraAction.Preview.Swiped -> modeSwitchDelegate.onPreviewSwiped(action.direction)
             is CameraAction.Preview.Tapped -> when {
-                state().isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
+                state.isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
                 else -> focusAt(x = action.x, y = action.y)
             }
         }
@@ -470,19 +475,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         modeSwitchDelegate.followCamera()
     }
 
-    private fun onPreviewSwiped(direction: SwipeDirection) {
-        when (val outcome = swipeOutcomeMapper.map(direction = direction, state = state())) {
-            null -> Unit
-            is SwipeOutcome.ShowQrFormats -> emitEffect(Effect.ShowQrFormats)
-            is SwipeOutcome.SelectAdjacentMode -> {
-                modeSwitchDelegate.onAdjacentModeSwiped(outcome.offset)
-            }
-        }
-    }
-
     private fun onModeStripSettled(mode: CameraMode) {
-        val state = state()
-
         when {
             state.modeStrip.pendingMode != mode -> Unit
             mode != state.mode && mode in state.session.availableModes -> switchMode(mode)
@@ -491,8 +484,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onFlipCameraClicked() {
-        val state = state()
-
         when {
             state.isQrMode() -> settingsDelegate.toggleScanAllCodes()
             state.recording.isActive() -> recordingDelegate.setPaused(!state.recording.isPaused)
@@ -506,8 +497,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onCaptureButtonClicked() {
-        val state = state()
-
         when {
             state.capture.isShutterHeld -> Unit
             state.isVideoMode() -> toggleRecording(state)
@@ -522,21 +511,19 @@ class ViewfinderViewModel @AssistedInject constructor(
         x: Float,
         y: Float,
     ) {
-        if (state().isQrMode()) return
+        if (state.isQrMode()) return
 
         cameraControlsDelegate.focusAt(x = x, y = y)
         previewControlsDelegate.showFocus(x = x, y = y)
     }
 
     private fun onCaptureKeyPressed() {
-        if (state().isQrMode()) return
+        if (state.isQrMode()) return
 
         onCaptureButtonClicked()
     }
 
     private fun onThirdCircleClicked() {
-        val state = state()
-
         when {
             state.recording.isActive() -> takePicture()
             state.isCaptureSession -> Unit
@@ -545,8 +532,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onThirdCircleLongClicked() {
-        val state = state()
-
         when {
             state.recording.isActive() -> takePicture()
             state.isCaptureSession -> Unit
@@ -562,8 +547,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun takePicture() {
-        val state = state()
-
         when {
             state.capture.isShutterHeld || !cameraDelegate.isCameraReady -> Unit
 
@@ -595,8 +578,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun startRecording() {
-        val state = state()
-
         val isStartBlocked = state.capture.isShutterHeld ||
             !cameraDelegate.canRecord ||
             state.recording.isActive()
@@ -618,7 +599,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onMicrophonePermissionAnswered() {
         when {
-            AppPermission.MICROPHONE in state().missingPermissions -> {
+            AppPermission.MICROPHONE in state.missingPermissions -> {
                 permissionDelegate.showDialog(AppPermission.MICROPHONE)
             }
 
@@ -652,7 +633,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         captureDelegate.onScreenStopped()
 
         // Stop explicitly rather than letting the unbind tear the recording down for us.
-        if (state().recording.isActive()) {
+        if (state.recording.isActive()) {
             cameraDelegate.holdPreviewFrame()
             recordingDelegate.requestStop()
         }
@@ -663,8 +644,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         galleryDelegate.refreshThumbnail()
 
         startResumedWork()
-
-        val state = state()
 
         when {
             AppPermission.CAMERA in state.missingPermissions -> {
@@ -696,7 +675,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onScreenPaused() {
         captureDelegate.cancelSelfTimer()
 
-        if (!state().isQrMode()) {
+        if (!state.isQrMode()) {
             captureDelegate.cancelPictureCapture()
         }
 
@@ -718,7 +697,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             cameraDelegate.isProviderReady -> startCamera(forced = forced)
             else -> cameraDelegate.initialize(
                 forced = forced,
-                extensionMode = state().mode.extensionMode,
+                extensionMode = state.mode.extensionMode,
             )
         }
     }
@@ -735,7 +714,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun applyModeSettings() {
         slotCurrentMode()
 
-        cameraDelegate.applyFlashMode(state().modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(state.modeSettings.flashMode)
     }
 
     private fun dismissQrResult() {
@@ -747,7 +726,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun startCamera(forced: Boolean) {
         // A recording can be saved while the screen is away, and its result is shown before the
         // screen resumes: binding then would put the camera back to work behind the result.
-        if (state().capture.hasResult() || !cameraDelegate.canBeginBind(forced)) return
+        if (state.capture.hasResult() || !cameraDelegate.canBeginBind(forced)) return
 
         captureDelegate.cancelPictureCapture()
 
@@ -757,9 +736,9 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
-        cameraDelegate.applyFlashMode(state().modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(state.modeSettings.flashMode)
 
-        val bindState = state()
+        val bindState = state
 
         val target = cameraDelegate.selectLens(
             isQrMode = bindState.isQrMode(),
@@ -806,14 +785,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun slotCurrentMode() {
         settingsDelegate.selectModeSlot(
             ModeSlot(
-                mode = state().mode,
+                mode = state.mode,
                 lensFacing = cameraDelegate.lensFacing,
             ),
         )
-    }
-
-    private fun state(): ViewfinderState {
-        return stateHolder.state.value
     }
 
     private fun emitEffect(effect: Effect) {

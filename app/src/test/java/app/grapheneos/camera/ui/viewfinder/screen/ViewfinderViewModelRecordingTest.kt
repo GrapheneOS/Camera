@@ -10,12 +10,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Lifecyc
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

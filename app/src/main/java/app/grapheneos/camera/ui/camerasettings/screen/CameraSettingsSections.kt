@@ -46,7 +46,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import app.grapheneos.camera.ui.core.animation.SETTLE_SIZE_SPEC
-import app.grapheneos.camera.util.storageLocationToUiString
+import app.grapheneos.camera.ui.settingvalues.storageLocationTitle
 
 private val FOOTER_TOP_PADDING = 4.dp
 
@@ -400,7 +400,7 @@ private fun storageRows(
             SettingsClickableItem(
                 title = stringResource(R.string.storage_location),
                 summary = remember(storageLocation.location) {
-                    storageLocationToUiString(context, storageLocation.location)
+                    storageLocationTitle(context, storageLocation.location)
                 },
                 icon = Icons.Outlined.Folder,
                 isChanged = storageLocation.isChanged,

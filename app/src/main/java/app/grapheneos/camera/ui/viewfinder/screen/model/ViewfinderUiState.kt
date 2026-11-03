@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
+import androidx.compose.runtime.Immutable
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
@@ -14,6 +15,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 
+@Immutable
 data class ViewfinderUiState(
     val mode: CameraMode = CameraMode.CAMERA,
     val preview: PreviewUiModel = PreviewUiModel(),

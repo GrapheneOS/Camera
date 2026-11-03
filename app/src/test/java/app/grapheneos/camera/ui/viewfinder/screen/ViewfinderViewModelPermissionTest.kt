@@ -2,14 +2,12 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

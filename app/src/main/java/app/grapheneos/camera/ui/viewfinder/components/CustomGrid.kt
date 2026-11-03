@@ -11,7 +11,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 class CustomGrid @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyle: Int = 0
+    defStyle: Int = 0,
 ) : View(context, attrs, defStyle) {
 
     private val paint: Paint = Paint()
@@ -40,7 +40,6 @@ class CustomGrid @JvmOverloads constructor(
         }
 
         if (gridType == GridType.GOLDEN_RATIO) {
-
             val cx = width / 2f
             val cy = height / 2f
 
@@ -51,9 +50,7 @@ class CustomGrid @JvmOverloads constructor(
             canvas.drawLine(cx + dxH, 0f, cx + dxH, height.toFloat(), paint)
             canvas.drawLine(0f, cy - dyH, width.toFloat(), cy - dyH, paint)
             canvas.drawLine(0f, cy + dyH, width.toFloat(), cy + dyH, paint)
-
         } else {
-
             val seed = if (gridType == GridType.THREE_BY_THREE) {
                 3f
             } else {
@@ -69,8 +66,11 @@ class CustomGrid @JvmOverloads constructor(
             )
             canvas.drawLine(width / seed, 0f, width / seed, height.toFloat(), paint)
             canvas.drawLine(
-                0f, height / seed * 2f,
-                width.toFloat(), height / seed * 2f, paint
+                0f,
+                height / seed * 2f,
+                width.toFloat(),
+                height / seed * 2f,
+                paint
             )
             canvas.drawLine(0f, height / seed, width.toFloat(), height / seed, paint)
 
@@ -83,8 +83,11 @@ class CustomGrid @JvmOverloads constructor(
                     paint
                 )
                 canvas.drawLine(
-                    0f, height / seed * 3f,
-                    width.toFloat(), height / seed * 3f, paint
+                    0f,
+                    height / seed * 3f,
+                    width.toFloat(),
+                    height / seed * 3f,
+                    paint
                 )
             }
         }

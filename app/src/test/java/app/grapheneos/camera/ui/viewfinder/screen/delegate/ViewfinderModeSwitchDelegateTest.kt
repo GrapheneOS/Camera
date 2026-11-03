@@ -1,11 +1,16 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderModeStripState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -27,7 +32,9 @@ class ViewfinderModeSwitchDelegateTest {
         }
     }
 
-    private val delegate = ViewfinderModeSwitchDelegateImpl().also { it.bind(stateHolder) }
+    private val delegate = ViewfinderModeSwitchDelegateImpl(
+        swipeOutcomeMapper = SwipeOutcomeMapperImpl(),
+    ).also { it.bind(stateHolder) }
 
     @Test
     fun stripReleased_onAnotherMode_headsThereBehindTheLastFrame() {
@@ -88,18 +95,31 @@ class ViewfinderModeSwitchDelegateTest {
     }
 
     @Test
-    fun adjacentModeSwipes_moveAcrossTheModes() {
-        delegate.onAdjacentModeSwiped(1)
+    fun sidewaysSwipes_moveAcrossTheModes() {
+        delegate.onPreviewSwiped(SwipeDirection.LEFT)
         assertEquals(CameraMode.VIDEO, state().modeStripTarget())
 
-        delegate.onAdjacentModeSwiped(-1)
+        delegate.onPreviewSwiped(SwipeDirection.RIGHT)
         assertEquals(CameraMode.CAMERA, state().modeStripTarget())
     }
 
     @Test
+    fun swipeUp_inQrMode_offersTheBarcodeFormats() {
+        runTest {
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+            val effects = collectEffects(stateHolder)
+
+            delegate.onPreviewSwiped(SwipeDirection.UP)
+
+            assertEquals(listOf(ViewfinderScreenEffect.ShowQrFormats), effects)
+            assertEquals(ViewfinderModeStripState(), state().modeStrip)
+        }
+    }
+
+    @Test
     fun aSecondFling_movesOnFromWhereTheFirstWasHeaded() {
-        delegate.onAdjacentModeSwiped(-1)
-        delegate.onAdjacentModeSwiped(-1)
+        delegate.onPreviewSwiped(SwipeDirection.RIGHT)
+        delegate.onPreviewSwiped(SwipeDirection.RIGHT)
 
         assertEquals(CameraMode.QR_SCAN, state().modeStripTarget())
         assertEquals(CameraMode.CAMERA, state().mode)
@@ -109,7 +129,7 @@ class ViewfinderModeSwitchDelegateTest {
     fun aSwipePastTheLastMode_movesNothing() {
         stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
 
-        delegate.onAdjacentModeSwiped(1)
+        delegate.onPreviewSwiped(SwipeDirection.LEFT)
 
         assertEquals(ViewfinderModeStripState(), state().modeStrip)
     }
