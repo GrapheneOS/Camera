@@ -1,16 +1,12 @@
 package app.grapheneos.camera.ui.activities
 
-import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.Vibrator
-import android.provider.Settings
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -38,12 +34,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.unit.Density
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updateLayoutParams
-import androidx.core.view.updateMargins
 import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -107,8 +101,6 @@ import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
 import javax.inject.Inject
-import kotlin.math.roundToInt
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -284,12 +276,6 @@ open class MainActivity : AppCompatActivity() {
 
     private lateinit var snackBar: Snackbar
 
-    private val focusRingHandler: Handler = Handler(Looper.getMainLooper())
-
-    private val focusRingCallback: Runnable = Runnable {
-        binding.focusRing.visibility = View.INVISIBLE
-    }
-
     // The blurred still that stands in for the preview whenever the camera is not streaming.
     private fun showPreviewTransition() {
         transitionShown = true
@@ -338,68 +324,6 @@ open class MainActivity : AppCompatActivity() {
     override fun onUserInteraction() {
         super.onUserInteraction()
         viewfinder.onAction(LifecycleAction.ScreenInteracted)
-    }
-
-    fun animateFocusRing(x: Float, y: Float) {
-        // Move the focus ring so that its center is at the tap location (x, y)
-        val width = binding.focusRing.width.toFloat()
-        binding.focusRing.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            updateMargins(
-                left = (x - width / 2).roundToInt(),
-                top = (y - width / 2).roundToInt()
-            )
-        }
-
-        // Show focus ring
-        binding.focusRing.visibility = View.VISIBLE
-        binding.focusRing.alpha = 1f
-
-        if (areSystemAnimationsEnabled()) {
-            // Animate the focus ring to disappear
-            binding.focusRing.animate()
-                .setStartDelay(500)
-                .setDuration(300)
-                .alpha(0f)
-                .setListener(object : Animator.AnimatorListener {
-
-                    var isCancelled = false
-
-                    override fun onAnimationStart(animation: Animator) {}
-
-                    override fun onAnimationEnd(animator: Animator) {
-                        if (!isCancelled) {
-                            binding.focusRing.visibility = View.INVISIBLE
-                        }
-
-                        isCancelled = false
-                    }
-
-                    override fun onAnimationCancel(animation: Animator) {
-                        isCancelled = true
-                    }
-
-                    override fun onAnimationRepeat(animation: Animator) {}
-                }).start()
-        } else {
-            focusRingHandler.removeCallbacks(focusRingCallback)
-            focusRingHandler.postDelayed(focusRingCallback, 800)
-        }
-    }
-
-    private fun areSystemAnimationsEnabled(): Boolean {
-        val duration: Float = Settings.Global.getFloat(
-            contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        )
-
-        val transition: Float = Settings.Global.getFloat(
-            contentResolver,
-            Settings.Global.TRANSITION_ANIMATION_SCALE,
-            1f
-        )
-
-        return duration != 0f && transition != 0f
     }
 
     fun animateLensSwitch() {
@@ -546,7 +470,7 @@ open class MainActivity : AppCompatActivity() {
             soundsEnabled = { viewfinder.uiState.value.cameraSoundsEnabled },
         )
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.uiState.collect { state ->
                     renderer.render(state)
@@ -554,12 +478,12 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             snapshotFlow { quickSettingsSheet.visibleFraction() }
                 .collect(renderer::renderSettingsPanelFraction)
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.zoomUiState.collect { zoom ->
                     renderer.renderZoom(zoom)
@@ -567,7 +491,7 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.levelUiState.collect { level ->
                     renderer.renderLevel(level)
@@ -575,7 +499,7 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.effects.collect { effect ->
                     effectHandler.handle(effect)
@@ -780,7 +704,7 @@ open class MainActivity : AppCompatActivity() {
             onCloseSettingsPanel = { showSettingsPanel(false) },
         )
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.navigationEvents.collect { event ->
                     navigation.navigate(event)
@@ -788,7 +712,7 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
+        lifecycleScope.launch {
             snapshotFlow { quickSettingsNavigator.quickSettingsNavKey() != null }
                 .collect { open -> renderSettingsPanel(open) }
         }

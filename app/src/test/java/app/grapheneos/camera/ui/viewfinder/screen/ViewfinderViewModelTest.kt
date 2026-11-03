@@ -183,19 +183,19 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewTapped_focusesThereAndShowsThePanels() {
+    fun previewTapped_focusesThereAndShowsTheRingAndPanels() {
         runTest {
             val viewModel = createViewModel()
 
             viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
 
             verify(exactly = 1) { cameraControlsDelegate.focusAt(x = 10f, y = 20f) }
-            verify(exactly = 1) { previewControlsDelegate.showFocusPanels() }
+            verify(exactly = 1) { previewControlsDelegate.showFocus(x = 10f, y = 20f) }
         }
     }
 
     @Test
-    fun previewTapped_inQrMode_neitherFocusesNorShowsThePanels() {
+    fun previewTapped_inQrMode_neitherFocusesNorShowsTheRing() {
         runTest {
             val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
@@ -203,7 +203,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
 
             verify(exactly = 0) { cameraControlsDelegate.focusAt(x = any(), y = any()) }
-            verify(exactly = 0) { previewControlsDelegate.showFocusPanels() }
+            verify(exactly = 0) { previewControlsDelegate.showFocus(x = any(), y = any()) }
         }
     }
 

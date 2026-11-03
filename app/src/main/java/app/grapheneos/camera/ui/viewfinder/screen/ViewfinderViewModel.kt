@@ -457,7 +457,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         if (state().isQrMode()) return
 
         cameraControlsDelegate.focusAt(x = x, y = y)
-        previewControlsDelegate.showFocusPanels()
+        previewControlsDelegate.showFocus(x = x, y = y)
     }
 
     private fun onCaptureKeyPressed() {
