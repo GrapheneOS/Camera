@@ -93,6 +93,7 @@ sealed interface ViewfinderScreenEffect {
 
         data class PlayStartSound(
             val recordingId: Int,
+            val soundEnabled: Boolean,
         ) : Recording
 
         data class SaveFailed(

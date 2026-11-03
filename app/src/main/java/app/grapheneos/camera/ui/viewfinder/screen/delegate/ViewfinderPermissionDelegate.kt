@@ -14,6 +14,9 @@ interface ViewfinderPermissionDelegate {
 
     fun refresh()
     fun request(permission: AppPermission, explainsFirst: Boolean)
+
+    /** Asks for the microphone when audio is on without it, and says whether it had to. */
+    fun requestMissingMicrophone(): Boolean
     fun showDialog(permission: AppPermission)
     fun openSettings()
 }
@@ -56,6 +59,18 @@ internal class ViewfinderPermissionDelegateImpl @Inject constructor(
                 explainsFirst = explainsFirst,
             ),
         )
+    }
+
+    override fun requestMissingMicrophone(): Boolean {
+        val isMissing = stateHolder.state.value.lacksMicrophone()
+        if (isMissing) {
+            request(
+                permission = AppPermission.MICROPHONE,
+                explainsFirst = false,
+            )
+        }
+
+        return isMissing
     }
 
     override fun showDialog(permission: AppPermission) {
