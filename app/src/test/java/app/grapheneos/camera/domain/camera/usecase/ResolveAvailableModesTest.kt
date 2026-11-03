@@ -1,10 +1,10 @@
 package app.grapheneos.camera.domain.camera.usecase
 
 import app.grapheneos.camera.data.camera.model.ExtensionKey
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.ExtensionMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

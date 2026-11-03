@@ -1,7 +1,7 @@
 package app.grapheneos.camera.data.camera.session
 
 import androidx.camera.core.CameraSelector
-import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.core.model.LensFacing
 
 private val FRONT_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
     .requireLensFacing(CameraSelector.LENS_FACING_FRONT)

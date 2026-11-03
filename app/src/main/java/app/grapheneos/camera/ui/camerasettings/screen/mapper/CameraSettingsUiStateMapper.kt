@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState

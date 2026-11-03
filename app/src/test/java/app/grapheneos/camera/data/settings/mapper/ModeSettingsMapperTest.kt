@@ -2,6 +2,7 @@ package app.grapheneos.camera.data.settings.mapper
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -173,8 +174,8 @@ class ModeSettingsMapperTest {
     }
 
     private companion object {
-        val BACK_PHOTO = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
-        val FRONT_PHOTO = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = true)
-        val BACK_VIDEO = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
+        val BACK_PHOTO = ModeSlot(mode = CameraMode.CAMERA, lensFacing = LensFacing.BACK)
+        val FRONT_PHOTO = ModeSlot(mode = CameraMode.CAMERA, lensFacing = LensFacing.FRONT)
+        val BACK_VIDEO = ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.BACK)
     }
 }

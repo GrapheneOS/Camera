@@ -2,6 +2,7 @@ package app.grapheneos.camera.data.camera.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -15,7 +16,7 @@ class BoundCameraTest {
     @Test
     fun modeSlot_isTheModeAndTheLensItIsBoundTo() {
         assertEquals(
-            ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = true),
+            ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.FRONT),
             VIDEO_CAMERA.copy(lensFacing = LensFacing.FRONT).modeSlot(),
         )
     }

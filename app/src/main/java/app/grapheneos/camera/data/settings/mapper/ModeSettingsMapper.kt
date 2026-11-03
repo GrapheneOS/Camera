@@ -32,26 +32,13 @@ internal class ModeSettingsMapperImpl @Inject constructor() : ModeSettingsMapper
         stored: StoredModeSettings,
         slot: ModeSlot,
     ): ModeSettings {
-        val storedFlashMode = when {
-            slot.isFrontFacing -> stored.flashModeFront
-            else -> stored.flashModeBack
-        }
-        val storedQuality = when {
-            slot.isFrontFacing -> stored.videoQualityFront
-            else -> stored.videoQualityBack
-        }
-        val storedFrameRate = when {
-            slot.isFrontFacing -> stored.frameRateFront
-            else -> stored.frameRateBack
-        }
-
         return ModeSettings(
             flashMode = mapFlashMode(
-                stored = storedFlashMode,
+                stored = stored.flashMode(slot.lensFacing),
                 mode = slot.mode,
             ),
-            videoQuality = mapVideoQuality(storedQuality),
-            videoFrameRate = mapVideoFrameRate(storedFrameRate),
+            videoQuality = mapVideoQuality(stored.videoQuality(slot.lensFacing)),
+            videoFrameRate = mapVideoFrameRate(stored.frameRate(slot.lensFacing)),
         )
     }
 

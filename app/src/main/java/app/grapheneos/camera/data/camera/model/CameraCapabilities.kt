@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.camera.model
 
 import android.os.Parcelable
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoQuality
 import kotlinx.parcelize.Parcelize
 

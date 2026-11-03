@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.camera.model
+package app.grapheneos.camera.data.core.model
 
 enum class LensFacing {
     FRONT,

@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
@@ -554,6 +555,22 @@ class ViewfinderUiStateMapperTest {
 
         assertEquals(FocusRingUiModel(x = 10f, y = 20f, id = 3), focused.focusRing)
         assertNull(map().focusRing)
+    }
+
+    @Test
+    fun flipCamera_showsTheBoundLensInEveryMode() {
+        val front = ViewfinderState(
+            mode = CameraMode.CAMERA,
+            requiresVideoModeOnly = false,
+            session = ViewfinderSessionState(lensFacing = LensFacing.FRONT),
+        )
+
+        assertEquals(LensFacing.FRONT, mapper.map(front).flipCamera.lensFacing)
+        assertEquals(
+            LensFacing.FRONT,
+            mapper.map(front.copy(mode = CameraMode.QR_SCAN)).flipCamera.lensFacing,
+        )
+        assertEquals(LensFacing.BACK, map().flipCamera.lensFacing)
     }
 
     @Test

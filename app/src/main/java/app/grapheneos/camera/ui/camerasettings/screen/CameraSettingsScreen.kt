@@ -23,7 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.ui.camerasettings.components.GROUPED_ITEM_SPACING
 import app.grapheneos.camera.ui.camerasettings.components.KeepAtEndEffect
 import app.grapheneos.camera.ui.camerasettings.components.SCREEN_CONTENT_PADDING

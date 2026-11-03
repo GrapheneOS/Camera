@@ -1,11 +1,11 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.camera.model.VideoBitrates
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.model.StorageSpace
