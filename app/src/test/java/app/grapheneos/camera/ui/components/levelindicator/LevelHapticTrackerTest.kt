@@ -3,11 +3,11 @@ package app.grapheneos.camera.ui.components.levelindicator
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class LevelTrackerTest {
+class LevelHapticTrackerTest {
 
     @Test
     fun reachesLevel_onlyOnTheWayIn() {
-        val tracker = LevelTracker(initialZone = LevelZone.Away)
+        val tracker = LevelHapticTracker(initialZone = LevelZone.Away)
 
         assertEquals(
             listOf(false, true, false),
@@ -17,7 +17,7 @@ class LevelTrackerTest {
 
     @Test
     fun reachesLevel_startingLevel_waitsForTheNextApproach() {
-        val tracker = LevelTracker(initialZone = LevelZone.Level)
+        val tracker = LevelHapticTracker(initialZone = LevelZone.Level)
 
         assertEquals(
             listOf(false, false, true),
@@ -27,7 +27,7 @@ class LevelTrackerTest {
 
     @Test
     fun reachesLevel_wobblingAtTheEdge_waitsUntilTiltedWellAway() {
-        val tracker = LevelTracker(initialZone = LevelZone.Away)
+        val tracker = LevelHapticTracker(initialZone = LevelZone.Away)
 
         assertEquals(
             listOf(true, false, false, false, true),
@@ -41,7 +41,7 @@ class LevelTrackerTest {
         )
     }
 
-    private fun LevelTracker.reaches(vararg zones: LevelZone): List<Boolean> {
+    private fun LevelHapticTracker.reaches(vararg zones: LevelZone): List<Boolean> {
         return zones.map { zone -> reachesLevel(zone = zone) }
     }
 }

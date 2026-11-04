@@ -11,7 +11,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 
@@ -23,14 +22,15 @@ data class ViewfinderUiState(
     val captureButton: CaptureButtonUiModel = CaptureButtonUiModel(),
     val flipCamera: FlipCameraUiModel = FlipCameraUiModel(),
     val thirdOption: ThirdOptionUiModel = ThirdOptionUiModel(),
-    val cancelButtonVisible: Boolean = true,
     val selfTimer: SelfTimerUiModel = SelfTimerUiModel(),
     val recording: RecordingUiModel = RecordingUiModel(),
     val qr: QrUiModel = QrUiModel(),
-    val focusRing: FocusRingUiModel? = null,
     val exposure: ExposureUiModel = ExposureUiModel(),
-    val rotation: RotationUiModel = RotationUiModel(),
     val captureResult: CaptureResultUiModel = CaptureResultUiModel(),
+    val focusRing: FocusRingUiModel? = null,
+    val iconRotationDegrees: Float = 0f,
+    val cancelButtonVisible: Boolean = true,
+    val isTakingPicture: Boolean = false,
     val keepScreenOn: Boolean = false,
     val isSelfIlluminating: Boolean = false,
     val isSettingsPanelAvailable: Boolean = false,

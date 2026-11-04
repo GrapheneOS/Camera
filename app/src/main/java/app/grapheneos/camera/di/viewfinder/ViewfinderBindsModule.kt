@@ -6,8 +6,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
@@ -33,12 +31,6 @@ internal abstract class ViewfinderBindsModule {
     abstract fun bindCameraBindSettingsMapper(
         impl: CameraBindSettingsMapperImpl,
     ): CameraBindSettingsMapper
-
-    @Binds
-    @Reusable
-    abstract fun bindViewfinderLevelStateMapper(
-        impl: ViewfinderLevelStateMapperImpl,
-    ): ViewfinderLevelStateMapper
 
     @Binds
     @Reusable

@@ -24,17 +24,10 @@ internal class LevelIndicatorLabels(
     private val textMeasurer: TextMeasurer,
     private val style: TextStyle,
     private val numberFormat: NumberFormat,
-    private val shadow: Shadow,
+    val shadow: Shadow,
 ) {
 
     private val labels = HashMap<Int, CenteredText>()
-
-    fun shadow(alpha: Float): Shadow {
-        return when {
-            alpha >= 1f -> shadow
-            else -> shadow.copy(color = shadow.color.copy(alpha = shadow.color.alpha * alpha))
-        }
-    }
 
     fun label(degrees: Int): CenteredText {
         return labels.getOrPut(degrees) {

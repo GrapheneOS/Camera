@@ -10,7 +10,6 @@ import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -28,7 +27,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -46,7 +44,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCamer
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -63,7 +60,6 @@ interface ViewfinderScreenModel {
     val uiState: StateFlow<ViewfinderUiState>
 
     val zoomUiState: StateFlow<ZoomUiState>
-    val levelUiState: StateFlow<LevelUiState>
 
     val effects: Flow<Effect>
     val navigationEvents: Flow<NavEvent>
@@ -104,20 +100,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         ),
     )
 
-    private val levelStateHolder = StateHolder(
-        initial = ViewfinderLevelState(),
-    )
-
     override val uiState: StateFlow<ViewfinderUiState> = stateHolder.derive { state ->
         uiStateMapper.map(state)
     }
 
     override val zoomUiState: StateFlow<ZoomUiState> = stateHolder.derive { state ->
         uiStateMapper.mapZoom(state)
-    }
-
-    override val levelUiState: StateFlow<LevelUiState> = levelStateHolder.derive { state ->
-        uiStateMapper.mapLevel(state)
     }
 
     override val effects: Flow<Effect> = stateHolder.effects
@@ -145,11 +133,8 @@ class ViewfinderViewModel @AssistedInject constructor(
         dialogDelegate.bind(stateHolder)
         modeSwitchDelegate.bind(stateHolder)
         cameraDelegate.bind(stateHolder)
+        orientationDelegate.bind(stateHolder)
 
-        orientationDelegate.bind(
-            stateHolder = stateHolder,
-            levelStateHolder = levelStateHolder,
-        )
         cameraControlsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,

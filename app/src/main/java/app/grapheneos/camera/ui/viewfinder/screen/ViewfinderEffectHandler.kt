@@ -3,8 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.provider.MediaStore
 import android.provider.Settings
 import android.view.View
@@ -37,7 +35,6 @@ internal interface ViewfinderEffectHandler {
 
 internal class ViewfinderEffectHandlerImpl(
     private val activity: MainActivity,
-    private val vibrator: Vibrator,
     private val capturedItemIntents: CapturedItemIntents,
     private val onAction: (ViewfinderAction) -> Unit,
     private val onPreviewFlashVisibilityChanged: (Boolean) -> Unit,
@@ -56,7 +53,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ShowMessage -> activity.showMessage(effect.message)
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
             is Effect.ShowQrResult -> showQrResult(effect.text)
-            is Effect.PlayLevelHaptic -> playLevelHaptic()
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
             is Effect.ShowQrFormats -> showQrFormats()
             is Effect.ShareCapturedItem -> share(effect.item)
@@ -137,10 +133,6 @@ internal class ViewfinderEffectHandlerImpl(
                 onAction(DialogAction.QrResultDismissed)
             },
         )
-    }
-
-    private fun playLevelHaptic() {
-        vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
     }
 
     private fun flashPreview(selfIlluminate: Boolean) {

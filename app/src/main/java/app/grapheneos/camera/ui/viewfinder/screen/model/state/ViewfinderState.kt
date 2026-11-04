@@ -84,10 +84,6 @@ data class ViewfinderState(
         return settings.includeAudio && AppPermission.MICROPHONE in missingPermissions
     }
 
-    fun showsLevel(): Boolean {
-        return settings.gyroscopeSuggestions && isPhotoMode()
-    }
-
     fun selfIlluminates(): Boolean {
         return modeSettings.flashMode == FlashMode.SELF_ILLUMINATION &&
             session.lensFacing == LensFacing.FRONT

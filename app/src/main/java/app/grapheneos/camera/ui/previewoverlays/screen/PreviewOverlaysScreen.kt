@@ -4,12 +4,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.grapheneos.camera.ui.components.compositiongrid.CompositionGrid
@@ -17,7 +20,10 @@ import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGrid
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewLayer
+import app.grapheneos.camera.ui.previewoverlays.components.PreviewLevel
 import app.grapheneos.camera.ui.previewoverlays.components.SelfTimerCountdown
+import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
 import kotlin.time.Duration.Companion.seconds
 
@@ -28,9 +34,16 @@ internal fun PreviewOverlaysScreen(
     screenModel: PreviewOverlaysScreenModel = viewModel<PreviewOverlaysViewModel>(),
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
+    val level = screenModel.levelUiState.collectAsStateWithLifecycle()
+
+    LifecycleResumeEffect(screenModel) {
+        screenModel.onAction(Action.ScreenResumed)
+        onPauseOrDispose { screenModel.onAction(Action.ScreenPaused) }
+    }
 
     PreviewOverlaysContent(
         uiState = uiState,
+        level = level,
         previewBounds = previewBounds,
         modifier = modifier,
     )
@@ -39,6 +52,7 @@ internal fun PreviewOverlaysScreen(
 @Composable
 private fun PreviewOverlaysContent(
     uiState: PreviewOverlaysUiState,
+    level: State<LevelUiState>,
     previewBounds: DpRect,
     modifier: Modifier = Modifier,
 ) {
@@ -50,6 +64,10 @@ private fun PreviewOverlaysContent(
                     modifier = Modifier.matchParentSize(),
                 )
             }
+            PreviewLevel(
+                level = level,
+                modifier = Modifier.align(Alignment.Center),
+            )
             uiState.selfTimerRemaining?.let { remaining ->
                 SelfTimerCountdown(
                     remaining = remaining,
@@ -73,6 +91,7 @@ private fun PreviewOverlaysPreview() {
                     isGridVisible = true,
                     selfTimerRemaining = 3.seconds,
                 ),
+                level = rememberUpdatedState(LevelUiState()),
                 previewBounds = DpRect(
                     left = 0.dp,
                     top = 0.dp,

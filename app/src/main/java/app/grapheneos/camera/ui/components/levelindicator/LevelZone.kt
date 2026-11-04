@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.components.levelindicator
 
+import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import kotlin.math.abs
 
 internal enum class LevelZone {
@@ -12,8 +13,6 @@ internal enum class LevelZone {
         private const val LEVEL_ROLL_DEGREES = 0.5f
         private const val LEVEL_DEGREES = 1f
         private const val AWAY_DEGREES = 2f
-        private const val TOP_DOWN_ENTER_DEGREES = 60f
-        private const val TOP_DOWN_EXIT_DEGREES = 50f
         private const val VERTICAL_DEGREES = 90f
 
         fun isRollLevel(roll: Float): Boolean {
@@ -32,25 +31,19 @@ internal enum class LevelZone {
             return VERTICAL_DEGREES - abs(pitch)
         }
 
-        fun isTopDown(
-            pitch: Float,
-            wasTopDown: Boolean,
-        ): Boolean {
-            return when {
-                abs(pitch) >= TOP_DOWN_ENTER_DEGREES -> true
-                abs(pitch) <= TOP_DOWN_EXIT_DEGREES -> false
-                else -> wasTopDown
-            }
-        }
-
         fun of(
+            mode: LevelIndicatorMode,
             roll: Float,
             pitch: Float,
         ): LevelZone {
-            val isLevel = isVertical(pitch = pitch) ||
-                (isRollLevel(roll = roll) && isPitchLevel(pitch = pitch))
-            val isNear = tiltFromVertical(pitch = pitch) < AWAY_DEGREES ||
-                (abs(roll) < AWAY_DEGREES && abs(pitch) < AWAY_DEGREES)
+            val isLevel = when (mode) {
+                LevelIndicatorMode.Horizon -> isRollLevel(roll) && isPitchLevel(pitch)
+                LevelIndicatorMode.Crosshairs -> isVertical(pitch)
+            }
+            val isNear = when (mode) {
+                LevelIndicatorMode.Horizon -> abs(roll) < AWAY_DEGREES && abs(pitch) < AWAY_DEGREES
+                LevelIndicatorMode.Crosshairs -> tiltFromVertical(pitch) < AWAY_DEGREES
+            }
 
             return when {
                 isLevel -> Level

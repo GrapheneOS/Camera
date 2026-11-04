@@ -6,13 +6,12 @@ import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Vibrator
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -43,6 +42,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.PreviewTarget
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -117,9 +117,6 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var cameraSoundPlayer: CameraSoundPlayer
-
-    @Inject
-    lateinit var vibrator: Vibrator
 
     @Inject
     internal lateinit var capturedItemIntents: CapturedItemIntents
@@ -246,9 +243,6 @@ open class MainActivity : AppCompatActivity() {
 
     val cbCross: ImageView
         get() = binding.captureButtonCross
-
-    val gCircleFrame: FrameLayout
-        get() = binding.gCircleFrame
 
     val muteToggle: ShapeableImageView
         get() = binding.muteToggle
@@ -398,9 +392,6 @@ open class MainActivity : AppCompatActivity() {
         tabLayout.settleNow()
 
         viewfinder.onAction(LifecycleAction.ScreenPaused)
-        previewOverlays.onAction(
-            PreviewOverlaysAction.PreviewFlashVisibilityChanged(visible = false),
-        )
         previewFrames.clear()
     }
 
@@ -416,7 +407,6 @@ open class MainActivity : AppCompatActivity() {
         )
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
-            vibrator = vibrator,
             capturedItemIntents = capturedItemIntents,
             onAction = viewfinder::onAction,
             onPreviewFlashVisibilityChanged = { visible ->
@@ -442,7 +432,7 @@ open class MainActivity : AppCompatActivity() {
             ),
         )
 
-        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
+        updateDisplayRotation()
 
         tunePlayer = TunePlayer(cameraSoundPlayer = cameraSoundPlayer)
 
@@ -453,6 +443,9 @@ open class MainActivity : AppCompatActivity() {
                         PreviewOverlaysAction.PreviewContentChanged(
                             content = PreviewContentState(
                                 mode = state.mode,
+                                lensFacing = state.flipCamera.lensFacing,
+                                isPreviewStreaming = state.preview.isStreaming,
+                                isTakingPicture = state.isTakingPicture,
                                 isTransitionFrameVisible = state.preview.lastFrameVisible,
                                 isCaptureResultVisible = state.captureResult.visible,
                                 selfTimerRemaining = state.selfTimer.remaining,
@@ -473,14 +466,6 @@ open class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.zoomUiState.collect { zoom ->
                     renderer.renderZoom(zoom)
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewfinder.levelUiState.collect { level ->
-                    renderer.renderLevel(level)
                 }
             }
         }
@@ -849,9 +834,24 @@ open class MainActivity : AppCompatActivity() {
         // The activity declares configChanges for orientation, so nothing else refreshes
         // rotation-dependent state.
         // The preview follows the window; the capture use cases follow the sensor.
-        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
+        updateDisplayRotation()
 
         renderer.reapplyPreviewRatio()
+    }
+
+    private fun updateDisplayRotation() {
+        val rotation = displayRotation()
+        val orientation = when (rotation) {
+            Surface.ROTATION_90 -> DeviceOrientation.DEGREES_270
+            Surface.ROTATION_180 -> DeviceOrientation.DEGREES_180
+            Surface.ROTATION_270 -> DeviceOrientation.DEGREES_90
+            else -> DeviceOrientation.DEGREES_0
+        }
+
+        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = rotation))
+        previewOverlays.onAction(
+            PreviewOverlaysAction.DisplayRotationChanged(rotation = orientation),
+        )
     }
 
     private fun displayRotation(): Int {

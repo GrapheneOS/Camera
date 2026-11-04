@@ -15,7 +15,6 @@ import android.widget.ImageView
 import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
@@ -27,7 +26,6 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
@@ -39,12 +37,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.color.MaterialColors
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
@@ -67,7 +63,6 @@ internal class ViewfinderViewRenderer(
     private var renderedAspectRatio: AspectRatio? = null
     private var renderedSensorOrientationDegrees: Int? = null
     private var renderedIconRotation: Float? = null
-    private var renderedLevelFrameRotation: Float? = null
     private var renderedKeepScreenOn = false
     private var renderedSelfIlluminating = false
     private var litFraction = 0f
@@ -98,7 +93,7 @@ internal class ViewfinderViewRenderer(
         renderExposure(state.exposure)
         renderKeepScreenOn(state.keepScreenOn)
         renderSelfIllumination(state.isSelfIlluminating)
-        renderRotation(state.rotation)
+        renderRotation(state.iconRotationDegrees)
         renderSettingsPanelAvailability(state.isSettingsPanelAvailable)
     }
 
@@ -109,13 +104,6 @@ internal class ViewfinderViewRenderer(
             visible = zoom.panelVisible,
             fadeTarget = R.id.zoom_bar_panel,
         )
-    }
-
-    fun renderLevel(level: LevelUiState) {
-        activity.gCircleFrame.visibility = visibleOrGone(level.visible)
-
-        renderTilt(level.tiltDegrees)
-        renderHorizon(level.horizonDegrees)
     }
 
     private fun renderPreview(state: ViewfinderUiState) {
@@ -474,19 +462,13 @@ internal class ViewfinderViewRenderer(
         }
     }
 
-    private fun renderRotation(rotation: RotationUiModel) {
-        if (rotation.iconDegrees != renderedIconRotation) {
-            renderedIconRotation = rotation.iconDegrees
+    private fun renderRotation(degrees: Float) {
+        if (degrees != renderedIconRotation) {
+            renderedIconRotation = degrees
 
             rotatingIcons().forEach { icon ->
-                rotate(icon, rotation.iconDegrees)
+                rotate(icon, degrees)
             }
-        }
-
-        if (rotation.levelFrameDegrees != renderedLevelFrameRotation) {
-            renderedLevelFrameRotation = rotation.levelFrameDegrees
-
-            rotate(activity.gCircleFrame, rotation.levelFrameDegrees)
         }
     }
 
@@ -527,61 +509,6 @@ internal class ViewfinderViewRenderer(
             .start()
     }
 
-    private fun renderTilt(tiltDegrees: Int) {
-        val binding = activity.binding
-        val isLevel = tiltDegrees == 0
-
-        binding.gCircle.rotation = tiltDegrees.toFloat()
-        binding.gCircleLineZ.rotation = tiltDegrees.toFloat()
-        binding.gCircleText.text = activity.getString(R.string.degree_format, abs(tiltDegrees))
-
-        val thickness = when {
-            isLevel -> LEVEL_LINE_THICKNESS_DP
-            else -> TILTED_LINE_THICKNESS_DP
-        }
-
-        listOf(
-            binding.gCircleLeftDash,
-            binding.gCircleRightDash,
-            binding.gCircleLineX,
-        ).forEach { line ->
-            line.updateLayoutParams {
-                height = pixels(thickness)
-            }
-        }
-    }
-
-    private fun renderHorizon(horizonDegrees: Int) {
-        val binding = activity.binding
-        val isLevel = horizonDegrees == 0
-
-        val lineBackground = when {
-            isLevel -> R.drawable.yellow_shadow_rect
-            else -> R.drawable.white_shadow_rect
-        }
-        val textColor = when {
-            isLevel -> R.color.z_yellow
-            else -> android.R.color.white
-        }
-
-        binding.gCircleLineX.setBackgroundResource(lineBackground)
-        binding.gCircleLeftDash.setBackgroundResource(lineBackground)
-        binding.gCircleRightDash.setBackgroundResource(lineBackground)
-        binding.gCircleText.setTextColor(ContextCompat.getColor(activity, textColor))
-        binding.gCircleLineZ.visibility = visibleOrGone(!isLevel)
-
-        val clampedHorizon = horizonDegrees.coerceIn(-HORIZON_RANGE_DEGREES, HORIZON_RANGE_DEGREES)
-        val horizonOffset = clampedHorizon / HORIZON_OFFSET_DIVISOR * pixels(HORIZON_OFFSET_DP)
-
-        binding.gCircleLineZ.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            bottomMargin = horizonOffset.toInt()
-        }
-    }
-
-    private fun pixels(dp: Int): Int {
-        return (dp * activity.resources.displayMetrics.density).toInt()
-    }
-
     private fun visibleOrInvisible(visible: Boolean): Int {
         return when {
             visible -> View.VISIBLE
@@ -604,11 +531,6 @@ internal class ViewfinderViewRenderer(
         private const val FOCUS_RING_FADE_DURATION = 300L
         private const val LENS_SWITCH_DURATION = 400L
         private const val HALF_TURN_DEGREES = 180f
-        private const val LEVEL_LINE_THICKNESS_DP = 4
-        private const val TILTED_LINE_THICKNESS_DP = 2
-        private const val HORIZON_RANGE_DEGREES = 45
-        private const val HORIZON_OFFSET_DIVISOR = 60f
-        private const val HORIZON_OFFSET_DP = 32
 
         private val FOCUS_RING_STILL_DURATION = 800.milliseconds
     }

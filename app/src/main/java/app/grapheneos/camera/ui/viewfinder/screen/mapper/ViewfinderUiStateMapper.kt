@@ -3,10 +3,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
@@ -17,7 +15,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 import app.grapheneos.camera.util.formatVideoDuration
@@ -29,8 +26,6 @@ interface ViewfinderUiStateMapper {
     fun map(state: ViewfinderState): ViewfinderUiState
 
     fun mapZoom(state: ViewfinderState): ZoomUiState
-
-    fun mapLevel(state: ViewfinderLevelState): LevelUiState
 }
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiStateMapper {
@@ -49,11 +44,12 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             qr = qr(state),
             focusRing = focusRing(state),
             exposure = exposure(state),
-            rotation = rotation(state),
+            iconRotationDegrees = iconRotationDegrees(state),
             captureResult = captureResult(state),
             keepScreenOn = keepScreenOn(state),
             isSelfIlluminating = state.selfIlluminates(),
             isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
+            isTakingPicture = state.capture.isTakingPicture,
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
             dialog = state.dialog,
         )
@@ -71,14 +67,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
                 panelVisible = panelVisible,
             )
         }
-    }
-
-    override fun mapLevel(state: ViewfinderLevelState): LevelUiState {
-        return LevelUiState(
-            visible = state.visible,
-            tiltDegrees = state.tiltDegrees,
-            horizonDegrees = state.horizonDegrees,
-        )
     }
 
     private fun preview(state: ViewfinderState): PreviewUiModel {
@@ -295,16 +283,11 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun rotation(state: ViewfinderState): RotationUiModel {
-        val deviceRotation = deviceRotationDegrees(state)
-
-        return RotationUiModel(
-            iconDegrees = when {
-                state.autoRotateEnabled -> deviceRotation
-                else -> 0f
-            },
-            levelFrameDegrees = deviceRotation,
-        )
+    private fun iconRotationDegrees(state: ViewfinderState): Float {
+        return when {
+            state.autoRotateEnabled -> deviceRotationDegrees(state)
+            else -> 0f
+        }
     }
 
     private fun deviceRotationDegrees(state: ViewfinderState): Float {

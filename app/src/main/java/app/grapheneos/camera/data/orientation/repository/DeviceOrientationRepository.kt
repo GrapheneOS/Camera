@@ -9,21 +9,27 @@ import android.hardware.SensorManager
 import android.provider.Settings
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
+import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.IoDispatcher
 import javax.inject.Inject
 import kotlin.math.abs
-import kotlin.math.atan
-import kotlin.math.floor
+import kotlin.math.atan2
 import kotlin.math.sqrt
+import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.shareIn
 
 interface DeviceOrientationRepository {
 
-    fun motion(): Flow<DeviceMotion>
+    val motion: Flow<DeviceMotion>
 
     fun autoRotateEnabled(): Flow<Boolean>
 }
@@ -32,35 +38,48 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
     private val sensorManager: SensorManager,
     private val contentResolver: ContentResolver,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @ApplicationScope applicationScope: CoroutineScope,
 ) : DeviceOrientationRepository {
 
-    override fun motion(): Flow<DeviceMotion> {
+    private var lastOrientation = DeviceOrientation.DEGREES_0
+
+    override val motion: Flow<DeviceMotion> = observeMotion()
+        .conflate()
+        .shareIn(
+            scope = applicationScope,
+            started = SharingStarted.WhileSubscribed(replayExpiration = Duration.ZERO),
+            replay = 1,
+        )
+
+    private fun observeMotion(): Flow<DeviceMotion> {
         return callbackFlow {
+            val gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
+            val sensor = gravitySensor ?: sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
             val gravity = FloatArray(size = 3)
-            var orientation: DeviceOrientation? = null
 
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
                     for (axis in gravity.indices) {
-                        gravity[axis] = smooth(
-                            previous = gravity[axis],
-                            reading = event.values[axis],
-                        )
+                        gravity[axis] = when {
+                            gravitySensor != null -> event.values[axis]
+                            else -> smooth(
+                                previous = gravity[axis],
+                                reading = event.values[axis],
+                            )
+                        }
                     }
 
-                    orientation = orientationOf(
+                    lastOrientation = orientationOf(
                         gravityX = gravity[0],
                         gravityY = gravity[1],
-                    ) ?: orientation
+                    ) ?: lastOrientation
 
-                    orientation?.let { current ->
-                        val deviceMotion = motionOf(
+                    trySend(
+                        motionOf(
                             gravity = gravity,
-                            orientation = current,
-                        )
-
-                        trySend(deviceMotion)
-                    }
+                            orientation = lastOrientation,
+                        ),
+                    )
                 }
 
                 @Suppress("EmptyFunctionBlock")
@@ -69,8 +88,8 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
 
             sensorManager.registerListener(
                 listener,
-                sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-                SensorManager.SENSOR_DELAY_NORMAL,
+                sensor,
+                SensorManager.SENSOR_DELAY_GAME,
             )
 
             awaitClose {
@@ -131,28 +150,39 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
             orientation == DeviceOrientation.DEGREES_270
         val isUpsideDown = orientation == DeviceOrientation.DEGREES_180 ||
             orientation == DeviceOrientation.DEGREES_270
+        val isVerticalAxisReversed = orientation == DeviceOrientation.DEGREES_90 ||
+            orientation == DeviceOrientation.DEGREES_180
 
-        val (across, along) = when {
-            isSideways -> gravity[1] to gravity[0]
-            else -> gravity[0] to gravity[1]
+        val across = when {
+            isSideways -> gravity[1]
+            else -> gravity[0]
+        }
+        val along = when {
+            isSideways -> gravity[0]
+            else -> gravity[1]
         }
         val depth = gravity[2]
 
-        val tilt = floorDegrees(atan(across / sqrt(along * along + depth * depth)))
-        val horizon = floorDegrees(atan(depth / sqrt(along * along + across * across)))
+        val horizontal = when {
+            isUpsideDown -> -across
+            else -> across
+        }
+        val vertical = when {
+            isVerticalAxisReversed -> -along
+            else -> along
+        }
+        val tilt = degrees(atan2(horizontal, vertical))
+        val horizon = degrees(atan2(depth, sqrt(along * along + across * across)))
 
         return DeviceMotion(
             orientation = orientation,
-            tiltDegrees = when {
-                isUpsideDown -> -tilt
-                else -> tilt
-            },
+            tiltDegrees = tilt,
             horizonDegrees = horizon,
         )
     }
 
-    private fun floorDegrees(radians: Float): Int {
-        return floor(Math.toDegrees(radians.toDouble())).toInt()
+    private fun degrees(radians: Float): Float {
+        return Math.toDegrees(radians.toDouble()).toFloat()
     }
 
     private fun isAutoRotateEnabled(): Boolean {
