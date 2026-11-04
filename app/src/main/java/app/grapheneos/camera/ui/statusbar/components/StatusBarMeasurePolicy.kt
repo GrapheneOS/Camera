@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 private val EDGE_PADDING = 8.dp
+private val SETTINGS_END_PADDING = 24.dp
 private val BOTTOM_PADDING = 4.dp
 private val ITEM_OVERLAP = 8.dp
 
@@ -34,13 +35,14 @@ internal class StatusBarMeasurePolicy(
         val settingsPlaceable = settings.single().measure(Constraints())
         val itemPlaceables = items.map { item -> item.measure(Constraints()) }
         val rowTop = height - BOTTOM_PADDING.roundToPx() - settingsPlaceable.height
+        val settingsEnd = width - SETTINGS_END_PADDING.roundToPx()
         val cutoutSpan = cutoutSpan(
             width = width,
             rowTop = rowTop,
         )
         val settingsStart = settingsStart(
             cutoutSpan = cutoutSpan,
-            settingsEnd = width - edgePadding,
+            settingsEnd = settingsEnd,
             settingsWidth = settingsPlaceable.width,
         )
         val itemsStart = when {
