@@ -41,6 +41,8 @@ data class ViewfinderUiState(
     val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,
     val isQrMode: Boolean = false,
     val isVideoMode: Boolean = false,
+    val isSelfIlluminating: Boolean = false,
+    val isSettingsPanelAvailable: Boolean = false,
     val scanAllCodes: Boolean = false,
     val handlesVolumeKeys: Boolean = true,
     val availableModes: Set<CameraMode> = emptySet(),
@@ -48,7 +50,6 @@ data class ViewfinderUiState(
     val iconRotationDegrees: Float = 0f,
     val levelFrameRotationDegrees: Float = 0f,
     val exposure: ExposureUiState? = null,
-    val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
     val capture: CaptureUiState = CaptureUiState(),
     val dialog: ViewfinderDialog? = null,
 )

@@ -22,23 +22,20 @@ import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
-import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
-import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
-import app.grapheneos.camera.ui.common.videoQualityTitle
-import app.grapheneos.camera.ui.core.activity.SecureActivity
+import app.grapheneos.camera.ui.camerasettings.navigation.openCameraSettings
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
 import app.grapheneos.camera.ui.gallery.screen.galleryArguments
 import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
+import app.grapheneos.camera.ui.settingvalues.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.components.qr.showQrResultDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LocationAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 
 internal interface ViewfinderEffectHandler {
@@ -111,7 +108,6 @@ internal class ViewfinderEffectHandlerImpl(
         when (effect) {
             is Effect.Preview.ShowFocus -> showFocus(effect)
             is Effect.Preview.Flash -> flashPreview(effect.selfIlluminate)
-            is Effect.Preview.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
         }
     }
 
@@ -161,44 +157,22 @@ internal class ViewfinderEffectHandlerImpl(
         activity.mainOverlay.startAnimation(animation)
     }
 
-    private fun applySelfIllumination(enabled: Boolean) {
-        activity.settingsDialog.selfIllumination(enabled)
-    }
-
     private fun handleSettings(effect: Effect.Settings) {
         when (effect) {
-            is Effect.Settings.OpenSheet -> openSettingsSheet()
-            is Effect.Settings.CloseSheet -> activity.settingsDialog.slideDialogUp()
             is Effect.Settings.ShowQrFormats -> showQrFormats()
-            is Effect.Settings.OpenCameraSettings -> openCameraSettings(effect)
+            is Effect.Settings.OpenCameraSettings -> openCameraSettings(
+                activity = activity,
+                entryPoint = activity.cameraEntryPoint,
+                capabilities = effect.capabilities,
+            )
         }
     }
 
-    private fun openSettingsSheet() {
-        if (activity.settingsDialog.isShowing || !activity.settingsIcon.isEnabled) return
-
-        activity.settingsDialog.show()
-    }
-
     private fun showQrFormats() {
-        if (activity.settingsDialog.isShowing) return
-
         showMoreQrFormatOptions(
             activity = activity,
             barcodeFormats = activity.barcodeFormats,
         )
-    }
-
-    private fun openCameraSettings(effect: Effect.Settings.OpenCameraSettings) {
-        val screen = when (activity) {
-            is SecureActivity -> SecureCameraSettingsActivity::class.java
-            else -> CameraSettingsActivity::class.java
-        }
-        val intent = Intent(activity, screen)
-            .putExtras(cameraEntryPointArguments(activity.cameraEntryPoint))
-            .putExtras(cameraSettingsArguments(effect.capabilities))
-
-        activity.startActivity(intent)
     }
 
     private fun handleModeTab(effect: Effect.ModeTab) {
@@ -209,8 +183,6 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun selectAdjacentModeTab(offset: Int) {
-        if (activity.settingsDialog.isShowing) return
-
         val tabLayout = activity.tabLayout
 
         tabLayout.getTabAt(tabLayout.selectedTabPosition + offset)?.let(activity::finalizeMode)
@@ -284,7 +256,7 @@ internal class ViewfinderEffectHandlerImpl(
             msg = activity.getString(R.string.location_is_disabled),
             action = action,
         ) {
-            onAction(SettingsAction.EnableLocationClicked)
+            onAction(LocationAction.EnableLocationClicked)
         }
     }
 

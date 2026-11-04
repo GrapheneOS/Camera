@@ -30,6 +30,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect a
 import app.grapheneos.camera.util.printStackTraceToString
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -217,7 +218,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         selfTimer = scope.launch(mainDispatcher) {
             val timer = this
 
-            selfTimerCountdown(settings.selfTimerDurationSeconds).collect { secondsLeft ->
+            selfTimerCountdown(settings.selfTimerDuration).collect { secondsLeft ->
                 postEffect(Effect.SelfTimer.Ticked(secondsLeft))
                 playCameraSound(tickSound(secondsLeft))
 
@@ -263,9 +264,9 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
-    private fun selfTimerCountdown(seconds: Int): Flow<Int> {
+    private fun selfTimerCountdown(duration: Duration): Flow<Int> {
         return flow {
-            for (secondsLeft in seconds downTo 1) {
+            for (secondsLeft in duration.inWholeSeconds.toInt() downTo 1) {
                 emit(secondsLeft)
                 delay(SELF_TIMER_TICK)
             }

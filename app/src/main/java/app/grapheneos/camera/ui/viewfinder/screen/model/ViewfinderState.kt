@@ -26,6 +26,7 @@ data class ViewfinderState(
     val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
     val missingPermissions: Set<AppPermission> = emptySet(),
     val dialog: ViewfinderDialog? = null,
+    val isSettingsPanelOpen: Boolean = false,
     val deviceOrientation: DeviceOrientation? = null,
     val displayRotation: Int = Surface.ROTATION_0,
     val autoRotateEnabled: Boolean = false,
@@ -78,5 +79,9 @@ data class ViewfinderState(
     fun selfIlluminate(): Boolean {
         return modeSettings.selfIllumination &&
             session.lensFacing == LensFacing.FRONT
+    }
+
+    fun isSettingsPanelAvailable(): Boolean {
+        return !(recording.isActive() || capture.isSelfTimerRunning || isQrMode())
     }
 }

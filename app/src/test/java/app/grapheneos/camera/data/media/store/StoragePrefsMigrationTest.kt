@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.testutil.clearLegacyPreferences
 import app.grapheneos.camera.testutil.legacyCommonsFile
+import app.grapheneos.camera.testutil.preferenceFilesOf
 import app.grapheneos.camera.testutil.writeLegacyPreferences
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -21,7 +22,9 @@ class StoragePrefsMigrationTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val migration = StoragePrefsMigration(context)
+    private val files = preferenceFilesOf(context)
+
+    private val migration = StoragePrefsMigration(files)
 
     @Before
     fun clearLegacyFiles() {

@@ -2,13 +2,14 @@ package app.grapheneos.camera.data.settings.model
 
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
+import kotlin.time.Duration
 
 data class CameraSettings(
     val aspectRatio: AspectRatio = SettingsDefaults.ASPECT_RATIO,
     val gridType: GridType = SettingsDefaults.GRID_TYPE,
     val focusTimeoutSeconds: Long = SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
     val volumeKeyAction: VolumeKeyAction = SettingsDefaults.VOLUME_KEY_ACTION,
-    val selfTimerDurationSeconds: Int = SettingsDefaults.SELF_TIMER_DURATION,
+    val selfTimerDuration: Duration = SettingsDefaults.SELF_TIMER_DURATION,
     val timerLight: Boolean = SettingsDefaults.TIMER_LIGHT,
     val enableCameraSounds: Boolean = SettingsDefaults.CAMERA_SOUNDS,
     val includeAudio: Boolean = SettingsDefaults.INCLUDE_AUDIO,

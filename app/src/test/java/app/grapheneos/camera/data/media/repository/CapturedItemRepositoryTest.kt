@@ -20,10 +20,12 @@ import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapperImpl
 import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.ImageBounds
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.data.media.store.mediaPrefsSerializer
+import app.grapheneos.camera.testutil.retrieverDataSourceOf
 import io.mockk.Called
 import io.mockk.mockk
 import io.mockk.verify
@@ -274,7 +276,7 @@ class CapturedItemRepositoryTest {
             val screenSide = max(metrics.widthPixels, metrics.heightPixels)
             documents().file = jpeg(width = screenSide * 4, height = 10)
 
-            val preview = requireNotNull(repository().loadPhotoPreview(photo()))
+            val preview = requireNotNull(repository().loadPhotoPreview(photo(), screenBounds()))
 
             assertEquals(screenSide, preview.width)
         }
@@ -289,7 +291,7 @@ class CapturedItemRepositoryTest {
             val shortSide = min(metrics.widthPixels, metrics.heightPixels)
             documents().file = jpeg(width = shortSide * 2, height = shortSide * 2)
 
-            val preview = requireNotNull(repository().loadPhotoPreview(photo()))
+            val preview = requireNotNull(repository().loadPhotoPreview(photo(), screenBounds()))
 
             assertEquals(shortSide, preview.width)
             assertEquals(shortSide, preview.height)
@@ -317,7 +319,7 @@ class CapturedItemRepositoryTest {
         runTest {
             documents().file = jpeg(width = 40, height = 20)
 
-            val preview = requireNotNull(repository().loadPhotoPreview(photo()))
+            val preview = requireNotNull(repository().loadPhotoPreview(photo(), screenBounds()))
 
             assertEquals(40, preview.width)
             assertEquals(20, preview.height)
@@ -334,7 +336,7 @@ class CapturedItemRepositoryTest {
                 writeBytes(whole.readBytes().copyOf(whole.length().toInt() / 2))
             }
 
-            assertNull(repository().loadPhotoPreview(photo()))
+            assertNull(repository().loadPhotoPreview(photo(), screenBounds()))
         }
     }
 
@@ -343,8 +345,17 @@ class CapturedItemRepositoryTest {
         runTest {
             documents()
 
-            assertNull(repository().loadPhotoPreview(photo()))
+            assertNull(repository().loadPhotoPreview(photo(), screenBounds()))
         }
+    }
+
+    private fun screenBounds(): ImageBounds {
+        val metrics = context.resources.displayMetrics
+
+        return ImageBounds(
+            longSide = max(metrics.widthPixels, metrics.heightPixels),
+            shortSide = min(metrics.widthPixels, metrics.heightPixels),
+        )
     }
 
     private fun TestScope.repository(
@@ -359,7 +370,7 @@ class CapturedItemRepositoryTest {
             storedCapturedItemMapper = StoredCapturedItemMapperImpl(),
             safTreeReleaseFlagsMapper = SafTreeReleaseFlagsMapperImpl(),
             contentResolver = contentResolver,
-            context = context,
+            retrieverDataSource = retrieverDataSourceOf(context),
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
             videoFrameDispatcher = UnconfinedTestDispatcher(testScheduler),
         )

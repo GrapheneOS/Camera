@@ -39,17 +39,9 @@ sealed interface ViewfinderScreenEffect {
         data class Flash(
             val selfIlluminate: Boolean,
         ) : Preview
-
-        data class ApplySelfIllumination(
-            val enabled: Boolean,
-        ) : Preview
     }
 
     sealed interface Settings : ViewfinderScreenEffect {
-
-        data object OpenSheet : Settings
-
-        data object CloseSheet : Settings
 
         data object ShowQrFormats : Settings
 

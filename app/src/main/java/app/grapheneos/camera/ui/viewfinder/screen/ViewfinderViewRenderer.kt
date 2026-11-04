@@ -1,20 +1,27 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.animation.ValueAnimator
+import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.LinearInterpolator
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.updateLayoutParams
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.core.theme.cameraColorScheme
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import com.google.android.material.color.MaterialColors
 import kotlin.math.abs
 
 internal class ViewfinderViewRenderer(
@@ -28,6 +35,10 @@ internal class ViewfinderViewRenderer(
     private var renderedIconRotation: Float? = null
     private var renderedLevelFrameRotation: Float? = null
     private var renderedKeepScreenOn = false
+    private var renderedSelfIlluminating = false
+    private var litFraction = 0f
+    private var settingsPanelFraction = 0f
+    private val panelTextColor by lazy { panelTextColor() }
     private var renderedThumbnail: Bitmap? = null
 
     fun render(state: ViewfinderUiState) {
@@ -62,10 +73,10 @@ internal class ViewfinderViewRenderer(
         activity.cdTimer.visibility = visibleOrGone(state.selfTimerCountdownVisible)
         activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
 
-        activity.settingsDialog.render(state.settingsSheet)
         activity.exposureBar.render(state.exposure)
 
         renderKeepScreenOn(state.keepScreenOn)
+        renderSelfIllumination(state.isSelfIlluminating)
         renderThumbnailLoader(state.thumbnailLoaderVisible)
         renderThumbnail(state.thumbnail)
         renderModeTabs(state)
@@ -92,6 +103,79 @@ internal class ViewfinderViewRenderer(
             keepScreenOn -> activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             else -> activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    private fun renderSelfIllumination(selfIlluminating: Boolean) {
+        if (selfIlluminating == renderedSelfIlluminating) return
+        renderedSelfIlluminating = selfIlluminating
+
+        animateSelfIllumination(selfIlluminating)
+        renderScreenBrightness(selfIlluminating)
+    }
+
+    private fun animateSelfIllumination(lit: Boolean) {
+        val tabLayout = activity.tabLayout
+        val light = activity.getColor(R.color.self_illumination_light)
+        val indicator = MaterialColors.getColor(tabLayout, androidx.appcompat.R.attr.colorPrimary)
+
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = SELF_ILLUMINATION_DURATION
+            addUpdateListener { animator ->
+                val fraction = when {
+                    lit -> animator.animatedFraction
+                    else -> 1f - animator.animatedFraction
+                }
+                val background = ColorUtils.blendARGB(Color.BLACK, light, fraction)
+                litFraction = fraction
+
+                activity.previewView.setBackgroundColor(background)
+                activity.rootView.setBackgroundColor(background)
+                activity.bottomOverlay.setBackgroundColor(background)
+                renderTabTextColors()
+                tabLayout.setSelectedTabIndicatorColor(
+                    ColorUtils.blendARGB(indicator, Color.BLACK, fraction),
+                )
+            }
+            start()
+        }
+    }
+
+    fun renderSettingsPanelFraction(fraction: Float) {
+        settingsPanelFraction = fraction
+        renderTabTextColors()
+    }
+
+    private fun renderTabTextColors() {
+        val tabLayout = activity.tabLayout
+        val selectedText = MaterialColors.getColor(
+            tabLayout,
+            com.google.android.material.R.attr.colorOnPrimary,
+        )
+        val text = ColorUtils.blendARGB(Color.WHITE, panelTextColor, settingsPanelFraction)
+
+        tabLayout.setTabTextColors(
+            ColorUtils.blendARGB(text, Color.BLACK, litFraction),
+            ColorUtils.blendARGB(selectedText, Color.WHITE, litFraction),
+        )
+    }
+
+    private fun panelTextColor(): Int {
+        val nightMode = activity.resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK
+
+        return cameraColorScheme(
+            context = activity,
+            darkTheme = nightMode == Configuration.UI_MODE_NIGHT_YES,
+        ).onSurface.toArgb()
+    }
+
+    private fun renderScreenBrightness(lit: Boolean) {
+        val attributes = activity.window.attributes
+        attributes.screenBrightness = when {
+            lit -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
+            else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
+        activity.window.attributes = attributes
     }
 
     private fun renderThumbnailLoader(visible: Boolean) {
@@ -162,7 +246,6 @@ internal class ViewfinderViewRenderer(
             activity.binding.exposureNegIcon,
             activity.binding.zoomInIcon,
             activity.binding.zoomOutIcon,
-            activity.settingsDialog.settingsFrame,
             activity.micOffIcon,
             activity.muteToggle,
         )
@@ -262,6 +345,7 @@ internal class ViewfinderViewRenderer(
 
     private companion object {
         private const val ROTATION_DURATION = 400L
+        private const val SELF_ILLUMINATION_DURATION = 300L
         private const val LEVEL_LINE_THICKNESS_DP = 4
         private const val TILTED_LINE_THICKNESS_DP = 2
         private const val HORIZON_RANGE_DEGREES = 45

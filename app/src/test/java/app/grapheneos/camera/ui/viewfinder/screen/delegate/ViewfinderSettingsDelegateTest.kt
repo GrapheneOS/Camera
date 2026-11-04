@@ -5,17 +5,24 @@ import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.ModeSlot
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
@@ -66,38 +73,6 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun setSelfTimerDuration_isInTheStateBeforeItReturns() {
-        runTest {
-            every { settingsRepository.update(transform = any()) } answers {
-                firstArg<(CameraSettings) -> CameraSettings>().invoke(storedSettings.value)
-            }
-
-            val delegate = createDelegate()
-
-            delegate.setSelfTimerDuration(seconds = SELF_TIMER_SECONDS)
-
-            assertEquals(
-                SELF_TIMER_SECONDS,
-                stateHolder.state.value.settings.selfTimerDurationSeconds,
-            )
-        }
-    }
-
-    @Test
-    fun perModeWrite_beforeAModeIsSlotted_isDropped() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.setSelfIllumination(enabled = true)
-
-            verify(exactly = 0) {
-                settingsRepository.setSelfIllumination(slot = any(), value = any())
-            }
-            assertEquals(ModeSettings(), stateHolder.state.value.modeSettings)
-        }
-    }
-
-    @Test
     fun selectModeSlot_loadsThatSlotsSettings() {
         runTest {
             every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
@@ -110,19 +85,219 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun perModeWrite_afterAModeIsSlotted_keepsWhatTheRepositoryStored() {
+    fun modeSettings_changedElsewhere_reachTheStateForTheSlotInUse() {
         runTest {
-            val stored = SLOTTED.copy(videoQuality = VideoQuality.UHD)
+            val slotted = MutableStateFlow(SLOTTED)
+            val left = MutableStateFlow(ModeSettings())
             every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
-            every {
-                settingsRepository.setVideoQuality(slot = SLOT, value = VideoQuality.UHD)
-            } returns stored
+            every { settingsRepository.observeModeSettings(SLOT) } returns slotted
+            every { settingsRepository.observeModeSettings(OTHER_SLOT) } returns left
 
             val delegate = createDelegate()
+            delegate.selectModeSlot(OTHER_SLOT)
             delegate.selectModeSlot(SLOT)
-            delegate.setVideoQuality(VideoQuality.UHD)
 
-            assertEquals(stored, stateHolder.state.value.modeSettings)
+            slotted.value = SLOTTED.copy(videoQuality = VideoQuality.UHD)
+            left.value = ModeSettings(videoQuality = VideoQuality.SD)
+
+            assertEquals(
+                SLOTTED.copy(videoQuality = VideoQuality.UHD),
+                stateHolder.state.value.modeSettings,
+            )
+        }
+    }
+
+    @Test
+    fun rebindRequests_followAspectRatioWritesOnceTheStateHoldsThem() {
+        runTest {
+            val delegate = createDelegate()
+            val ratiosAtRequest = mutableListOf<AspectRatio>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.rebindRequests().collect {
+                    ratiosAtRequest += stateHolder.state.value.settings.aspectRatio
+                }
+            }
+
+            settingsRepository.update { it.copy(aspectRatio = AspectRatio.RATIO_16_9) }
+            settingsRepository.update { it.copy(aspectRatio = AspectRatio.RATIO_16_9) }
+
+            assertEquals(listOf(AspectRatio.RATIO_16_9), ratiosAtRequest)
+        }
+    }
+
+    @Test
+    fun rebindRequests_followVideoQualityWritesButNotSlotSwitches() {
+        runTest {
+            val stored = MutableStateFlow(SLOTTED)
+            every { settingsRepository.modeSettings(SLOT) } answers { stored.value }
+            every { settingsRepository.observeModeSettings(SLOT) } returns stored
+            val delegate = createDelegate()
+            val qualitiesAtRequest = mutableListOf<VideoQuality>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.rebindRequests().collect {
+                    qualitiesAtRequest += stateHolder.state.value.modeSettings.videoQuality
+                }
+            }
+
+            delegate.selectModeSlot(SLOT)
+            stored.value = SLOTTED.copy(videoQuality = VideoQuality.UHD)
+            delegate.selectModeSlot(OTHER_SLOT)
+
+            assertEquals(listOf(VideoQuality.UHD), qualitiesAtRequest)
+        }
+    }
+
+    @Test
+    fun rebindRequests_followFrameRateWrites() {
+        runTest {
+            val stored = MutableStateFlow(SLOTTED)
+            every { settingsRepository.modeSettings(SLOT) } answers { stored.value }
+            every { settingsRepository.observeModeSettings(SLOT) } returns stored
+            val delegate = createDelegate()
+            val frameRatesAtRequest = mutableListOf<VideoFrameRate>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.rebindRequests().collect {
+                    frameRatesAtRequest += stateHolder.state.value.modeSettings.videoFrameRate
+                }
+            }
+
+            delegate.selectModeSlot(SLOT)
+            stored.value = SLOTTED.copy(videoFrameRate = VideoFrameRate.FPS_60)
+
+            assertEquals(listOf(VideoFrameRate.FPS_60), frameRatesAtRequest)
+        }
+    }
+
+    @Test
+    fun videoLightWrites_followWritesToTheCurrentSlotButNotSlotSwitches() {
+        runTest {
+            val stored = MutableStateFlow(SLOTTED)
+            every { settingsRepository.modeSettings(SLOT) } answers { stored.value }
+            every { settingsRepository.observeModeSettings(SLOT) } returns stored
+            val delegate = createDelegate()
+            val writes = mutableListOf<Boolean>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.videoLightWrites().collect { enabled -> writes += enabled }
+            }
+
+            delegate.selectModeSlot(SLOT)
+            stored.value = SLOTTED.copy(flashMode = FlashMode.ON)
+            delegate.selectModeSlot(OTHER_SLOT)
+
+            assertEquals(listOf(true), writes)
+        }
+    }
+
+    @Test
+    fun settingsPanel_isNavigatedToOutsideQrModeAndRecordings() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+
+            delegate.openSettingsPanel()
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
+            }
+            delegate.openSettingsPanel()
+            stateHolder.update {
+                it.copy(mode = CameraMode.QR_SCAN, recording = ViewfinderRecordingState())
+            }
+            delegate.openSettingsPanel()
+
+            assertEquals(listOf(ViewfinderNavEvent.OpenSettingsPanel()), events)
+        }
+    }
+
+    @Test
+    fun settingsPanel_carriesTheSettingToHighlight() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+
+            delegate.openSettingsPanel(highlight = QuickSetting.SELF_TIMER)
+
+            assertEquals(
+                listOf(ViewfinderNavEvent.OpenSettingsPanel(highlight = QuickSetting.SELF_TIMER)),
+                events,
+            )
+        }
+    }
+
+    @Test
+    fun settingsPanel_closesOnSwitchingToQrScanning() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+
+            assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
+        }
+    }
+
+    @Test
+    fun settingsPanel_closesOnceARecordingOrTheSelfTimerStarts() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
+            }
+            stateHolder.update { it.copy(recording = ViewfinderRecordingState()) }
+            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+
+            assertEquals(
+                listOf(
+                    ViewfinderNavEvent.CloseSettingsPanel,
+                    ViewfinderNavEvent.CloseSettingsPanel,
+                ),
+                events,
+            )
+        }
+    }
+
+    @Test
+    fun settingsPanel_shownWhileUnavailable_isClosed() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
+            }
+
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
+        }
+    }
+
+    @Test
+    fun capturing_withTheSettingsPanelClosed_navigatesNowhere() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
+            }
+
+            assertEquals(emptyList<ViewfinderNavEvent>(), events)
+        }
+    }
+
+    @Test
+    fun settingsPanel_isOpenOnlyWhileTheHostShowsIt() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.openSettingsPanel()
+            assertFalse(stateHolder.state.value.isSettingsPanelOpen)
+
+            delegate.onSettingsPanelVisibilityChanged(true)
+            assertTrue(stateHolder.state.value.isSettingsPanelOpen)
         }
     }
 
@@ -170,12 +345,17 @@ class ViewfinderSettingsDelegateTest {
         backgroundScope.launch(mainDispatcherRule.testDispatcher) {
             delegate.trackSettings()
         }
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            delegate.trackModeSettings()
+        }
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            delegate.trackSettingsPanelAvailability()
+        }
 
         return delegate
     }
 
     private companion object {
-        const val SELF_TIMER_SECONDS = 5
 
         val CAPABILITIES = CameraCapabilities(
             lensFeatures = mapOf(
@@ -191,6 +371,7 @@ class ViewfinderSettingsDelegateTest {
         )
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
+        val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
         val SLOTTED = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
     }
 }

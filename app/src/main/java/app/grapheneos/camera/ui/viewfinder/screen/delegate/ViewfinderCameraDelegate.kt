@@ -69,6 +69,7 @@ interface ViewfinderCameraDelegate {
     fun setPreviewRotation(rotation: Int)
 
     fun applyFlashMode(value: FlashMode)
+    fun applyVideoLight(enabled: Boolean)
     fun toggleTorch()
 
     fun stepZoom(step: Float)
@@ -81,7 +82,6 @@ interface ViewfinderCameraDelegate {
     fun focusAt(x: Float, y: Float)
     fun cancelFocus()
 
-    fun refreshVideoQualities()
     fun dismissQrResult()
 
     fun capabilities(): CameraCapabilities
@@ -149,6 +149,13 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                     .map { state -> state.barcodeFormats() }
                     .distinctUntilChanged()
                     .collect { barcodeFormats -> session.setBarcodeFormats(barcodeFormats) }
+            }
+
+            launch {
+                stateHolder.state
+                    .map { state -> state.modeSettings.flashMode }
+                    .distinctUntilChanged()
+                    .collect(::applyFlashMode)
             }
 
             stateHolder.state
@@ -270,6 +277,13 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
     }
 
+    override fun applyVideoLight(enabled: Boolean) {
+        val state = stateHolder.state.value
+        if (state.isQrMode()) return
+
+        torch.enable(state.isVideoMode() && enabled)
+    }
+
     override fun toggleTorch() {
         torch.enable(!torch.isOn)
 
@@ -279,7 +293,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun stepZoom(step: Float) {
-        if (stateHolder.state.value.isQrMode()) return
+        val state = stateHolder.state.value
+        if (state.isQrMode()) return
 
         val zoom = session.zoom ?: return
         val requested = zoom.zoomRatio + step
@@ -334,7 +349,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         y: Float,
     ) {
         val state = stateHolder.state.value
-
         if (state.isQrMode()) return
 
         session.startFocusAndMetering(
@@ -362,14 +376,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         // cancel any manual focus
         // CameraX will start the continuous autofocus (if supported) automatically
         session.cancelFocusAndMetering()
-    }
-
-    override fun refreshVideoQualities() {
-        val videoQualities = session.supportedVideoQualities()
-
-        stateHolder.update {
-            it.copy(session = it.session.copy(videoQualities = videoQualities))
-        }
     }
 
     override fun dismissQrResult() {
@@ -450,7 +456,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                 session = it.session.copy(
                     lensFacing = session.lensFacing,
                     canTakePicture = session.imageCapture != null,
-                    isFlashAvailable = torch.isAvailable,
                     isTorchOn = false,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,
                 ),

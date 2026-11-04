@@ -63,14 +63,12 @@ class CountDownTimerUI @JvmOverloads constructor(
     }
 
     private fun beforeTimeStarts() {
-        mActivity.settingsIcon.visibility = View.INVISIBLE
         mActivity.flipCameraCircle.visibility = View.INVISIBLE
 
         isRunning = true
     }
 
     fun onTimerEnded() {
-        mActivity.settingsIcon.visibility = View.VISIBLE
         mActivity.flipCameraCircle.visibility = View.VISIBLE
 
         isRunning = false

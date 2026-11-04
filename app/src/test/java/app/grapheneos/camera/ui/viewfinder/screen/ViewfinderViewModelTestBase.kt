@@ -10,6 +10,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
@@ -17,7 +18,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionD
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
@@ -55,6 +55,7 @@ open class ViewfinderViewModelTestBase {
     protected val screenWakeDelegate = mockk<ViewfinderScreenWakeDelegate>(relaxed = true)
     protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
     protected val dialogDelegate = mockk<ViewfinderDialogDelegate>(relaxed = true)
+    protected val gestureDelegate = mockk<ViewfinderGestureDelegate>(relaxed = true)
 
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
@@ -88,10 +89,10 @@ open class ViewfinderViewModelTestBase {
             screenWakeDelegate = screenWakeDelegate,
             galleryDelegate = galleryDelegate,
             dialogDelegate = dialogDelegate,
+            gestureDelegate = gestureDelegate,
             uiStateMapper = mockk(relaxed = true),
             zoomUiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),
-            swipeEffectMapper = SwipeEffectMapperImpl(),
             volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
         )
 
