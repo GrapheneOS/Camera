@@ -179,12 +179,11 @@ class ViewfinderUiStateMapperTest {
             ),
         )
 
-        assertEquals(180f, state.rotation.iconDegrees)
-        assertEquals(180f, state.rotation.levelFrameDegrees)
+        assertEquals(180f, state.iconRotationDegrees)
     }
 
     @Test
-    fun icons_withoutAutoRotate_stayUprightWhileTheLevelFrameStillTurns() {
+    fun icons_withoutAutoRotate_stayUpright() {
         val state = mapper.map(
             ViewfinderState(
                 mode = CameraMode.CAMERA,
@@ -194,8 +193,7 @@ class ViewfinderUiStateMapperTest {
             ),
         )
 
-        assertEquals(0f, state.rotation.iconDegrees)
-        assertEquals(270f, state.rotation.levelFrameDegrees)
+        assertEquals(0f, state.iconRotationDegrees)
     }
 
     @Test
@@ -213,13 +211,12 @@ class ViewfinderUiStateMapperTest {
             ),
         )
 
-        assertEquals(0f, state.rotation.iconDegrees)
+        assertEquals(0f, state.iconRotationDegrees)
     }
 
     @Test
     fun icons_beforeTheSensorHasSpoken_stayUpright() {
-        assertEquals(0f, map().rotation.iconDegrees)
-        assertEquals(0f, map().rotation.levelFrameDegrees)
+        assertEquals(0f, map().iconRotationDegrees)
     }
 
     @Test
@@ -300,7 +297,9 @@ class ViewfinderUiStateMapperTest {
         val taking = map(capture = ViewfinderCaptureState(isTakingPicture = true))
 
         assertFalse(taking.captureButton.enabled)
+        assertTrue(taking.isTakingPicture)
         assertTrue(map().captureButton.enabled)
+        assertFalse(map().isTakingPicture)
     }
 
     @Test

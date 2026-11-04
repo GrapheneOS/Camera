@@ -6,7 +6,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
-import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -28,7 +27,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -75,7 +73,6 @@ open class ViewfinderViewModelTestBase {
     protected val recordingEvents = MutableSharedFlow<ViewfinderRecordingEvent>()
 
     protected lateinit var stateHolder: ViewfinderStateHolder
-    protected lateinit var levelStateHolder: StateHolder<ViewfinderLevelState>
 
     private val viewModels = mutableListOf<ViewfinderViewModel>()
 
@@ -124,10 +121,6 @@ open class ViewfinderViewModelTestBase {
         val boundStateHolder = slot<ViewfinderStateHolder>()
         verify { modeDelegate.bind(capture(boundStateHolder)) }
         stateHolder = boundStateHolder.captured
-
-        val boundLevelStateHolder = slot<StateHolder<ViewfinderLevelState>>()
-        verify { orientationDelegate.bind(any(), capture(boundLevelStateHolder)) }
-        levelStateHolder = boundLevelStateHolder.captured
 
         return viewModel
     }

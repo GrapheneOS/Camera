@@ -22,7 +22,7 @@ internal class LevelPaint(
         end: Offset,
         width: Float,
         color: Color,
-        alpha: Float,
+        alpha: Float = 1f,
     ) {
         prepare(
             color = color,
@@ -38,19 +38,15 @@ internal class LevelPaint(
         center: Offset,
         radius: Float,
         color: Color,
-        alpha: Float,
     ) {
-        prepare(
-            color = color,
-            alpha = alpha,
-        )
+        prepare(color = color)
         paint.style = Paint.Style.FILL
         canvas.nativeCanvas.drawCircle(center.x, center.y, radius, paint)
     }
 
     private fun prepare(
         color: Color,
-        alpha: Float,
+        alpha: Float = 1f,
     ) {
         paint.color = color.copy(alpha = color.alpha * alpha).toArgb()
         paint.setShadowLayer(

@@ -5,83 +5,92 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
-import app.grapheneos.camera.ui.components.motion.animateFollow
-import app.grapheneos.camera.ui.components.motion.animateTurn
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 
 @Stable
 internal class LevelIndicatorMotion(
+    val mode: LevelIndicatorMode,
     roll: State<Float>,
     pitch: State<Float>,
-    rollLevel: State<Float>,
-    pitchLevel: State<Float>,
-    verticalLevel: State<Float>,
-    topDown: State<Float>,
+    rollAlignmentFraction: State<Float>,
+    pitchAlignmentFraction: State<Float>,
+    verticalAlignmentFraction: State<Float>,
 ) {
     val roll by roll
     val pitch by pitch
-    val rollLevel by rollLevel
-    val pitchLevel by pitchLevel
-    val verticalLevel by verticalLevel
-    val topDown by topDown
+    val rollAlignmentFraction by rollAlignmentFraction
+    val pitchAlignmentFraction by pitchAlignmentFraction
+    val verticalAlignmentFraction by verticalAlignmentFraction
 }
 
 @Composable
 internal fun rememberLevelIndicatorMotion(
+    mode: LevelIndicatorMode,
     roll: () -> Float,
     pitch: () -> Float,
 ): LevelIndicatorMotion {
-    val shownRoll = animateTurn(
-        degrees = roll,
-        animationSpec = SETTLE_SPEC,
+    val shownAngles = rememberLevelIndicatorAngles(
+        mode = mode,
+        roll = roll,
+        pitch = pitch,
     )
-    val shownPitch = animateFollow(
-        value = pitch,
-        animationSpec = SETTLE_SPEC,
-    )
-    val rollLevel = animateLevelFraction { LevelZone.isRollLevel(roll = shownRoll.value) }
-    val pitchLevel = animateLevelFraction { LevelZone.isPitchLevel(pitch = shownPitch.value) }
-    val verticalLevel = animateLevelFraction { LevelZone.isVertical(pitch = shownPitch.value) }
-    val topDown = animateTopDownFraction(pitch = shownPitch)
+    val shownRoll = remember(shownAngles) { derivedStateOf { shownAngles.value.roll } }
+    val shownPitch = remember(shownAngles) { derivedStateOf { shownAngles.value.pitch } }
+    val rollAlignmentFraction = animateAlignmentFraction {
+        LevelZone.isRollLevel(roll = shownRoll.value)
+    }
+    val pitchAlignmentFraction = animateAlignmentFraction {
+        LevelZone.isPitchLevel(pitch = shownPitch.value)
+    }
+    val verticalAlignmentFraction = animateAlignmentFraction {
+        LevelZone.isVertical(pitch = shownPitch.value)
+    }
 
-    LevelHapticEffect(
+    LevelIndicatorHapticEffect(
+        mode = mode,
         roll = shownRoll,
         pitch = shownPitch,
     )
 
-    return remember(shownRoll, shownPitch, rollLevel, pitchLevel, verticalLevel, topDown) {
+    return remember(
+        mode,
+        shownRoll,
+        shownPitch,
+        rollAlignmentFraction,
+        pitchAlignmentFraction,
+        verticalAlignmentFraction,
+    ) {
         LevelIndicatorMotion(
+            mode = mode,
             roll = shownRoll,
             pitch = shownPitch,
-            rollLevel = rollLevel,
-            pitchLevel = pitchLevel,
-            verticalLevel = verticalLevel,
-            topDown = topDown,
+            rollAlignmentFraction = rollAlignmentFraction,
+            pitchAlignmentFraction = pitchAlignmentFraction,
+            verticalAlignmentFraction = verticalAlignmentFraction,
         )
     }
 }
 
 @Composable
-private fun animateLevelFraction(isLevel: () -> Boolean): State<Float> {
-    val currentIsLevel by rememberUpdatedState(isLevel)
+private fun animateAlignmentFraction(isAligned: () -> Boolean): State<Float> {
+    val currentIsAligned by rememberUpdatedState(isAligned)
     val fraction = remember {
-        Animatable(initialValue = fractionOf(level = Snapshot.withoutReadObservation(isLevel)))
+        val initiallyAligned = Snapshot.withoutReadObservation(isAligned)
+        Animatable(initialValue = alignmentFraction(isAligned = initiallyAligned))
     }
 
     LaunchedEffect(fraction) {
-        snapshotFlow { currentIsLevel() }.collectLatest { level ->
+        snapshotFlow { currentIsAligned() }.collectLatest { aligned ->
             fraction.animateTo(
-                targetValue = fractionOf(level = level),
+                targetValue = alignmentFraction(isAligned = aligned),
                 animationSpec = SETTLE_SPEC,
             )
         }
@@ -90,70 +99,9 @@ private fun animateLevelFraction(isLevel: () -> Boolean): State<Float> {
     return fraction.asState()
 }
 
-@Composable
-private fun animateTopDownFraction(pitch: State<Float>): State<Float> {
-    val fraction = remember {
-        val isTopDown = Snapshot.withoutReadObservation {
-            LevelZone.isTopDown(
-                pitch = pitch.value,
-                wasTopDown = false,
-            )
-        }
-
-        Animatable(initialValue = fractionOf(level = isTopDown))
-    }
-
-    LaunchedEffect(pitch) {
-        var isTopDown = fraction.value == 1f
-
-        snapshotFlow { pitch.value }
-            .map { value ->
-                isTopDown = LevelZone.isTopDown(
-                    pitch = value,
-                    wasTopDown = isTopDown,
-                )
-                isTopDown
-            }
-            .distinctUntilChanged()
-            .collectLatest { topDown ->
-                fraction.animateTo(
-                    targetValue = fractionOf(level = topDown),
-                    animationSpec = SETTLE_SPEC,
-                )
-            }
-    }
-
-    return fraction.asState()
-}
-
-@Composable
-private fun LevelHapticEffect(
-    roll: State<Float>,
-    pitch: State<Float>,
-) {
-    fun currentZone(): LevelZone {
-        return LevelZone.of(
-            roll = roll.value,
-            pitch = pitch.value,
-        )
-    }
-
-    val hapticFeedback = rememberUpdatedState(LocalHapticFeedback.current)
-
-    LaunchedEffect(roll, pitch) {
-        val tracker = LevelTracker(initialZone = currentZone())
-
-        snapshotFlow { currentZone() }.collect { zone ->
-            if (tracker.reachesLevel(zone = zone)) {
-                hapticFeedback.value.performHapticFeedback(HapticFeedbackType.SegmentTick)
-            }
-        }
-    }
-}
-
-private fun fractionOf(level: Boolean): Float {
+private fun alignmentFraction(isAligned: Boolean): Float {
     return when {
-        level -> 1f
+        isAligned -> 1f
         else -> 0f
     }
 }

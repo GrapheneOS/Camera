@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Vibrator
 import android.provider.MediaStore
 import android.view.animation.Transformation
 import android.widget.ImageView
@@ -32,7 +31,6 @@ class ViewfinderEffectHandlerTest {
     private val flashVisibility = mutableListOf<Boolean>()
     private val handler = ViewfinderEffectHandlerImpl(
         activity = activity,
-        vibrator = mockk<Vibrator>(),
         capturedItemIntents = mockk(),
         onAction = {},
         onPreviewFlashVisibilityChanged = { visible -> flashVisibility += visible },

@@ -11,9 +11,6 @@ import android.content.res.Resources
 import android.hardware.SensorManager
 import android.hardware.camera2.CameraManager
 import android.location.LocationManager
-import android.os.Build
-import android.os.Vibrator
-import android.os.VibratorManager
 import app.grapheneos.camera.data.core.notification.NotificationBuilderFactory
 import dagger.Module
 import dagger.Provides
@@ -105,22 +102,6 @@ internal class SystemServicesProvidesModule {
     ): NotificationBuilderFactory {
         return NotificationBuilderFactory { channelId ->
             Notification.Builder(context, channelId)
-        }
-    }
-
-    @Provides
-    @Reusable
-    fun provideVibrator(
-        @ApplicationContext context: Context,
-    ): Vibrator {
-        return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                context.getSystemService(VibratorManager::class.java).defaultVibrator
-            }
-
-            else -> {
-                context.getSystemService(Vibrator::class.java)
-            }
         }
     }
 }

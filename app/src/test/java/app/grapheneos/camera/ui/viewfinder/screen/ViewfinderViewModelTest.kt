@@ -5,7 +5,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.LensFacing
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
@@ -13,7 +12,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Lifecyc
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderModeStripState
 import io.mockk.coEvery
 import io.mockk.every
@@ -32,42 +30,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
-
-    @Test
-    fun levelState_isMappedInitiallyAndWhenTheLevelChanges() {
-        runTest {
-            val initial = ViewfinderLevelState()
-            val changed = initial.copy(visible = true, tiltDegrees = -3, horizonDegrees = -12)
-            val hidden = changed.copy(visible = false)
-            val initialUiState = mockk<LevelUiState>()
-            val changedUiState = mockk<LevelUiState>()
-            val hiddenUiState = mockk<LevelUiState>()
-            every { uiStateMapper.mapLevel(initial) } returns initialUiState
-            every { uiStateMapper.mapLevel(changed) } returns changedUiState
-            every { uiStateMapper.mapLevel(hidden) } returns hiddenUiState
-            val viewModel = createViewModel()
-            val screenState = stateHolder.state.value
-            assertSame(initialUiState, viewModel.levelUiState.value)
-
-            val levels = mutableListOf<LevelUiState>()
-            val collection = backgroundScope.launch(mainDispatcherRule.testDispatcher) {
-                viewModel.levelUiState.collect { level -> levels += level }
-            }
-
-            assertEquals(listOf(initialUiState), levels)
-
-            levelStateHolder.update { changed }
-
-            assertSame(changedUiState, viewModel.levelUiState.value)
-            assertSame(changedUiState, levels.last())
-            assertSame(screenState, stateHolder.state.value)
-
-            collection.cancel()
-            levelStateHolder.update { hidden }
-
-            assertSame(hiddenUiState, viewModel.levelUiState.value)
-        }
-    }
 
     @Test
     fun screenResumed_withTheProviderReady_startsTheBindBeforeReturning() {

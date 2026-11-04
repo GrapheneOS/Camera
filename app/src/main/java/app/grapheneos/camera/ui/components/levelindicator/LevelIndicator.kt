@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
@@ -26,6 +27,7 @@ private val SHADOW_RADIUS = 1.dp
  */
 @Composable
 internal fun LevelIndicator(
+    mode: LevelIndicatorMode,
     roll: () -> Float,
     pitch: () -> Float,
     modifier: Modifier = Modifier,
@@ -33,6 +35,7 @@ internal fun LevelIndicator(
 ) {
     val rotation = LocalContentRotation.current
     val motion = rememberLevelIndicatorMotion(
+        mode = mode,
         roll = roll,
         pitch = pitch,
     )
@@ -74,12 +77,36 @@ private fun LevelIndicatorPreview() {
                 horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(space = 16.dp),
             ) {
-                PreviewLevelIndicator(roll = -22f, pitch = -30f)
-                PreviewLevelIndicator(roll = -23f, pitch = 0f)
-                PreviewLevelIndicator(roll = 0f, pitch = 20f)
-                PreviewLevelIndicator(roll = 0f, pitch = 0f)
-                PreviewLevelIndicator(roll = 150f, pitch = -70f)
-                PreviewLevelIndicator(roll = 0f, pitch = -90f)
+                PreviewLevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
+                    roll = -22f,
+                    pitch = -30f,
+                )
+                PreviewLevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
+                    roll = -23f,
+                    pitch = 0f,
+                )
+                PreviewLevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
+                    roll = 0f,
+                    pitch = 20f,
+                )
+                PreviewLevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
+                    roll = 0f,
+                    pitch = 0f,
+                )
+                PreviewLevelIndicator(
+                    mode = LevelIndicatorMode.Crosshairs,
+                    roll = 150f,
+                    pitch = -70f,
+                )
+                PreviewLevelIndicator(
+                    mode = LevelIndicatorMode.Crosshairs,
+                    roll = 0f,
+                    pitch = -90f,
+                )
             }
         }
     }
@@ -87,10 +114,12 @@ private fun LevelIndicatorPreview() {
 
 @Composable
 private fun PreviewLevelIndicator(
+    mode: LevelIndicatorMode,
     roll: Float,
     pitch: Float,
 ) {
     LevelIndicator(
+        mode = mode,
         roll = { roll },
         pitch = { pitch },
     )

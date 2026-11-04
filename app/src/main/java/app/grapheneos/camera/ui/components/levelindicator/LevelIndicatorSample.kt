@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -17,8 +18,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.adjustmentbar.AdjustmentBar
+import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.motion.rotateLayout
+import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
 import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
 import app.grapheneos.camera.ui.core.preview.PreviewRotation
 
@@ -54,10 +57,15 @@ private fun LevelIndicatorSample() {
         status = "Roll ${degrees.format(state.roll)}°, pitch ${degrees.format(state.pitch)}°",
         controls = {
             state.rotation.Control()
+            CameraPreviewControl(
+                text = state.mode.name,
+                onClick = state::changeMode,
+            )
         },
     ) {
         ProvideContentRotation(degrees = state.rotation.degrees) {
             LevelIndicator(
+                mode = state.mode,
                 roll = state::roll,
                 pitch = state::pitch,
                 modifier = Modifier.align(Alignment.Center),
@@ -99,10 +107,20 @@ private class LevelIndicatorSampleState {
 
     val rotation = PreviewRotation()
 
+    var mode by mutableStateOf(LevelIndicatorMode.Horizon)
+        private set
+
     var roll by mutableFloatStateOf(INITIAL_ROLL)
         private set
     var pitch by mutableFloatStateOf(0f)
         private set
+
+    fun changeMode() {
+        mode = when (mode) {
+            LevelIndicatorMode.Horizon -> LevelIndicatorMode.Crosshairs
+            LevelIndicatorMode.Crosshairs -> LevelIndicatorMode.Horizon
+        }
+    }
 
     fun changeRoll(value: Float) {
         roll = value

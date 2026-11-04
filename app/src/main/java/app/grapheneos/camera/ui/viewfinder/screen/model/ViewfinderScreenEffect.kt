@@ -9,8 +9,6 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 
 sealed interface ViewfinderScreenEffect {
 
-    data object PlayLevelHaptic : ViewfinderScreenEffect
-
     data object ShowQrFormats : ViewfinderScreenEffect
 
     data class ShowMessage(

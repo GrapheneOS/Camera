@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
 import com.android.tools.screenshot.PreviewTest
@@ -23,26 +24,32 @@ private fun LevelIndicatorAngles() {
                 verticalArrangement = Arrangement.spacedBy(space = 16.dp),
             ) {
                 LevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
                     roll = { -22f },
                     pitch = { -30f },
                 )
                 LevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
                     roll = { -23f },
                     pitch = { 0f },
                 )
                 LevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
                     roll = { 0f },
                     pitch = { 20f },
                 )
                 LevelIndicator(
+                    mode = LevelIndicatorMode.Horizon,
                     roll = { 0f },
                     pitch = { 0f },
                 )
                 LevelIndicator(
+                    mode = LevelIndicatorMode.Crosshairs,
                     roll = { 150f },
                     pitch = { -70f },
                 )
                 LevelIndicator(
+                    mode = LevelIndicatorMode.Crosshairs,
                     roll = { 0f },
                     pitch = { -90f },
                 )

@@ -4,16 +4,16 @@ import app.grapheneos.camera.data.orientation.repository.DeviceOrientationReposi
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepositoryImpl
 import dagger.Binds
 import dagger.Module
-import dagger.Reusable
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class OrientationBindsModule {
 
     @Binds
-    @Reusable
+    @Singleton
     abstract fun bindDeviceOrientationRepository(
         impl: DeviceOrientationRepositoryImpl,
     ): DeviceOrientationRepository

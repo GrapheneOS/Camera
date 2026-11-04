@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.components.levelindicator
 
-internal class LevelTracker(
+internal class LevelHapticTracker(
     initialZone: LevelZone,
 ) {
 

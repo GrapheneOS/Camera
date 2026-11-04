@@ -6,25 +6,17 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.core.screen.StateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import io.mockk.every
 import io.mockk.mockk
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,8 +37,6 @@ class ViewfinderOrientationDelegateTest {
         settings = CameraSettings(gyroscopeSuggestions = true),
     )
 
-    private val levelStateHolder = StateHolder(initial = ViewfinderLevelState())
-
     @Test
     fun motion_publishesTheOrientationToTheState() {
         runTest {
@@ -55,6 +45,27 @@ class ViewfinderOrientationDelegateTest {
             motion.emit(motionOf(orientation = DeviceOrientation.DEGREES_270))
 
             assertEquals(DeviceOrientation.DEGREES_270, state().deviceOrientation)
+        }
+    }
+
+    @Test
+    fun motionWithTheSameOrientation_doesNotRecomputeViewfinderUiState() {
+        runTest {
+            startTracking()
+            var projections = 0
+            val orientation = stateHolder.derive { state ->
+                projections += 1
+                state.deviceOrientation
+            }
+            motion.emit(motionOf(orientation = DeviceOrientation.DEGREES_0))
+            val before = projections
+
+            repeat(50) { tilt ->
+                motion.emit(motionOf(orientation = DeviceOrientation.DEGREES_0, tilt = tilt))
+            }
+
+            assertEquals(before, projections)
+            assertEquals(DeviceOrientation.DEGREES_0, orientation.value)
         }
     }
 
@@ -71,76 +82,19 @@ class ViewfinderOrientationDelegateTest {
         }
     }
 
-    @Test
-    fun level_disappearsOutsidePhotoMode() {
-        runTest {
-            startTracking()
-            motion.emit(motionOf(tilt = 1))
-
-            stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-
-            assertFalse(levelStateHolder.state.value.visible)
-        }
-    }
-
-    @Test
-    fun levelReached_isAnnouncedOnceTheDeviceStaysLevel() {
-        runTest {
-            startTracking()
-            val effects = collectEffects(stateHolder)
-            motion.emit(motionOf(tilt = 2))
-            motion.emit(motionOf(tilt = 0))
-
-            advanceTimeBy(LEVEL_HOLD - 1.milliseconds)
-            assertEquals(0, hapticCount(effects))
-
-            advanceTimeBy(2.milliseconds)
-            assertEquals(1, hapticCount(effects))
-        }
-    }
-
-    @Test
-    fun levelReached_isNotAnnouncedAgainUntilTheDeviceTiltsAway() {
-        runTest {
-            startTracking()
-            val effects = collectEffects(stateHolder)
-            motion.emit(motionOf(tilt = 2))
-            motion.emit(motionOf(tilt = 0))
-            advanceTimeBy(LEVEL_HOLD + 1.milliseconds)
-
-            motion.emit(motionOf(tilt = 2))
-            motion.emit(motionOf(tilt = 0))
-            advanceTimeBy(LEVEL_HOLD + 1.milliseconds)
-            assertEquals(1, hapticCount(effects))
-
-            motion.emit(motionOf(tilt = 6))
-            motion.emit(motionOf(tilt = 0))
-            advanceTimeBy(LEVEL_HOLD + 1.milliseconds)
-            assertEquals(2, hapticCount(effects))
-        }
-    }
-
-    private fun hapticCount(effects: List<Effect>): Int {
-        return effects.count { effect -> effect == Effect.PlayLevelHaptic }
-    }
-
     private fun state(): ViewfinderState {
         return stateHolder.state.value
     }
 
     private fun TestScope.startTracking(): ViewfinderOrientationDelegate {
-        every { deviceOrientationRepository.motion() } returns motion
+        every { deviceOrientationRepository.motion } returns motion
         every { deviceOrientationRepository.autoRotateEnabled() } returns autoRotate
 
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderOrientationDelegateImpl(
             deviceOrientationRepository = deviceOrientationRepository,
-            levelStateMapper = ViewfinderLevelStateMapperImpl(),
         )
-        delegate.bind(
-            stateHolder = stateHolder,
-            levelStateHolder = levelStateHolder,
-        )
+        delegate.bind(stateHolder)
         backgroundScope.launch(dispatcher) { delegate.trackOrientation() }
 
         return delegate
@@ -152,12 +106,8 @@ class ViewfinderOrientationDelegateTest {
     ): DeviceMotion {
         return DeviceMotion(
             orientation = orientation,
-            tiltDegrees = tilt,
-            horizonDegrees = 0,
+            tiltDegrees = tilt.toFloat(),
+            horizonDegrees = 0f,
         )
-    }
-
-    private companion object {
-        val LEVEL_HOLD = 250.milliseconds
     }
 }

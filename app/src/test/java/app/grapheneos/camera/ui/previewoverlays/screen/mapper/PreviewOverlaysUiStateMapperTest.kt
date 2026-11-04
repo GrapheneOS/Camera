@@ -1,8 +1,14 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
+import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
+import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelPose
+import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
@@ -110,7 +116,7 @@ class PreviewOverlaysUiStateMapperTest {
             ),
         )
 
-        assertEquals(remaining, state.selfTimerRemaining)
+        assertTrue(remaining == state.selfTimerRemaining)
     }
 
     @Test
@@ -140,11 +146,128 @@ class PreviewOverlaysUiStateMapperTest {
         val content = PreviewContentState(selfTimerRemaining = 3.seconds)
         val state = PreviewOverlaysState(previewContent = content)
 
-        assertEquals(3.seconds, mapper.map(state).selfTimerRemaining)
+        assertTrue(3.seconds == mapper.map(state).selfTimerRemaining)
         assertNull(
             mapper.map(
                 state.copy(previewContent = content.copy(selfTimerRemaining = null)),
             ).selfTimerRemaining,
         )
+    }
+
+    @Test
+    fun level_mapsTheSensorAxesToRollAndPitch() {
+        val state = PreviewOverlaysState(
+            previewContent = PreviewContentState(isPreviewStreaming = true),
+            level = LevelState(
+                isEnabled = true,
+                visible = true,
+                pose = LevelPose.Horizon,
+                tiltDegrees = -3f,
+                horizonDegrees = 12f,
+            ),
+        )
+
+        assertEquals(
+            LevelUiState(
+                visible = true,
+                rollDegrees = -3f,
+                pitchDegrees = -12f,
+            ),
+            mapper.mapLevel(state),
+        )
+    }
+
+    @Test
+    fun level_modeFollowsTheClassifiedPoseInsteadOfReclassifyingTheAngles() {
+        val modes = mapOf(
+            LevelPose.Horizon to LevelIndicatorMode.Horizon,
+            LevelPose.FacingUp to LevelIndicatorMode.Crosshairs,
+            LevelPose.FacingDown to LevelIndicatorMode.Crosshairs,
+        )
+        modes.forEach { (pose, mode) ->
+            val state = PreviewOverlaysState(
+                level = LevelState(pose = pose, tiltDegrees = 35f, horizonDegrees = 70f),
+            )
+
+            assertEquals(mode, mapper.mapLevel(state).mode)
+        }
+    }
+
+    @Test
+    fun level_turnsAgainstEveryDeviceOrientation() {
+        val rotations = mapOf(
+            DeviceOrientation.DEGREES_0 to 0f,
+            DeviceOrientation.DEGREES_90 to 270f,
+            DeviceOrientation.DEGREES_180 to 180f,
+            DeviceOrientation.DEGREES_270 to 90f,
+        )
+
+        rotations.forEach { (orientation, rotation) ->
+            val state = PreviewOverlaysState(
+                level = LevelState(pose = LevelPose.Horizon, orientation = orientation),
+            )
+
+            assertEquals(rotation, mapper.mapLevel(state).rotationDegrees)
+        }
+    }
+
+    @Test
+    fun level_rotationIsRelativeToTheDisplay() {
+        val state = PreviewOverlaysState(
+            level = LevelState(
+                pose = LevelPose.Horizon,
+                orientation = DeviceOrientation.DEGREES_90,
+            ),
+            displayRotation = DeviceOrientation.DEGREES_270,
+        )
+
+        assertEquals(180f, mapper.mapLevel(state).rotationDegrees)
+    }
+
+    @Test
+    fun level_withoutDeviceOrientation_staysUpright() {
+        val state = PreviewOverlaysState(
+            level = LevelState(pose = LevelPose.Horizon),
+            displayRotation = DeviceOrientation.DEGREES_270,
+        )
+
+        assertEquals(LevelUiState(), mapper.mapLevel(state))
+    }
+
+    @Test
+    fun level_zeroHorizonMapsToTheDefaultPitchFromEitherSide() {
+        listOf(0f, -0f).forEach { horizon ->
+            val state = PreviewOverlaysState(
+                level = LevelState(pose = LevelPose.Horizon, horizonDegrees = horizon),
+            )
+
+            assertEquals(LevelUiState(), mapper.mapLevel(state))
+        }
+    }
+
+    @Test
+    fun level_isHiddenOutsidePhotoModeAndBehindOtherPreviewContent() {
+        val content = PreviewContentState(isPreviewStreaming = true)
+        val shown = PreviewOverlaysState(
+            previewContent = content,
+            level = LevelState(isEnabled = true, visible = true, pose = LevelPose.Horizon),
+        )
+        val hiddenStates = listOf(
+            shown.copy(level = shown.level.copy(pose = null)),
+            shown.copy(level = shown.level.copy(isEnabled = false)),
+            shown.copy(previewContent = null),
+            shown.copy(previewContent = content.copy(mode = CameraMode.VIDEO)),
+            shown.copy(previewContent = content.copy(mode = CameraMode.QR_SCAN)),
+            shown.copy(previewContent = content.copy(lensFacing = LensFacing.FRONT)),
+            shown.copy(previewContent = content.copy(isTransitionFrameVisible = true)),
+            shown.copy(previewContent = content.copy(isCaptureResultVisible = true)),
+            shown.copy(isPreviewFlashVisible = true),
+            shown.copy(previewContent = content.copy(isPreviewStreaming = false)),
+            shown.copy(previewContent = content.copy(isTakingPicture = true)),
+            shown.copy(previewContent = content.copy(selfTimerRemaining = 3.seconds)),
+        )
+
+        assertTrue(mapper.mapLevel(shown).visible)
+        hiddenStates.forEach { state -> assertFalse(mapper.mapLevel(state).visible) }
     }
 }
