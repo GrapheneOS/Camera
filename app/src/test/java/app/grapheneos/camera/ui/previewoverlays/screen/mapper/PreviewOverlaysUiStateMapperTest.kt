@@ -6,8 +6,11 @@ import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGrid
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -96,5 +99,52 @@ class PreviewOverlaysUiStateMapperTest {
 
         assertFalse(mapper.map(state).isGridVisible)
         assertTrue(mapper.map(state.copy(isPreviewFlashVisible = false)).isGridVisible)
+    }
+
+    @Test
+    fun selfTimer_preservesTheRemainingDuration() {
+        val remaining = 1500.milliseconds
+        val state = mapper.map(
+            PreviewOverlaysState(
+                previewContent = PreviewContentState(selfTimerRemaining = remaining),
+            ),
+        )
+
+        assertEquals(remaining, state.selfTimerRemaining)
+    }
+
+    @Test
+    fun selfTimer_isHiddenBehindOtherPreviewContent() {
+        val content = PreviewContentState(selfTimerRemaining = 3.seconds)
+        val states = listOf(
+            PreviewOverlaysState(previewContent = content.copy(mode = CameraMode.QR_SCAN)),
+            PreviewOverlaysState(
+                previewContent = content.copy(isTransitionFrameVisible = true),
+            ),
+            PreviewOverlaysState(
+                previewContent = content.copy(isCaptureResultVisible = true),
+            ),
+            PreviewOverlaysState(
+                previewContent = content,
+                isPreviewFlashVisible = true,
+            ),
+        )
+
+        states.forEach { state ->
+            assertNull(mapper.map(state).selfTimerRemaining)
+        }
+    }
+
+    @Test
+    fun selfTimer_isRemovedWhenTheRemainingTimeIsCleared() {
+        val content = PreviewContentState(selfTimerRemaining = 3.seconds)
+        val state = PreviewOverlaysState(previewContent = content)
+
+        assertEquals(3.seconds, mapper.map(state).selfTimerRemaining)
+        assertNull(
+            mapper.map(
+                state.copy(previewContent = content.copy(selfTimerRemaining = null)),
+            ).selfTimerRemaining,
+        )
     }
 }

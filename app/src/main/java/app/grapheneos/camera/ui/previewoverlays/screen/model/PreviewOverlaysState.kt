@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.previewoverlays.screen.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.GridType
+import kotlin.time.Duration
 
 internal data class PreviewOverlaysState(
     val gridType: GridType = GridType.NONE,
@@ -21,5 +22,18 @@ internal data class PreviewOverlaysState(
             !content.isTransitionFrameVisible &&
             !content.isCaptureResultVisible &&
             !isPreviewFlashVisible
+    }
+
+    fun visibleSelfTimerRemaining(): Duration? {
+        val content = previewContent ?: return null
+
+        return when {
+            content.mode == CameraMode.QR_SCAN ||
+                content.isTransitionFrameVisible ||
+                content.isCaptureResultVisible ||
+                isPreviewFlashVisible -> null
+
+            else -> content.selfTimerRemaining
+        }
     }
 }

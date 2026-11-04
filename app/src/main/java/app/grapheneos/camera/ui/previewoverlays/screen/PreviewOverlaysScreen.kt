@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpRect
@@ -16,7 +17,9 @@ import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGrid
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewLayer
+import app.grapheneos.camera.ui.previewoverlays.components.SelfTimerCountdown
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 internal fun PreviewOverlaysScreen(
@@ -47,6 +50,12 @@ private fun PreviewOverlaysContent(
                     modifier = Modifier.matchParentSize(),
                 )
             }
+            uiState.selfTimerRemaining?.let { remaining ->
+                SelfTimerCountdown(
+                    remaining = remaining,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
         }
     }
 }
@@ -62,6 +71,7 @@ private fun PreviewOverlaysPreview() {
                 uiState = PreviewOverlaysUiState(
                     gridPattern = CompositionGridPattern.GoldenRatio,
                     isGridVisible = true,
+                    selfTimerRemaining = 3.seconds,
                 ),
                 previewBounds = DpRect(
                     left = 0.dp,

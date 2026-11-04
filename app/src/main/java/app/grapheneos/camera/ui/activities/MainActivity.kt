@@ -74,7 +74,6 @@ import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
 import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
-import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
 import app.grapheneos.camera.ui.viewfinder.components.ExposureBar
 import app.grapheneos.camera.ui.viewfinder.components.ZoomBar
 import app.grapheneos.camera.ui.viewfinder.components.qr.QROverlay
@@ -148,7 +147,7 @@ open class MainActivity : AppCompatActivity() {
         extrasProducer = { cameraEntryPointCreationExtras() },
     )
 
-    private val previewOverlays: PreviewOverlaysViewModel by viewModels(
+    internal val previewOverlays: PreviewOverlaysViewModel by viewModels(
         extrasProducer = { cameraEntryPointCreationExtras() },
     )
 
@@ -241,9 +240,6 @@ open class MainActivity : AppCompatActivity() {
 
     val mainOverlay: ImageView
         get() = binding.mainOverlay
-
-    val cdTimer: CountDownTimerUI
-        get() = binding.cTimer
 
     val cbText: TextView
         get() = binding.captureButtonText
@@ -459,6 +455,7 @@ open class MainActivity : AppCompatActivity() {
                                 mode = state.mode,
                                 isTransitionFrameVisible = state.preview.lastFrameVisible,
                                 isCaptureResultVisible = state.captureResult.visible,
+                                selfTimerRemaining = state.selfTimer.remaining,
                             ),
                         ),
                     )

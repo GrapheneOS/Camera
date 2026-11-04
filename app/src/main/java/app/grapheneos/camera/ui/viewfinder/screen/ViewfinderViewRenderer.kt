@@ -254,8 +254,6 @@ internal class ViewfinderViewRenderer(
 
         activity.cbText.text = selfTimer.badge
         activity.cbText.visibility = visibleOrInvisible(selfTimer.badgeVisible)
-        activity.cdTimer.visibility = visibleOrGone(isRunning)
-        activity.cdTimer.render(selfTimer.remaining)
         activity.cbCross.visibility = visibleOrInvisible(isRunning)
     }
 
