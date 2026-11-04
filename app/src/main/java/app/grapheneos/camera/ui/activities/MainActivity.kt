@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.Density
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import androidx.lifecycle.DEFAULT_ARGS_KEY
@@ -61,6 +60,7 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.camerascreen.CameraOverlay
 import app.grapheneos.camera.ui.camerascreen.CameraOverlayInsets
+import app.grapheneos.camera.ui.camerascreen.HiddenStatusBar
 import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
@@ -674,7 +674,15 @@ open class MainActivity : AppCompatActivity() {
 
         var isInsetSet = false
 
+        val hiddenStatusBar = HiddenStatusBar(
+            window = window,
+            view = rootView,
+        )
+        hiddenStatusBar.install()
+
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            hiddenStatusBar.onWindowInsetsApplied(windowInsets)
+
             val insets = windowInsets.getInsetsIgnoringVisibility(
                 WindowInsetsCompat.Type.systemBars()
             )
@@ -734,12 +742,6 @@ open class MainActivity : AppCompatActivity() {
         }
 
         setContentView(binding.getRoot())
-
-        WindowInsetsControllerCompat(window, rootView).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.statusBars())
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
 
         enableEdgeToEdge()
 

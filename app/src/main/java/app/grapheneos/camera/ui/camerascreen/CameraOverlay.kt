@@ -45,16 +45,15 @@ internal fun CameraOverlay(
     }
 
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
-        val controlsShown = uiState.isSettingsPanelAvailable &&
-            !uiState.capturedPreviewVisible &&
-            !isTransitionShown
+        val controlsShown = uiState.isSettingsPanelAvailable && !uiState.capturedPreviewVisible
+        val controlsEnabled = isSheetHidden && !isTransitionShown
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (controlsShown) {
                 StatusBarLayer(
                     statusBar = statusBar,
                     sheetState = sheetState,
-                    enabled = isSheetHidden,
+                    enabled = controlsEnabled,
                     height = insets.previewTop,
                     onItemClick = { setting ->
                         viewfinder.onAction(SettingsAction.StatusBarClicked(setting))
@@ -64,7 +63,7 @@ internal fun CameraOverlay(
                     uiState = uiState,
                     insets = insets,
                     onQuickSettingsClick = {
-                        if (isSheetHidden) {
+                        if (controlsEnabled) {
                             viewfinder.onAction(SettingsAction.QuickSettingsButtonClicked)
                         }
                     },
