@@ -25,6 +25,7 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor() :
         return PreviewOverlaysUiState(
             gridPattern = pattern ?: CompositionGridPattern.Thirds,
             isGridVisible = state.showsGrid(),
+            selfTimerRemaining = state.visibleSelfTimerRemaining(),
         )
     }
 }

@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +58,7 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 assertFalse(isSelfTimerRunning(activity))
-                assertEquals(View.GONE, activity.cdTimer.visibility)
+                assertNull(activity.previewOverlays.uiState.value.selfTimerRemaining)
                 assertEquals(View.INVISIBLE, activity.cbCross.visibility)
             }
 
@@ -138,7 +139,7 @@ class SelfTimerRegressionTest {
                 activity.captureButton.performClick()
 
                 assertTrue(isSelfTimerRunning(activity))
-                assertEquals(View.VISIBLE, activity.cdTimer.visibility)
+                assertEquals(10.seconds, activity.previewOverlays.uiState.value.selfTimerRemaining)
                 assertEquals(View.VISIBLE, activity.cbCross.visibility)
                 assertFalse(activity.viewfinder.uiState.value.isSettingsPanelAvailable)
                 assertEquals(View.INVISIBLE, activity.tabLayout.visibility)
@@ -169,7 +170,7 @@ class SelfTimerRegressionTest {
                 activity.captureButton.performClick()
 
                 assertFalse(isSelfTimerRunning(activity))
-                assertEquals(View.GONE, activity.cdTimer.visibility)
+                assertNull(activity.previewOverlays.uiState.value.selfTimerRemaining)
                 assertEquals(View.INVISIBLE, activity.cbCross.visibility)
                 assertTrue(activity.viewfinder.uiState.value.isSettingsPanelAvailable)
                 assertEquals(View.VISIBLE, activity.tabLayout.visibility)

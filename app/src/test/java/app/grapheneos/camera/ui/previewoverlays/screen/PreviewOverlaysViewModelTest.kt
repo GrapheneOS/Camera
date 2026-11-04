@@ -15,6 +15,7 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiSt
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -58,8 +59,11 @@ class PreviewOverlaysViewModelTest {
     fun previewContentChanged_updatesUiStateBeforeReturning() {
         runTest {
             val viewModel = createViewModel()
-            val content = PreviewContentState(isTransitionFrameVisible = true)
-            val mapped = PreviewOverlaysUiState(gridPattern = CompositionGridPattern.Quarters)
+            val content = PreviewContentState(selfTimerRemaining = 3.seconds)
+            val mapped = PreviewOverlaysUiState(
+                gridPattern = CompositionGridPattern.Quarters,
+                selfTimerRemaining = 3.seconds,
+            )
             every { mapper.map(capture(mappedState)) } returns mapped
 
             viewModel.onAction(Action.PreviewContentChanged(content = content))
@@ -73,7 +77,10 @@ class PreviewOverlaysViewModelTest {
     fun settingsChanges_preservePreviewContentAndFlash() {
         runTest {
             val viewModel = createViewModel()
-            val content = PreviewContentState(mode = CameraMode.QR_SCAN)
+            val content = PreviewContentState(
+                mode = CameraMode.QR_SCAN,
+                selfTimerRemaining = 3.seconds,
+            )
             viewModel.onAction(Action.PreviewContentChanged(content = content))
             viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = true))
 
@@ -94,7 +101,10 @@ class PreviewOverlaysViewModelTest {
     fun endingAFlash_preservesPreviewContentAndGrid() {
         runTest {
             val viewModel = createViewModel()
-            val content = PreviewContentState(isCaptureResultVisible = true)
+            val content = PreviewContentState(
+                isCaptureResultVisible = true,
+                selfTimerRemaining = 3.seconds,
+            )
             viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = true))
             viewModel.onAction(Action.PreviewContentChanged(content = content))
             viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = false))
