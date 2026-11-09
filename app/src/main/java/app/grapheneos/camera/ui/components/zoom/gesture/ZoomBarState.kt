@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.components.zoom.gesture
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -19,8 +20,9 @@ import kotlin.math.sign
 @Stable
 internal class ZoomBarState(
     initialValue: Float,
-    private val currentScale: State<ZoomBarScale>,
     bindings: RulerBindings,
+    private val currentScale: State<ZoomBarScale>,
+    private val animateValueChanges: State<Boolean>,
 ) : RulerState(
     initialPosition = currentScale.value.position(value = initialValue),
     currentScale = currentScale,
@@ -28,6 +30,7 @@ internal class ZoomBarState(
 ) {
 
     private var reportedValue by mutableFloatStateOf(initialValue)
+    private var previousScale = currentScale.value
     private var detentTravel = 0f
 
     override fun step(ticks: Int): Boolean {
@@ -59,12 +62,13 @@ internal class ZoomBarState(
     }
 
     override suspend fun syncTo(value: Float) {
-        animatePosition(
+        syncPosition(
             target = currentScale.value.position(value = value),
             onStart = {
                 detentTravel = 0f
                 reportedValue = value
             },
+            animated = animateValueChanges.value,
         )
     }
 
@@ -102,6 +106,16 @@ internal class ZoomBarState(
         }
     }
 
+    fun updateScale() {
+        val scale = currentScale.value
+        if (scale != previousScale) {
+            previousScale = scale
+            detentTravel = 0f
+            reportedValue = bindings.value.value
+            resetPosition(position = scale.position(value = reportedValue))
+        }
+    }
+
     private fun holdAt(
         stop: Float,
         travel: Float,
@@ -134,15 +148,20 @@ internal fun rememberZoomBarState(
     value: Float,
     scale: ZoomBarScale,
     bindings: RulerBindings,
+    animateValueChanges: Boolean = true,
 ): ZoomBarState {
     val currentScale = rememberUpdatedState(scale)
-    val state = remember(scale) {
+    val currentAnimateValueChanges = rememberUpdatedState(animateValueChanges)
+    val state = remember {
         ZoomBarState(
             initialValue = value,
-            currentScale = currentScale,
             bindings = bindings,
+            currentScale = currentScale,
+            animateValueChanges = currentAnimateValueChanges,
         )
     }
+
+    SideEffect { state.updateScale() }
 
     RulerSyncEffect(
         state = state,

@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui.previewoverlays.screen
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -14,10 +16,12 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysActi
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.ZoomUiModel
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -32,10 +36,54 @@ class PreviewOverlaysScreenTest {
     val composeRule = createComposeRule()
 
     private val actions = mutableListOf<Action>()
+    private val uiState = MutableStateFlow(PreviewOverlaysUiState())
     private val model = mockk<PreviewOverlaysScreenModel> {
-        every { uiState } returns MutableStateFlow(PreviewOverlaysUiState())
+        every { uiState } returns this@PreviewOverlaysScreenTest.uiState
         every { levelUiState } returns MutableStateFlow(LevelUiState())
         every { onAction(capture(actions)) } just runs
+    }
+
+    @Test
+    fun changingTheZoomRange_doesNotReleaseTheFingerHoldingTheControl() {
+        uiState.value = PreviewOverlaysUiState(
+            zoom = ZoomUiModel(
+                ratio = 1f,
+                range = 0.5f..8f,
+                presets = persistentListOf(0.5f, 1f, 2f),
+            ),
+        )
+        composeRule.setContent {
+            CameraTheme {
+                PreviewOverlaysScreen(
+                    previewBounds = DpRect(
+                        left = 0.dp,
+                        top = 0.dp,
+                        right = 240.dp,
+                        bottom = 320.dp,
+                    ),
+                    shutterRowInset = 0.dp,
+                    screenModel = model,
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("1×").performTouchInput { down(center) }
+        composeRule.runOnIdle {
+            uiState.value = uiState.value.copy(
+                zoom = ZoomUiModel(
+                    ratio = 1f,
+                    range = 1f..4f,
+                    presets = persistentListOf(1f, 2f),
+                ),
+            )
+        }
+        composeRule.runOnIdle {
+            val presses = actions.filterIsInstance<Action.ZoomAction.ControlPressChanged>()
+            assertEquals(listOf(Action.ZoomAction.ControlPressChanged(isPressed = true)), presses)
+        }
+        composeRule.onNodeWithContentDescription("1×").performTouchInput { up() }
+        composeRule.runOnIdle {
+            assertEquals(Action.ZoomAction.ControlPressChanged(isPressed = false), actions.last())
+        }
     }
 
     @Test
@@ -48,7 +96,13 @@ class PreviewOverlaysScreenTest {
                 CompositionLocalProvider(LocalLifecycleOwner provides owner) {
                     if (visible.value) {
                         PreviewOverlaysScreen(
-                            previewBounds = DpRect(0.dp, 0.dp, 240.dp, 320.dp),
+                            previewBounds = DpRect(
+                                left = 0.dp,
+                                top = 0.dp,
+                                right = 240.dp,
+                                bottom = 320.dp,
+                            ),
+                            shutterRowInset = 0.dp,
                             screenModel = model,
                         )
                     }

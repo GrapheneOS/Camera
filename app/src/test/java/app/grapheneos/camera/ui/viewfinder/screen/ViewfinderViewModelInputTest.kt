@@ -13,7 +13,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Setting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
-import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import io.mockk.every
 import io.mockk.verify
@@ -30,43 +29,51 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
 
     @Test
-    fun volumeKeyEvent_mapsWithTheCurrentSettingAndDispatchesTheResult() {
+    fun volumeKeyReleased_withTheShutterSetting_actsAsTheCaptureKey() {
         runTest {
-            val event = CaptureAction.VolumeKeyEvent.Pressed(VolumeKey.UP)
-            every {
-                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.ZOOM)
-            } returns CameraAction.ZoomStepKey.Pressed(ZoomDirection.IN)
+            every { cameraDelegate.canRecord } returns true
+
             val viewModel = createViewModel()
             stateHolder.update {
-                it.copy(settings = CameraSettings(volumeKeyAction = VolumeKeyAction.ZOOM))
+                it.copy(
+                    mode = CameraMode.VIDEO,
+                    settings = CameraSettings(volumeKeyAction = VolumeKeyAction.SHUTTER),
+                )
             }
 
-            viewModel.onAction(event)
+            viewModel.onAction(CaptureAction.VolumeKeyEvent.Pressed(VolumeKey.UP))
+            verify(exactly = 0) { recordingDelegate.requestRecording() }
 
-            verify(exactly = 1) { cameraControlsDelegate.startZoomStepping(ZoomDirection.IN) }
+            viewModel.onAction(CaptureAction.VolumeKeyEvent.Released(VolumeKey.UP))
+            verify(exactly = 1) { recordingDelegate.requestRecording() }
         }
     }
 
     @Test
-    fun volumeKeyEvent_withoutAMappedAction_doesNothing() {
+    fun volumeKey_withAnotherSetting_doesNothingInTheViewfinder() {
         runTest {
-            val event = CaptureAction.VolumeKeyEvent.Released(VolumeKey.DOWN)
-            every {
-                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.OFF)
-            } returns null
+            every { cameraDelegate.canRecord } returns true
+
             val viewModel = createViewModel()
-            stateHolder.update {
-                it.copy(settings = CameraSettings(volumeKeyAction = VolumeKeyAction.OFF))
+            val actions = listOf(
+                VolumeKeyAction.ZOOM,
+                VolumeKeyAction.OFF,
+                VolumeKeyAction.VOLUME,
+            )
+
+            actions.forEach { action ->
+                stateHolder.update {
+                    it.copy(
+                        mode = CameraMode.VIDEO,
+                        settings = CameraSettings(volumeKeyAction = action),
+                    )
+                }
+                viewModel.onAction(CaptureAction.VolumeKeyEvent.Pressed(VolumeKey.DOWN))
+                viewModel.onAction(CaptureAction.VolumeKeyEvent.Released(VolumeKey.DOWN))
             }
 
-            viewModel.onAction(event)
-
-            verify(exactly = 1) {
-                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.OFF)
-            }
-            verify(exactly = 0) { captureDelegate.takePicture() }
             verify(exactly = 0) { recordingDelegate.requestRecording() }
-            verify(exactly = 0) { cameraControlsDelegate.stopZoomStepping() }
+            verify(exactly = 0) { captureDelegate.takePicture() }
         }
     }
 
@@ -297,7 +304,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.Preview.Tapped)
 
             verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
-            verify(exactly = 0) { previewControlsDelegate.showFocusControls() }
+            verify(exactly = 0) { previewControlsDelegate.showExposurePanel() }
         }
     }
 

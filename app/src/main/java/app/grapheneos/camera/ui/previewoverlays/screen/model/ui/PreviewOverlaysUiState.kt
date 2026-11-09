@@ -7,6 +7,7 @@ import kotlin.time.Duration
 @Immutable
 internal data class PreviewOverlaysUiState(
     val focus: FocusUiModel? = null,
+    val zoom: ZoomUiModel? = null,
     val gridPattern: CompositionGridPattern? = null,
     val selfTimerRemaining: Duration? = null,
 )

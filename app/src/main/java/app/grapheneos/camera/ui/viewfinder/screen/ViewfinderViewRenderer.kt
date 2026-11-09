@@ -23,7 +23,6 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
@@ -80,15 +79,6 @@ internal class ViewfinderViewRenderer(
         renderSelfIllumination(state.isSelfIlluminating)
         renderRotation(state.iconRotationDegrees)
         renderSettingsPanelAvailability(state.isSettingsPanelAvailable)
-    }
-
-    fun renderZoom(zoom: ZoomUiState) {
-        activity.zoomBar.render(zoom)
-        renderPanel(
-            panel = activity.zoomBarPanel,
-            visible = zoom.panelVisible,
-            fadeTarget = R.id.zoom_bar_panel,
-        )
     }
 
     private fun renderPreview(state: ViewfinderUiState) {
@@ -404,8 +394,6 @@ internal class ViewfinderViewRenderer(
             activity.thirdOption,
             activity.binding.exposurePlusIcon,
             activity.binding.exposureNegIcon,
-            activity.binding.zoomInIcon,
-            activity.binding.zoomOutIcon,
             activity.micOffIcon,
             activity.muteToggle,
         )

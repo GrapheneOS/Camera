@@ -15,6 +15,9 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverla
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 internal interface FocusDelegate {
@@ -26,7 +29,11 @@ internal interface FocusDelegate {
         current: PreviewOverlaysState,
     ): FocusState
 
-    fun onPreviewPressed(x: Float, y: Float, hitRadius: Float)
+    fun onPreviewPressed(
+        x: Float,
+        y: Float,
+        hitRadius: Float,
+    )
 
     fun onPreviewTapped()
 
@@ -63,7 +70,7 @@ internal class FocusDelegateImpl @Inject constructor(
     ): FocusState {
         val modeChanged = previous.previewContent?.mode != current.previewContent?.mode
         return when {
-            current.isPreviewFocusable() && !modeChanged -> current.focus
+            current.isPreviewInteractive() && !modeChanged -> current.focus
             else -> current.focus.hidden()
         }
     }
@@ -77,10 +84,20 @@ internal class FocusDelegateImpl @Inject constructor(
 
         val selection = state.focus.selection
         val isOnRing = selection != null && selection.visible &&
-            selection.isNear(x = x, y = y, radius = hitRadius)
+            selection.isNear(
+                x = x,
+                y = y,
+                radius = hitRadius,
+            )
         val press = when {
-            isOnRing -> FocusPress.OnRing(x = x, y = y)
-            else -> newPoint(x = x, y = y)
+            isOnRing -> FocusPress.OnRing(
+                x = x,
+                y = y,
+            )
+            else -> newPoint(
+                x = x,
+                y = y,
+            )
         }
         updateFocus { focus -> focus.copy(press = press) }
     }
@@ -89,7 +106,10 @@ internal class FocusDelegateImpl @Inject constructor(
         when (val press = takePress()) {
             null -> Unit
             is FocusPress.OnRing -> cancelFocus()
-            is FocusPress.NewPoint -> startFocus(press = press, isLocked = false)
+            is FocusPress.NewPoint -> startFocus(
+                press = press,
+                isLocked = false,
+            )
         }
     }
 
@@ -97,7 +117,10 @@ internal class FocusDelegateImpl @Inject constructor(
         when (val press = takePress()) {
             null -> Unit
             is FocusPress.OnRing -> lockFocus(press)
-            is FocusPress.NewPoint -> startFocus(press = press, isLocked = true)
+            is FocusPress.NewPoint -> startFocus(
+                press = press,
+                isLocked = true,
+            )
         }
     }
 
@@ -117,6 +140,7 @@ internal class FocusDelegateImpl @Inject constructor(
 
     override suspend fun trackFocus() {
         coroutineScope {
+            launch { trackHiddenSelection() }
             focusControl.events.collect { event ->
                 when (event) {
                     is CameraFocusEvent.Started -> {
@@ -144,6 +168,18 @@ internal class FocusDelegateImpl @Inject constructor(
         }
     }
 
+    private suspend fun trackHiddenSelection() {
+        stateHolder.state
+            .map { state ->
+                state.focus.selection
+                    ?.takeUnless { selection -> selection.visible }
+                    ?.requestId
+            }
+            .distinctUntilChanged()
+            .filterNotNull()
+            .collect { focusControl.cancel() }
+    }
+
     private fun takePress(): FocusPress? {
         val press = state.focus.press?.takeIf { state.isFocusAvailable() }
         updateFocus { focus -> focus.copy(press = null) }
@@ -152,10 +188,14 @@ internal class FocusDelegateImpl @Inject constructor(
 
     private fun lockFocus(press: FocusPress.OnRing) {
         when {
-            state.focus.selection?.visible == true -> {
-                focusControl.lock()
-            }
-            else -> startFocus(press = newPoint(x = press.x, y = press.y), isLocked = true)
+            state.focus.selection?.visible == true -> focusControl.lock()
+            else -> startFocus(
+                press = newPoint(
+                    x = press.x,
+                    y = press.y,
+                ),
+                isLocked = true,
+            )
         }
     }
 
@@ -188,7 +228,11 @@ internal class FocusDelegateImpl @Inject constructor(
         y: Float,
     ): FocusPress.NewPoint {
         lastRequestId += 1
-        return FocusPress.NewPoint(requestId = lastRequestId, x = x, y = y)
+        return FocusPress.NewPoint(
+            requestId = lastRequestId,
+            x = x,
+            y = y,
+        )
     }
 
     private fun updateFocus(transform: (FocusState) -> FocusState) {

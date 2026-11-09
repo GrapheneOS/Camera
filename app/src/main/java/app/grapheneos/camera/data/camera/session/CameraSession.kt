@@ -45,7 +45,6 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.di.core.CameraSessionScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
-import app.grapheneos.camera.di.core.MainLooperDispatcher
 import app.grapheneos.camera.di.core.QrAnalysisDispatcher
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executor
@@ -119,8 +118,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val focusControl: FocusControl,
     private val sceneLightControl: SceneLightControl,
     @QrAnalysisDispatcher qrAnalysisDispatcher: CoroutineDispatcher,
-    @MainImmediateDispatcher mainDispatcher: CoroutineDispatcher,
-    @MainLooperDispatcher private val mainLooperDispatcher: CoroutineDispatcher,
+    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
     @CameraSessionScope private val scope: CoroutineScope,
 ) : CameraSession {
 
@@ -310,7 +308,7 @@ internal class CameraSessionImpl @Inject constructor(
                 highFrameRate = videoFeatureGroup.highFrameRate,
                 appliedExtensionMode = appliedExtension?.extensionMode,
             )
-            attachControls()
+            attachControls(remembersZoom = settings.qr == null)
         }
 
         return outcome
@@ -539,7 +537,7 @@ internal class CameraSessionImpl @Inject constructor(
         )
 
         useCases.add(analysis)
-        qrAutofocusJob = scope.launch(mainLooperDispatcher) {
+        qrAutofocusJob = scope.launch(mainDispatcher) {
             do {
                 delay(QR_AUTOFOCUS_INTERVAL)
             } while (focusOnQrScanAreaIfResumed())
@@ -747,7 +745,7 @@ internal class CameraSessionImpl @Inject constructor(
         iAnalyzer?.targetRotation = rotation
     }
 
-    private fun attachControls() {
+    private fun attachControls(remembersZoom: Boolean) {
         val attachedCamera = camera
         val target = previewTarget
         val boundCamera = _boundCamera.value
@@ -757,7 +755,11 @@ internal class CameraSessionImpl @Inject constructor(
             control = attachedCamera.cameraControl,
             meteringPointFactory = target.meteringPointFactory,
         )
-        zoomControl.attach(attachedCamera)
+        zoomControl.attach(
+            camera = attachedCamera,
+            lensFacing = lensFacing,
+            remembersZoom = remembersZoom,
+        )
         sceneLightControl.attach(
             control = attachedCamera.cameraControl,
             boundCamera = boundCamera,

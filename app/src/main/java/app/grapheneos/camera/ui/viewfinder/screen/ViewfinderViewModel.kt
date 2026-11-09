@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
@@ -27,7 +28,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeD
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -40,7 +40,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Setting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
@@ -59,8 +58,6 @@ import kotlinx.coroutines.launch
 interface ViewfinderScreenModel {
 
     val uiState: StateFlow<ViewfinderUiState>
-
-    val zoomUiState: StateFlow<ZoomUiState>
 
     val effects: Flow<Effect>
     val navigationEvents: Flow<NavEvent>
@@ -87,7 +84,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val modeSwitchDelegate: ViewfinderModeSwitchDelegate,
     private val previewControlsDelegate: ViewfinderPreviewControlsDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
-    private val volumeKeyActionMapper: VolumeKeyActionMapper,
     uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
     ViewfinderScreenModel {
@@ -103,10 +99,6 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     override val uiState: StateFlow<ViewfinderUiState> = stateHolder.derive { state ->
         uiStateMapper.map(state)
-    }
-
-    override val zoomUiState: StateFlow<ZoomUiState> = stateHolder.derive { state ->
-        uiStateMapper.mapZoom(state)
     }
 
     override val effects: Flow<Effect> = stateHolder.effects
@@ -135,11 +127,8 @@ class ViewfinderViewModel @AssistedInject constructor(
         modeSwitchDelegate.bind(stateHolder)
         cameraDelegate.bind(stateHolder)
         orientationDelegate.bind(stateHolder)
+        cameraControlsDelegate.bind(stateHolder)
 
-        cameraControlsDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
         captureDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
@@ -162,7 +151,6 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun trackSources() {
         viewModelScope.launch { cameraDelegate.trackSession() }
-        viewModelScope.launch { cameraControlsDelegate.trackZoom() }
         viewModelScope.launch { settingsDelegate.trackSettings() }
         viewModelScope.launch { settingsDelegate.trackModeSettings() }
         viewModelScope.launch { settingsDelegate.trackSettingsPanelAvailability() }
@@ -175,12 +163,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         viewModelScope.launch {
             cameraDelegate.cameraEvents.collect { event ->
                 onCameraEvent(event)
-            }
-        }
-
-        viewModelScope.launch {
-            cameraControlsDelegate.zoomChanges.collect {
-                previewControlsDelegate.showZoomPanel()
             }
         }
 
@@ -215,14 +197,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.ModeSelected -> switchMode(action.mode)
             is CameraAction.ModeStrip -> onModeStripAction(action)
             is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
-            is CameraAction.ZoomStepKey -> onZoomStepKey(action)
             is CameraAction.Preview -> onPreviewAction(action)
-            is CameraAction.ZoomInKeyPressed -> cameraControlsDelegate.stepZoom(ZOOM_KEY_STEP)
-            is CameraAction.ZoomOutKeyPressed -> cameraControlsDelegate.stepZoom(-ZOOM_KEY_STEP)
-            is CameraAction.ZoomSliderDragged -> {
-                cameraControlsDelegate.setLinearZoom(action.linearZoom)
-            }
-
             is CameraAction.ExposureSliderDragged -> {
                 cameraControlsDelegate.setExposureCompensation(action.compensationIndex)
                 previewControlsDelegate.showExposurePanel()
@@ -247,15 +222,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.RetakeClicked -> retake()
             is CaptureAction.ConfirmClicked -> captureDelegate.confirmResult(outputUri)
             is CaptureAction.PlayResultClicked -> captureDelegate.playResult()
-
-            is CaptureAction.VolumeKeyEvent -> {
-                volumeKeyActionMapper
-                    .map(
-                        event = action,
-                        volumeKeyAction = state.settings.volumeKeyAction,
-                    )
-                    ?.let(::onAction)
-            }
+            is CaptureAction.VolumeKeyEvent -> onVolumeKeyEvent(action)
         }
     }
 
@@ -337,18 +304,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun onZoomStepKey(action: CameraAction.ZoomStepKey) {
-        when (action) {
-            is CameraAction.ZoomStepKey.Released -> {
-                cameraControlsDelegate.stopZoomStepping()
-            }
-
-            is CameraAction.ZoomStepKey.Pressed -> {
-                cameraControlsDelegate.startZoomStepping(action.direction)
-            }
-        }
-    }
-
     private fun onModeStripAction(action: CameraAction.ModeStrip) {
         when (action) {
             is CameraAction.ModeStrip.Dragged -> modeSwitchDelegate.onStripDragged()
@@ -360,7 +315,6 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onPreviewAction(action: CameraAction.Preview) {
         when (action) {
-            is CameraAction.Preview.Pinched -> cameraControlsDelegate.scaleZoom(action.scaleFactor)
             is CameraAction.Preview.Swiped -> modeSwitchDelegate.onPreviewSwiped(action.direction)
             is CameraAction.Preview.Tapped -> when {
                 state.isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
@@ -495,7 +449,16 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPreviewPressed() {
         if (state.isQrMode()) return
 
-        previewControlsDelegate.showFocusControls()
+        previewControlsDelegate.showExposurePanel()
+    }
+
+    private fun onVolumeKeyEvent(event: CaptureAction.VolumeKeyEvent) {
+        val takesShot = event is CaptureAction.VolumeKeyEvent.Released &&
+            state.settings.volumeKeyAction == VolumeKeyAction.SHUTTER
+
+        if (takesShot) {
+            onCaptureKeyPressed()
+        }
     }
 
     private fun onCaptureKeyPressed() {
@@ -758,7 +721,6 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             BindOutcome.BOUND -> {
                 cameraDelegate.announceBind()
-                previewControlsDelegate.hideZoomPanel()
             }
         }
     }
@@ -779,9 +741,5 @@ class ViewfinderViewModel @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(outputUri: Uri?): ViewfinderViewModel
-    }
-
-    companion object {
-        private const val ZOOM_KEY_STEP = 1f
     }
 }

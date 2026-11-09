@@ -24,33 +24,16 @@ class ViewfinderPreviewControlsDelegateTest {
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     @Test
-    fun focus_showsBothPanels() {
+    fun exposurePanel_showsImmediately() {
         runTest {
-            createDelegate().showFocusControls()
+            createDelegate().showExposurePanel()
 
             assertEquals(
                 ViewfinderPreviewControlsState(
-                    isZoomPanelShown = true,
                     isExposurePanelShown = true,
                 ),
                 state().previewControls,
             )
-        }
-    }
-
-    @Test
-    fun zoomPanel_hidesTwoSecondsAfterItWasLastShown() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.showZoomPanel()
-            advanceTimeBy(1.seconds)
-            delegate.showZoomPanel()
-            advanceTimeBy(1.5.seconds)
-            assertTrue(state().previewControls.isZoomPanelShown)
-
-            advanceTimeBy(1.seconds)
-            assertFalse(state().previewControls.isZoomPanelShown)
         }
     }
 
@@ -71,18 +54,13 @@ class ViewfinderPreviewControlsDelegateTest {
     }
 
     @Test
-    fun panels_hiddenEarly_stayHiddenAndKeepTheirOwnTimeouts() {
+    fun exposurePanel_hiddenEarly_staysHidden() {
         runTest {
             val delegate = createDelegate()
 
-            delegate.showFocusControls()
-            delegate.hideZoomPanel()
-            assertFalse(state().previewControls.isZoomPanelShown)
-            assertTrue(state().previewControls.isExposurePanelShown)
-
+            delegate.showExposurePanel()
             delegate.hideExposurePanel()
             advanceTimeBy(3.seconds)
-            assertFalse(state().previewControls.isZoomPanelShown)
             assertFalse(state().previewControls.isExposurePanelShown)
         }
     }

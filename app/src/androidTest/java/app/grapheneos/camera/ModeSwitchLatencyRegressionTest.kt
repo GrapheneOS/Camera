@@ -13,6 +13,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import dagger.hilt.android.EntryPointAccessors
+import kotlin.math.abs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -160,7 +161,7 @@ class ModeSwitchLatencyRegressionTest {
      * camera that was just bound rather than the one it replaced.
      */
     @Test
-    fun switchingModes_leavesTheZoomBarUsable() {
+    fun switchingModes_leavesTheZoomControlUsable() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
@@ -173,8 +174,10 @@ class ModeSwitchLatencyRegressionTest {
 
             scenario.onActivity { cameraSession(it).camera!!.cameraControl.setLinearZoom(0.5f) }
 
-            waitUntil(scenario, "the zoom bar caught up with the camera") {
-                it.zoomBar.progress == 50
+            waitUntil(scenario, "the zoom control caught up with the camera") {
+                val zoom = zoomControl(it).zoom
+                val isHalfway = zoom != null && abs(zoom.linearZoom - 0.5f) < 0.01f
+                isHalfway && it.previewOverlays.uiState.value.zoom?.ratio == zoom.zoomRatio
             }
             scenario.onActivity {
                 assertEquals(0.5f, zoomControl(it).zoom!!.linearZoom, 0.01f)

@@ -6,10 +6,12 @@ import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegate
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ZoomDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.PreviewOverlaysUiStateMapper
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
@@ -34,6 +36,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
     uiStateMapper: PreviewOverlaysUiStateMapper,
     private val focusDelegate: FocusDelegate,
     private val levelDelegate: LevelDelegate,
+    private val zoomDelegate: ZoomDelegate,
 ) : ViewModel(),
     PreviewOverlaysScreenModel {
 
@@ -43,7 +46,11 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         ),
     )
 
-    override val uiState: StateFlow<PreviewOverlaysUiState> = stateHolder.derive { state ->
+    override val uiState: StateFlow<PreviewOverlaysUiState> = stateHolder.derive(
+        isAffected = { previous, current ->
+            previous.copy(level = current.level) != current
+        },
+    ) { state ->
         uiStateMapper.map(state)
     }
 
@@ -56,6 +63,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
     init {
         levelDelegate.bind(stateHolder)
         focusDelegate.bind(stateHolder)
+        zoomDelegate.bind(stateHolder)
 
         viewModelScope.launch {
             settingsRepository.settings.collect { settings ->
@@ -68,6 +76,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         when (action) {
             is LifecycleAction -> onLifecycleAction(action)
             is PreviewAction -> onPreviewAction(action)
+            is ZoomAction -> onZoomAction(action)
         }
     }
 
@@ -88,6 +97,25 @@ internal class PreviewOverlaysViewModel @Inject constructor(
             is PreviewAction.DisplayRotationChanged -> onRotationChanged(action)
             is PreviewAction.PreviewContentChanged -> onContentChanged(action)
             is PreviewAction.PreviewFlashVisibilityChanged -> onFlashChanged(action)
+        }
+    }
+
+    private fun onZoomAction(action: ZoomAction) {
+        when (action) {
+            is ZoomAction.ZoomKeyPressed -> zoomDelegate.onZoomKeyPressed(action.direction)
+            is ZoomAction.VolumeKeyPressed -> zoomDelegate.onVolumeKeyPressed(action.direction)
+            is ZoomAction.VolumeKeyReleased -> zoomDelegate.onVolumeKeyReleased()
+            is ZoomAction.Expanded -> zoomDelegate.onExpanded()
+            is ZoomAction.RatioChanged -> zoomDelegate.onRatioChanged(action.ratio)
+            is ZoomAction.PresetSelected -> zoomDelegate.onPresetSelected(action.ratio)
+            is ZoomAction.PreviewPinchStarted -> zoomDelegate.onPreviewPinchStarted()
+            is ZoomAction.PreviewPinchFinished -> zoomDelegate.onPreviewPinchFinished()
+            is ZoomAction.PreviewPinchScaleChanged -> {
+                zoomDelegate.onPreviewPinchScaleChanged(action.scaleFactor)
+            }
+            is ZoomAction.ControlPressChanged -> {
+                zoomDelegate.onControlPressChanged(action.isPressed)
+            }
         }
     }
 
@@ -131,8 +159,18 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         stateHolder.update { previous ->
             val current = transform(previous)
             current.copy(
-                level = levelDelegate.levelAfterChange(previous = previous, current = current),
-                focus = focusDelegate.focusAfterChange(previous = previous, current = current),
+                level = levelDelegate.levelAfterChange(
+                    previous = previous,
+                    current = current,
+                ),
+                focus = focusDelegate.focusAfterChange(
+                    previous = previous,
+                    current = current,
+                ),
+                zoom = zoomDelegate.zoomAfterChange(
+                    previous = previous,
+                    current = current,
+                ),
             )
         }
     }
@@ -143,6 +181,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         resumedWork = viewModelScope.launch {
             launch { levelDelegate.trackLevel() }
             launch { focusDelegate.trackFocus() }
+            launch { zoomDelegate.trackZoom() }
         }
     }
 
@@ -151,6 +190,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         resumedWork = null
         levelDelegate.onScreenPaused()
         focusDelegate.onScreenPaused()
+        zoomDelegate.onScreenPaused()
         stateHolder.update { state -> state.copy(isPreviewFlashVisible = false) }
     }
 }

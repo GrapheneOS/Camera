@@ -27,13 +27,16 @@ class ZoomBarScaleTest {
     }
 
     @Test
-    fun marks_addTheEndOfTheRangeToTheStops() {
+    fun marks_includeTheActualWideAngleMinimumAndTheDigitalMaximum() {
+        val minimum = 0.5304938f
         val scale = ZoomBarScale(
-            valueRange = 0.5f..8f,
-            stops = listOf(0.5f, 1f, 2f),
+            valueRange = minimum..8f,
+            stops = listOf(minimum, 1f, 2f),
         )
 
-        assertEquals(listOf(0.5f, 1f, 2f, 8f), scale.marks)
+        assertEquals(listOf(minimum, 1f, 2f, 8f), scale.marks)
+        assertEquals(0, scale.markTicks.first())
+        assertTrue(scale.isMajor(tick = 0))
         assertTrue(scale.isMajor(tick = scale.lastTick))
     }
 

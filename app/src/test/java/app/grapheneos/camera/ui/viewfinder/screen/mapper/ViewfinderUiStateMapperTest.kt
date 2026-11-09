@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
-import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -13,7 +12,6 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
@@ -581,45 +579,6 @@ class ViewfinderUiStateMapperTest {
     @Test
     fun screenWake_keepsTheScreenOnWithoutARecording() {
         assertTrue(map(keepsScreenAwake = true).keepScreenOn)
-    }
-
-    @Test
-    fun zoom_isPublishedForTheZoomBar() {
-        val state = stateWithZoom(
-            zoom = CameraZoom(
-                zoomRatio = 2f,
-                linearZoom = 0.5f,
-                minZoomRatio = 1f,
-                maxZoomRatio = 10f,
-            ),
-        )
-
-        assertEquals(ZoomUiState(zoomRatio = 2f, linearZoom = 0.5f), mapper.mapZoom(state))
-    }
-
-    @Test
-    fun zoom_beforeTheCameraIsBound_isTheDefault() {
-        assertEquals(ZoomUiState(), mapper.mapZoom(stateWithZoom(zoom = null)))
-    }
-
-    @Test
-    fun zoomPanel_followsItsStateWithOrWithoutAZoom() {
-        assertEquals(
-            ZoomUiState(panelVisible = true),
-            mapper.mapZoom(
-                stateWithZoom(zoom = null).copy(
-                    previewControls = ViewfinderPreviewControlsState(isZoomPanelShown = true),
-                ),
-            ),
-        )
-    }
-
-    private fun stateWithZoom(zoom: CameraZoom?): ViewfinderState {
-        return ViewfinderState(
-            mode = CameraMode.CAMERA,
-            requiresVideoModeOnly = false,
-            session = ViewfinderSessionState(zoom = zoom),
-        )
     }
 
     private fun map(

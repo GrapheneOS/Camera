@@ -55,6 +55,7 @@ internal fun CameraOverlay(
         Box(modifier = Modifier.fillMaxSize()) {
             PreviewOverlaysScreen(
                 previewBounds = insets.previewBounds,
+                shutterRowInset = insets.shutterRow,
                 screenModel = previewOverlays,
             )
 

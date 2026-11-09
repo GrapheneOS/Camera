@@ -25,6 +25,7 @@ internal class ZoomControlExpander(
     private val enabled: State<Boolean>,
     private val expanded: State<Boolean>,
     private val onExpand: State<() -> Unit>,
+    private val onPressChanged: State<(Boolean) -> Unit>,
     private val hapticFeedback: State<HapticFeedback>,
 ) {
 
@@ -34,6 +35,10 @@ internal class ZoomControlExpander(
 
     fun expand() {
         onExpand.value()
+    }
+
+    fun reportPress(pressed: Boolean) {
+        onPressChanged.value(pressed)
     }
 
     fun expandOnDrag() {
@@ -55,10 +60,12 @@ internal fun rememberZoomControlExpander(
     enabled: Boolean,
     expanded: Boolean,
     onExpand: () -> Unit,
+    onPressChanged: (Boolean) -> Unit,
 ): ZoomControlExpander {
     val currentEnabled = rememberUpdatedState(enabled)
     val currentExpanded = rememberUpdatedState(expanded)
     val currentOnExpand = rememberUpdatedState(onExpand)
+    val currentOnPressChanged = rememberUpdatedState(onPressChanged)
     val currentHapticFeedback = rememberUpdatedState(LocalHapticFeedback.current)
 
     return remember {
@@ -66,6 +73,7 @@ internal fun rememberZoomControlExpander(
             enabled = currentEnabled,
             expanded = currentExpanded,
             onExpand = currentOnExpand,
+            onPressChanged = currentOnPressChanged,
             hapticFeedback = currentHapticFeedback,
         )
     }
@@ -88,21 +96,26 @@ internal fun Modifier.zoomControlInput(
         )
         .zoomControlPress(
             expander = expander,
+            enabled = enabled,
             interactionSource = interactionSource,
         )
 }
 
 private fun Modifier.zoomControlPress(
     expander: ZoomControlExpander,
+    enabled: Boolean,
     interactionSource: MutableInteractionSource,
 ): Modifier {
-    return pointerInput(expander, interactionSource) {
+    return pointerInput(expander, interactionSource, enabled) {
+        if (!enabled) return@pointerInput
+
         awaitEachGesture {
             val press = PressInteraction.Press(awaitFirstDown(requireUnconsumed = false).position)
             var end: PressInteraction = PressInteraction.Cancel(press)
 
             interactionSource.tryEmit(press)
             try {
+                expander.reportPress(pressed = true)
                 val isLongPress = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                     waitForUpOrCancellation()
                     false
@@ -115,6 +128,7 @@ private fun Modifier.zoomControlPress(
                 end = PressInteraction.Release(press)
             } finally {
                 interactionSource.tryEmit(end)
+                expander.reportPress(pressed = false)
             }
         }
     }

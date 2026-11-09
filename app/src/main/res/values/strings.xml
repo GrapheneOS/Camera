@@ -50,7 +50,8 @@
     <string name="turn_torch_on">Turn torch on</string>
     <string name="unmute_audio">Unmute audio</string>
     <string name="video_capture_label">Record Video</string>
-    <string name="zoom">Zoom</string>
+    <string name="zoom_value_suffix" translatable="false">×</string>
+    <string name="zoom_expand">Adjust zoom</string>
 
     <!-- The flash control cycles through several states rather than toggling between two, so
          its labels name the state it is currently in; naming the next action instead would

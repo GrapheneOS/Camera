@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.domain.camera.mapper.ZoomPresetsMapperImpl
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.LevelStateMapperImpl
@@ -424,7 +425,9 @@ class LevelDelegateTest {
     @Test
     fun downwardPose_revealsCrosshairsWithTheCurrentAngles() {
         runTest {
-            val mapper = PreviewOverlaysUiStateMapperImpl()
+            val mapper = PreviewOverlaysUiStateMapperImpl(
+                zoomPresetsMapper = ZoomPresetsMapperImpl(),
+            )
             val levelUiState = stateHolder.derive { mapper.mapLevel(it) }
             startTracking()
             motion.emit(motionOf(tilt = 35f, horizon = 77f))

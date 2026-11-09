@@ -22,7 +22,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeD
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
@@ -65,11 +64,9 @@ open class ViewfinderViewModelTestBase {
 
     protected val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true)
     protected val cameraBindSettingsMapper = mockk<CameraBindSettingsMapper>(relaxed = true)
-    protected val volumeKeyActionMapper = mockk<VolumeKeyActionMapper>(relaxed = true)
 
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
-    protected val zoomChanges = MutableSharedFlow<Unit>()
     protected val recordingEvents = MutableSharedFlow<ViewfinderRecordingEvent>()
 
     protected lateinit var stateHolder: ViewfinderStateHolder
@@ -81,7 +78,6 @@ open class ViewfinderViewModelTestBase {
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
         every { cameraDelegate.cameraEvents } returns cameraEvents
         every { captureDelegate.captureEvents } returns captureEvents
-        every { cameraControlsDelegate.zoomChanges } returns zoomChanges
         every { recordingDelegate.recordingEvents } returns recordingEvents
     }
 
@@ -113,7 +109,6 @@ open class ViewfinderViewModelTestBase {
             previewControlsDelegate = previewControlsDelegate,
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,
-            volumeKeyActionMapper = volumeKeyActionMapper,
         )
 
         viewModels += viewModel

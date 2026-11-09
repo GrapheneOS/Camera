@@ -107,7 +107,7 @@ internal class AdjustmentBarState(
     }
 
     private suspend fun animateTo(tick: Int) {
-        animatePosition(
+        syncPosition(
             target = tick.toFloat(),
             onStart = { reportedTick = tick },
         )

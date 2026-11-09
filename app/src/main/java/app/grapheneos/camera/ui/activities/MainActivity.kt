@@ -66,6 +66,8 @@ import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysViewModel
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.input.ZoomDirection
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
@@ -76,13 +78,13 @@ import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.ExposureBar
-import app.grapheneos.camera.ui.viewfinder.components.ZoomBar
 import app.grapheneos.camera.ui.viewfinder.components.qr.QROverlay
 import app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFocusCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewZoomCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.SettingsPanelDragCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
@@ -104,6 +106,8 @@ import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
 import javax.inject.Inject
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -170,6 +174,13 @@ open class MainActivity : AppCompatActivity() {
                 onGestureStarted = {
                     previewOverlays.onAction(PreviewAction.PreviewGestureStarted)
                 },
+            ),
+            previewZoom = PreviewZoomCallbacks(
+                onPinchStarted = { previewOverlays.onAction(ZoomAction.PreviewPinchStarted) },
+                onPinchScaleChanged = { scaleFactor ->
+                    previewOverlays.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor))
+                },
+                onPinchFinished = { previewOverlays.onAction(ZoomAction.PreviewPinchFinished) },
             ),
             settingsPanelDrag = SettingsPanelDragCallbacks(
                 isShown = { !quickSettingsSheet.isHidden },
@@ -238,12 +249,6 @@ open class MainActivity : AppCompatActivity() {
 
     val previewLoader: ProgressBar
         get() = binding.previewLoading
-
-    val zoomBar: ZoomBar
-        get() = binding.zoomBar
-
-    val zoomBarPanel: LinearLayout
-        get() = binding.zoomBarPanel
 
     val exposureBar: ExposureBar
         get() = binding.exposureBar
@@ -342,10 +347,10 @@ open class MainActivity : AppCompatActivity() {
                 previewOverlays.onAction(PreviewAction.FocusKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_IN -> {
-                viewfinder.onAction(CameraAction.ZoomInKeyPressed)
+                previewOverlays.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
             }
             KeyEvent.KEYCODE_ZOOM_OUT -> {
-                viewfinder.onAction(CameraAction.ZoomOutKeyPressed)
+                previewOverlays.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.OUT))
             }
         }
         return super.onKeyUp(keyCode, event)
@@ -361,6 +366,7 @@ open class MainActivity : AppCompatActivity() {
 
         if (event?.repeatCount == 0) {
             viewfinder.onAction(CaptureAction.VolumeKeyEvent.Pressed(volumeKey))
+            previewOverlays.onAction(ZoomAction.VolumeKeyPressed(zoomDirectionOf(volumeKey)))
         }
         return true
     }
@@ -370,6 +376,14 @@ open class MainActivity : AppCompatActivity() {
 
         tabLayout.settleNow()
         viewfinder.onAction(CaptureAction.VolumeKeyEvent.Released(key))
+        previewOverlays.onAction(ZoomAction.VolumeKeyReleased)
+    }
+
+    private fun zoomDirectionOf(key: VolumeKey): ZoomDirection {
+        return when (key) {
+            VolumeKey.UP -> ZoomDirection.IN
+            VolumeKey.DOWN -> ZoomDirection.OUT
+        }
     }
 
     private fun volumeKeyOf(keyCode: Int): VolumeKey? {
@@ -473,9 +487,10 @@ open class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewfinder.zoomUiState.collect { zoom ->
-                    renderer.renderZoom(zoom)
-                }
+                previewOverlays.uiState
+                    .map { state -> state.zoom?.ratio }
+                    .distinctUntilChanged()
+                    .collect { previewFrames.discardPrefetch() }
             }
         }
 
@@ -585,9 +600,6 @@ open class MainActivity : AppCompatActivity() {
             viewfinder.onAction(CaptureAction.CaptureButtonClicked)
         }
 
-        zoomBar.onLinearZoomDragged = { linearZoom ->
-            viewfinder.onAction(CameraAction.ZoomSliderDragged(linearZoom = linearZoom))
-        }
         exposureBar.onCompensationDragged = { compensationIndex ->
             viewfinder.onAction(
                 CameraAction.ExposureSliderDragged(compensationIndex = compensationIndex),
@@ -622,7 +634,6 @@ open class MainActivity : AppCompatActivity() {
                 it
             }
 
-            zoomBarPanel.setPadding(0, 0, 0, insets.bottom)
             exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
             binding.bottomRow.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 bottomMargin = insets.bottom +

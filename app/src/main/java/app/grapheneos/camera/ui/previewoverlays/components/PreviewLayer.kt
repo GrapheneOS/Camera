@@ -27,8 +27,14 @@ internal fun BoxScope.PreviewLayer(
     Box(
         modifier = modifier
             .align(AbsoluteAlignment.TopLeft)
-            .absoluteOffset(x = bounds.left, y = bounds.top)
-            .size(width = bounds.width, height = bounds.height)
+            .absoluteOffset(
+                x = bounds.left,
+                y = bounds.top,
+            )
+            .size(
+                width = bounds.width,
+                height = bounds.height,
+            )
             .clipToBounds(),
         content = content,
     )
@@ -38,7 +44,12 @@ internal fun BoxScope.PreviewLayer(
 @Composable
 private fun PreviewLayerPreview() {
     CameraPreviewColumn {
-        Box(modifier = Modifier.size(width = 280.dp, height = 400.dp)) {
+        Box(
+            modifier = Modifier.size(
+                width = 280.dp,
+                height = 400.dp,
+            ),
+        ) {
             PreviewLayer(
                 bounds = DpRect(
                     left = 20.dp,

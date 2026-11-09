@@ -4,6 +4,8 @@ import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegateImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegateImpl
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ZoomDelegate
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ZoomDelegateImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -25,4 +27,10 @@ internal abstract class PreviewOverlaysViewModelBindsModule {
     abstract fun bindLevelDelegate(
         impl: LevelDelegateImpl,
     ): LevelDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindZoomDelegate(
+        impl: ZoomDelegateImpl,
+    ): ZoomDelegate
 }

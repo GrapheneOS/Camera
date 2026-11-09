@@ -9,18 +9,19 @@ import kotlin.time.Duration
 
 internal data class PreviewOverlaysState(
     val settings: CameraSettings = CameraSettings(),
-    val focus: FocusState = FocusState(),
     val previewContent: PreviewContentState? = null,
     val isPreviewFlashVisible: Boolean = false,
-    val level: LevelState = LevelState(),
     val displayRotation: DeviceOrientation = DeviceOrientation.DEGREES_0,
+    val focus: FocusState = FocusState(),
+    val level: LevelState = LevelState(),
+    val zoom: ZoomState = ZoomState(),
 ) {
 
     fun isFocusAvailable(): Boolean {
-        return isPreviewFocusable() && !isPreviewFlashVisible
+        return isPreviewInteractive() && !isPreviewFlashVisible
     }
 
-    fun isPreviewFocusable(): Boolean {
+    fun isPreviewInteractive(): Boolean {
         val content = previewContent ?: return false
         return content.mode != CameraMode.QR_SCAN &&
             content.isPreviewStreaming &&
@@ -66,6 +67,14 @@ internal data class PreviewOverlaysState(
             content.selfTimerRemaining == null &&
             !content.isTakingPicture &&
             !isPreviewHidden(content)
+    }
+
+    fun isZoomVisible(): Boolean {
+        val content = previewContent ?: return false
+        return content.mode != CameraMode.QR_SCAN &&
+            !content.isCaptureResultVisible &&
+            !isPreviewFlashVisible &&
+            zoom.isAdjustable()
     }
 
     private fun isPreviewHidden(content: PreviewContentState): Boolean {

@@ -45,8 +45,9 @@ private const val SELECTED_LABEL_SCALE = 1.15f
 
 /**
  * The selected stop is the last one at or below [value], or the first one below all of them. It
- * shows [value] followed by [valueSuffix]; the others show only their number. [onStopClick] reports
- * a tapped stop, and [value] changes only when the caller sets it.
+ * shows [value] followed by [valueSuffix], or its preset when [showCurrentValue] is false.
+ * The others show only their number. [onStopClick] reports a tapped stop, and [value] changes
+ * only when the caller sets it.
  */
 @Composable
 internal fun ZoomStops(
@@ -56,6 +57,7 @@ internal fun ZoomStops(
     onStopClick: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    showCurrentValue: Boolean = true,
     customActions: List<CustomAccessibilityAction> = emptyList(),
     colors: PillSelectorColors = PillSelectorColors.fromTheme(),
 ) {
@@ -80,7 +82,7 @@ internal fun ZoomStops(
             val isSelected = index == selectedIndex
             val number = format.format(
                 value = when {
-                    isSelected -> value
+                    isSelected && showCurrentValue -> value
                     else -> stops[index]
                 },
             )

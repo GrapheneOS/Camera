@@ -5,4 +5,9 @@ data class CameraZoom(
     val linearZoom: Float,
     val minZoomRatio: Float,
     val maxZoomRatio: Float,
-)
+) {
+
+    fun isAdjustable(): Boolean {
+        return minZoomRatio > 0f && maxZoomRatio.isFinite() && minZoomRatio < maxZoomRatio
+    }
+}

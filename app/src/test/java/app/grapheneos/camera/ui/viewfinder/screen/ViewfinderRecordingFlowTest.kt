@@ -388,7 +388,6 @@ class ViewfinderRecordingFlowTest {
             modeDelegate = ViewfinderModeDelegateImpl(entryPoint = entryPoint),
             cameraDelegate = ViewfinderCameraDelegateImpl(
                 session = cameraSession,
-                zoomControl = mockk(relaxed = true),
                 exposureControl = mockk(relaxed = true),
                 torch = torch,
                 entryPoint = entryPoint,
@@ -423,7 +422,6 @@ class ViewfinderRecordingFlowTest {
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,
-            volumeKeyActionMapper = mockk(relaxed = true),
         )
     }
 

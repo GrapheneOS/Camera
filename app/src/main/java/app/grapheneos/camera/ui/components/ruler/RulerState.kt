@@ -123,18 +123,22 @@ internal abstract class RulerState(
         to: Float,
     )
 
-    protected suspend fun animatePosition(
+    protected suspend fun syncPosition(
         target: Float,
         onStart: () -> Unit,
+        animated: Boolean = true,
     ) {
         mutex.mutate {
             onStart()
-            animate(
-                initialValue = position,
-                targetValue = target,
-                animationSpec = SETTLE_SPEC,
-            ) { value, _ ->
-                position = value
+            when {
+                animated -> animate(
+                    initialValue = position,
+                    targetValue = target,
+                    animationSpec = SETTLE_SPEC,
+                ) { value, _ ->
+                    position = value
+                }
+                else -> position = target
             }
         }
     }
@@ -143,6 +147,11 @@ internal abstract class RulerState(
         isDragging = false
         revision++
         bindings.onValueChangeFinished.value()
+    }
+
+    protected fun resetPosition(position: Float) {
+        this.position = position
+        revision++
     }
 
     protected fun commit(value: Float) {
