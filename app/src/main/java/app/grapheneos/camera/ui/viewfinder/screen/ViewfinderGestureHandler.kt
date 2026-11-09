@@ -11,11 +11,13 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import kotlin.math.abs
+import kotlin.math.hypot
 
 internal class ViewfinderGestureHandler(
     context: Context,
     private val onAction: (ViewfinderAction) -> Unit,
     private val previewFocus: PreviewFocusCallbacks,
+    private val previewZoom: PreviewZoomCallbacks,
     private val settingsPanelDrag: SettingsPanelDragCallbacks,
 ) : GestureDetector.SimpleOnGestureListener(),
     View.OnTouchListener,
@@ -31,7 +33,13 @@ internal class ViewfinderGestureHandler(
         touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
     )
 
+    private val pinchTracker = PreviewPinchTracker(
+        spanSlop = ViewConfiguration.get(context).scaledTouchSlop * 2f,
+    )
+
     private var velocityTracker: VelocityTracker? = null
+
+    private var pointerCount = 0
 
     private var isZooming = false
 
@@ -50,9 +58,11 @@ internal class ViewfinderGestureHandler(
             MotionEvent.ACTION_CANCEL -> cancelTap()
         }
 
+        pointerCount = event.pointerCount
         scaleGestureDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
         trackSettingsPanelDrag(event)
+        trackPinch(event)
 
         if (event.action != MotionEvent.ACTION_UP) return true
 
@@ -115,23 +125,19 @@ internal class ViewfinderGestureHandler(
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
 
-        onAction(CameraAction.Preview.Pinched(scaleFactor = detector.scaleFactor))
+        previewZoom.onPinchScaleChanged(detector.scaleFactor)
 
         return true
     }
 
-    // A pinch, or a double tap held and dragged, zooms only while the panel is down, and stops the
-    // panel from following the same finger.
+    // The detector is left with the double tap held and dragged; pinchTracker follows two fingers.
     override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-        if (settingsPanelDrag.isShown()) return false
-
-        cancelTap()
-        stopSettingsPanelDrag(velocity = 0f)
-
-        return true
+        return pointerCount == 1 && startZoom()
     }
 
-    override fun onScaleEnd(detector: ScaleGestureDetector) {}
+    override fun onScaleEnd(detector: ScaleGestureDetector) {
+        previewZoom.onPinchFinished()
+    }
 
     override fun onFling(
         e1: MotionEvent?,
@@ -156,6 +162,92 @@ internal class ViewfinderGestureHandler(
         }
 
         return direction != null
+    }
+
+    private fun startZoom(): Boolean {
+        val starts = !settingsPanelDrag.isShown()
+
+        if (starts) {
+            cancelTap()
+            stopSettingsPanelDrag(velocity = 0f)
+            previewZoom.onPinchStarted()
+        }
+
+        return starts
+    }
+
+    private fun trackPinch(event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_POINTER_DOWN -> pinchTracker.restart(
+                span = pointerSpan(
+                    event = event,
+                    liftedIndex = NO_POINTER,
+                ),
+            )
+
+            MotionEvent.ACTION_POINTER_UP -> when {
+                event.pointerCount > 2 -> pinchTracker.restart(
+                    span = pointerSpan(
+                        event = event,
+                        liftedIndex = event.actionIndex,
+                    ),
+                )
+
+                else -> stopPinch()
+            }
+
+            MotionEvent.ACTION_MOVE -> if (event.pointerCount > 1) movePinch(event)
+            MotionEvent.ACTION_UP -> stopPinch()
+            MotionEvent.ACTION_CANCEL -> stopPinch()
+        }
+    }
+
+    private fun movePinch(event: MotionEvent) {
+        val span = pointerSpan(
+            event = event,
+            liftedIndex = NO_POINTER,
+        )
+
+        when (val pinch = pinchTracker.move(span)) {
+            null -> Unit
+            is PreviewPinchTracker.Pinch.Started -> if (!startZoom()) pinchTracker.reject()
+
+            is PreviewPinchTracker.Pinch.Scaled -> {
+                isZooming = true
+                previewZoom.onPinchScaleChanged(pinch.scaleFactor)
+            }
+        }
+    }
+
+    private fun stopPinch() {
+        if (pinchTracker.stop()) previewZoom.onPinchFinished()
+    }
+
+    private fun pointerSpan(
+        event: MotionEvent,
+        liftedIndex: Int,
+    ): Float {
+        var count = 0
+        var sumX = 0f
+        var sumY = 0f
+        for (index in 0 until event.pointerCount) {
+            if (index != liftedIndex) {
+                count++
+                sumX += event.getX(index)
+                sumY += event.getY(index)
+            }
+        }
+
+        var deviationX = 0f
+        var deviationY = 0f
+        for (index in 0 until event.pointerCount) {
+            if (index != liftedIndex) {
+                deviationX += abs(event.getX(index) - sumX / count)
+                deviationY += abs(event.getY(index) - sumY / count)
+            }
+        }
+
+        return hypot(deviationX, deviationY) * 2 / count
     }
 
     private fun cancelTap() {
@@ -255,5 +347,6 @@ internal class ViewfinderGestureHandler(
         private const val SWIPE_THRESHOLD = 100
         private const val SWIPE_VELOCITY_THRESHOLD = 100
         private const val PIXELS_PER_SECOND = 1000
+        private const val NO_POINTER = -1
     }
 }

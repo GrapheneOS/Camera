@@ -113,7 +113,10 @@ internal class LevelDelegateImpl @Inject constructor(
     }
 
     private fun publishMotion(motion: DeviceMotion): LevelState {
-        val level = levelStateMapper.map(state = state, motion = motion)
+        val level = levelStateMapper.map(
+            state = state,
+            motion = motion,
+        )
         val published = when {
             level.visible -> level
             else -> level.copy(
@@ -122,9 +125,7 @@ internal class LevelDelegateImpl @Inject constructor(
             )
         }
 
-        if (published != state.level) {
-            stateHolder.update { state -> state.copy(level = published) }
-        }
+        stateHolder.update { state -> state.copy(level = published) }
 
         return level
     }
@@ -134,7 +135,10 @@ internal class LevelDelegateImpl @Inject constructor(
         expectedPose: LevelPose,
     ) {
         stateHolder.update { state ->
-            val candidate = levelStateMapper.map(state = state, motion = motion)
+            val candidate = levelStateMapper.map(
+                state = state,
+                motion = motion,
+            )
             when {
                 state.level.pose != expectedPose || candidate.pose != expectedPose -> state
                 else -> state.copy(level = candidate.copy(visible = true))

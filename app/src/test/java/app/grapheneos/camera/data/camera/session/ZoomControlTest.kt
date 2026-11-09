@@ -7,20 +7,24 @@ import androidx.camera.core.ZoomState
 import androidx.lifecycle.MutableLiveData
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapperImpl
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,10 +53,15 @@ class ZoomControlTest {
         runTest {
             val zoomControl = createZoomControl()
 
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
 
             verify(exactly = 0) { cameraInfo.zoomState }
             assertNull(zoomControl.zoom)
+            assertEquals(LensFacing.BACK, zoomControl.lensFacing)
 
             runCurrent()
 
@@ -67,8 +76,16 @@ class ZoomControlTest {
         runTest {
             val zoomControl = createZoomControl()
 
-            zoomControl.attach(camera)
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             runCurrent()
 
             verify(exactly = 1) { cameraInfo.zoomState }
@@ -80,7 +97,11 @@ class ZoomControlTest {
         runTest {
             val zoomControl = createZoomControl()
 
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             zoomControl.detach()
             runCurrent()
 
@@ -92,7 +113,11 @@ class ZoomControlTest {
     fun laterRatios_areReportedAsChanged() {
         runTest {
             val zoomControl = createZoomControl()
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             runCurrent()
 
             zoomStates.value = zoomState(ratio = 1f)
@@ -109,7 +134,11 @@ class ZoomControlTest {
     fun detach_stopsObservingAndForgetsTheState() {
         runTest {
             val zoomControl = createZoomControl()
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             runCurrent()
 
             zoomControl.detach()
@@ -118,6 +147,7 @@ class ZoomControlTest {
 
             assertFalse(zoomStates.hasObservers())
             assertNull(zoomControl.zoom)
+            assertNull(zoomControl.lensFacing)
             assertEquals(listOf(CameraZoomEvent.Loaded), events)
         }
     }
@@ -126,10 +156,18 @@ class ZoomControlTest {
     fun reattach_reportsTheNewStateAsLoaded() {
         runTest {
             val zoomControl = createZoomControl()
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             runCurrent()
 
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             runCurrent()
 
             assertEquals(listOf(CameraZoomEvent.Loaded, CameraZoomEvent.Loaded), events)
@@ -142,13 +180,223 @@ class ZoomControlTest {
             val zoomControl = createZoomControl()
             zoomControl.setZoomRatio(2f)
 
-            zoomControl.attach(camera)
+            zoomControl.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
             zoomControl.setZoomRatio(3f)
-            zoomControl.setLinearZoom(0.5f)
 
             verify(exactly = 0) { cameraControl.setZoomRatio(2f) }
             verify(exactly = 1) { cameraControl.setZoomRatio(3f) }
-            verify(exactly = 1) { cameraControl.setLinearZoom(0.5f) }
+        }
+    }
+
+    @Test
+    fun animatedZoom_changesTheCameraGraduallyAndEndsAtTheClampedTarget() {
+        runTest {
+            val control = createZoomControl()
+            val ratios = mutableListOf<Float>()
+            every { cameraControl.setZoomRatio(capture(ratios)) } answers {
+                zoomStates.value = zoomState(ratio = firstArg())
+                mockk(relaxed = true)
+            }
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+
+            val animation = launch(mainDispatcherRule.testDispatcher) {
+                control.animateZoomRatio(100f)
+            }
+            advanceTimeBy(100.milliseconds)
+            assertTrue(ratios.size > 1)
+            assertTrue(ratios.all { it > 1f && it < 4f })
+
+            advanceTimeBy(100.milliseconds)
+            runCurrent()
+
+            assertTrue(animation.isCompleted)
+            assertEquals(4f, ratios.last())
+        }
+    }
+
+    @Test
+    fun aDirectZoomRequest_cancelsTheAnimationBeforeApplyingItsValue() {
+        runTest {
+            val control = createZoomControl()
+            val ratios = mutableListOf<Float>()
+            every { cameraControl.setZoomRatio(capture(ratios)) } returns mockk(relaxed = true)
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+            val animation = launch(mainDispatcherRule.testDispatcher) {
+                control.animateZoomRatio(4f)
+            }
+            advanceTimeBy(80.milliseconds)
+
+            control.setZoomRatio(1.5f)
+            val afterManualInput = ratios.toList()
+            advanceTimeBy(300.milliseconds)
+
+            assertTrue(animation.isCompleted)
+            assertFalse(animation.isCancelled)
+            assertEquals(1.5f, ratios.last())
+            assertEquals(afterManualInput, ratios)
+        }
+    }
+
+    @Test
+    fun aRequestAwaitingCameraAcknowledgement_isStillCancelledByManualInput() {
+        runTest {
+            val control = createZoomControl()
+            val ratios = mutableListOf<Float>()
+            every { cameraControl.setZoomRatio(capture(ratios)) } returns mockk(relaxed = true)
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+            val animation = launch(mainDispatcherRule.testDispatcher) {
+                control.animateZoomRatio(4f)
+            }
+            advanceTimeBy(250.milliseconds)
+            assertFalse(animation.isCompleted)
+
+            control.setZoomRatio(1.5f)
+            advanceTimeBy(300.milliseconds)
+
+            assertTrue(animation.isCompleted)
+            assertFalse(animation.isCancelled)
+            assertEquals(1.5f, ratios.last())
+        }
+    }
+
+    @Test
+    fun replacingTheCamera_stopsAllCommandsToThePreviousCamera() {
+        runTest {
+            val control = createZoomControl()
+            val ratios = mutableListOf<Float>()
+            every { cameraControl.setZoomRatio(capture(ratios)) } returns mockk(relaxed = true)
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+            val animation = launch(mainDispatcherRule.testDispatcher) {
+                control.animateZoomRatio(4f)
+            }
+            advanceTimeBy(80.milliseconds)
+
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            val beforeRebind = ratios.toList()
+            advanceTimeBy(300.milliseconds)
+
+            assertTrue(animation.isCompleted)
+            assertFalse(animation.isCancelled)
+            assertEquals(beforeRebind + 4f, ratios)
+        }
+    }
+
+    @Test
+    fun aRememberedRatio_isAppliedWithinTheNextCamerasRange() {
+        runTest {
+            val control = createZoomControl()
+            control.rememberZoomRatio(
+                zoomRatio = 8f,
+                lensFacing = LensFacing.FRONT,
+            )
+
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.FRONT,
+                remembersZoom = true,
+            )
+            runCurrent()
+
+            verify(exactly = 1) { cameraControl.setZoomRatio(4f) }
+            assertEquals(4f, control.zoom?.zoomRatio)
+            assertEquals(listOf(CameraZoomEvent.Loaded), events)
+        }
+    }
+
+    @Test
+    fun eachLens_keepsItsOwnRatio() {
+        runTest {
+            val control = createZoomControl()
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+            control.setZoomRatio(2f)
+
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.FRONT,
+                remembersZoom = true,
+            )
+            runCurrent()
+
+            assertEquals(1f, control.zoom?.zoomRatio)
+            control.setZoomRatio(3f)
+
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+
+            assertEquals(2f, control.zoom?.zoomRatio)
+            verify(exactly = 2) { cameraControl.setZoomRatio(2f) }
+            verify(exactly = 1) { cameraControl.setZoomRatio(3f) }
+        }
+    }
+
+    @Test
+    fun aCameraAttachedWithoutMemory_neitherGetsNorReplacesTheRememberedRatio() {
+        runTest {
+            val control = createZoomControl()
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+            control.setZoomRatio(2f)
+
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = false,
+            )
+            runCurrent()
+
+            assertEquals(1f, control.zoom?.zoomRatio)
+            control.setZoomRatio(3f)
+
+            control.attach(
+                camera = camera,
+                lensFacing = LensFacing.BACK,
+                remembersZoom = true,
+            )
+            runCurrent()
+
+            assertEquals(2f, control.zoom?.zoomRatio)
+            verify(exactly = 2) { cameraControl.setZoomRatio(2f) }
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Looper
 import android.os.SystemClock
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
 import androidx.test.core.app.ApplicationProvider
@@ -15,6 +16,8 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import java.util.concurrent.TimeUnit
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -30,6 +33,9 @@ class ViewfinderGestureHandlerTest {
     private val onTapped = mockk<() -> Unit>(relaxed = true)
     private val onLongPressed = mockk<() -> Unit>(relaxed = true)
     private val onGestureStarted = mockk<() -> Unit>(relaxed = true)
+    private val onPinchStarted = mockk<() -> Unit>(relaxed = true)
+    private val onPinchScaleChanged = mockk<(Float) -> Unit>(relaxed = true)
+    private val onPinchFinished = mockk<() -> Unit>(relaxed = true)
     private val isSettingsPanelShown = mockk<() -> Boolean>().also { isShown ->
         every { isShown() } returns false
     }
@@ -41,6 +47,11 @@ class ViewfinderGestureHandlerTest {
             onTapped = onTapped,
             onLongPressed = onLongPressed,
             onGestureStarted = onGestureStarted,
+        ),
+        previewZoom = PreviewZoomCallbacks(
+            onPinchStarted = onPinchStarted,
+            onPinchScaleChanged = onPinchScaleChanged,
+            onPinchFinished = onPinchFinished,
         ),
         settingsPanelDrag = SettingsPanelDragCallbacks(
             isShown = isSettingsPanelShown,
@@ -116,6 +127,37 @@ class ViewfinderGestureHandlerTest {
 
         verify(exactly = 1) { onAction(CameraAction.Preview.Tapped) }
         confirmVerified(onPressed, onAction, onTapped, onLongPressed, onGestureStarted)
+    }
+
+    @Test
+    fun pinchingRoutesTheWholeGestureToZoom_andDoesNotConfirmTheInitialFocus() {
+        val detector = mockk<ScaleGestureDetector> {
+            every { scaleFactor } returns 1.5f
+        }
+        touch(MotionEvent.ACTION_DOWN)
+        assertTrue(handler.onScaleBegin(detector))
+        handler.onScale(detector)
+        handler.onScaleEnd(detector)
+        touch(MotionEvent.ACTION_UP)
+
+        verifyOrder {
+            onGestureStarted()
+            onPinchStarted()
+            onPinchScaleChanged(1.5f)
+            onPinchFinished()
+        }
+        verify(exactly = 0) { onTapped() }
+        verify(exactly = 0) { onAction(CameraAction.Preview.Tapped) }
+    }
+
+    @Test
+    fun anOpenSettingsPanel_preventsStartingAPinch() {
+        every { isSettingsPanelShown() } returns true
+        touch(MotionEvent.ACTION_DOWN)
+
+        assertFalse(handler.onScaleBegin(mockk()))
+
+        verify(exactly = 0) { onPinchStarted() }
     }
 
     private fun waitForLongPress() {

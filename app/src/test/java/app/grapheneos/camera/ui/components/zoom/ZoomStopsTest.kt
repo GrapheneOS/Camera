@@ -26,10 +26,11 @@ class ZoomStopsTest {
 
     private var value by mutableFloatStateOf(1f)
     private var enabled by mutableStateOf(true)
+    private var showCurrentValue by mutableStateOf(true)
     private val clicks = mutableListOf<Float>()
 
     @Test
-    fun zoomStops_betweenStops_selectTheStopBelowWithTheValue() {
+    fun zoomStops_betweenStops_showTheCurrentValueInTheSelectedStop() {
         value = 4.5f
         setContent()
 
@@ -65,6 +66,18 @@ class ZoomStopsTest {
 
         stop(description = "2.3×").assertIsSelected()
         stop(description = "1×").assertIsNotSelected()
+        stop(description = "1.9×").assertDoesNotExist()
+    }
+
+    @Test
+    fun zoomStops_currentValueHidden_keepsThePresetLabelDuringATransition() {
+        value = 1.8f
+        showCurrentValue = false
+        setContent()
+
+        stop(description = "1×").assertIsSelected()
+        stop(description = "1.8×").assertDoesNotExist()
+        stop(description = "2×").assertIsNotSelected()
     }
 
     @Test
@@ -75,6 +88,16 @@ class ZoomStopsTest {
 
         assertEquals(listOf(2f), clicks)
         stop(description = "1×").assertIsSelected()
+    }
+
+    @Test
+    fun zoomStops_wideAngleLabel_requestsTheActualCameraMinimum() {
+        val minimum = 0.5304938f
+        setContent(stops = listOf(minimum, 1f, 2f))
+
+        stop(description = ".5×").performClick()
+
+        assertEquals(listOf(minimum), clicks)
     }
 
     @Test
@@ -97,6 +120,7 @@ class ZoomStopsTest {
                     valueSuffix = "×",
                     onStopClick = { stop -> clicks += stop },
                     enabled = enabled,
+                    showCurrentValue = showCurrentValue,
                 )
             }
         }

@@ -6,6 +6,7 @@ import app.grapheneos.camera.data.camera.session.FocusControl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.sound.model.CameraSound
+import app.grapheneos.camera.domain.camera.mapper.ZoomPresetsMapperImpl
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.core.screen.StateHolder
@@ -50,7 +51,9 @@ class FocusDelegateTest {
         focusControl = focusControl,
         playCameraSound = playCameraSound,
     )
-    private val mapper = PreviewOverlaysUiStateMapperImpl()
+    private val mapper = PreviewOverlaysUiStateMapperImpl(
+        zoomPresetsMapper = ZoomPresetsMapperImpl(),
+    )
     private val framing = PreviewOverlaysState(
         settings = CameraSettings(focusTimeoutSeconds = 3),
         previewContent = PreviewContentState(isPreviewStreaming = true),

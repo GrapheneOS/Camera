@@ -25,6 +25,12 @@ interface PreviewFrameHolder {
 
     fun prefetch()
 
+    /**
+     * The preview no longer looks like a copy made before this call, a zoom change for one, so
+     * that copy is not held in its place.
+     */
+    fun discardPrefetch()
+
     fun clear()
 
     fun release()
@@ -86,6 +92,10 @@ internal class PreviewFrameHolderImpl(
             Handler(frameCopyLooper()),
             FRAME_COPY_RETRIES,
         )
+    }
+
+    override fun discardPrefetch() {
+        synchronized(lock) { framePrefetchedAt = 0 }
     }
 
     override fun currentFrame(): Bitmap? {

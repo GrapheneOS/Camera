@@ -11,7 +11,6 @@ import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.ExposureControl
 import app.grapheneos.camera.data.camera.session.TorchControl
-import app.grapheneos.camera.data.camera.session.ZoomControl
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -73,7 +72,6 @@ interface ViewfinderCameraDelegate {
 
 internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val session: CameraSession,
-    private val zoomControl: ZoomControl,
     private val exposureControl: ExposureControl,
     private val torch: TorchControl,
     private val entryPoint: CameraEntryPoint,
@@ -213,7 +211,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         stateHolder.update {
             it.copy(
                 session = it.session.copy(
-                    zoom = zoomControl.zoom,
                     exposure = exposureControl.exposure,
                 ),
             )

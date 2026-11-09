@@ -23,7 +23,10 @@ internal class LevelStateMapperImpl @Inject constructor() : LevelStateMapper {
     ): LevelState {
         val current = state.level
         val pose = when {
-            state.isLevelAvailable() -> poseOf(current = current, motion = motion)
+            state.isLevelAvailable() -> poseOf(
+                current = current,
+                motion = motion,
+            )
             else -> null
         }
         val visible = current.visible && pose != null && pose == current.pose

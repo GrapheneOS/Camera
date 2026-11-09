@@ -20,6 +20,7 @@ import app.grapheneos.camera.ui.components.ruler.rememberRulerBindings
 import app.grapheneos.camera.ui.components.zoom.gesture.ZoomBarState
 import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomBarState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -34,10 +35,29 @@ class ZoomBarStateTest {
 
     private var value by mutableFloatStateOf(1f)
     private var scale by mutableStateOf(SCALE)
+    private var animateValueChanges by mutableStateOf(true)
     private var touchSlop = 0f
     private val changes = mutableListOf<Float>()
     private var applyChange: (Float) -> Unit = { newValue -> value = newValue }
     private lateinit var state: ZoomBarState
+
+    @Test
+    fun state_continuousExternalChanges_followTheValueWithoutSettlingAfterEveryUpdate() {
+        animateValueChanges = false
+        setContent()
+        composeRule.mainClock.autoAdvance = false
+
+        listOf(1.5f, 2f, 3f).forEach { ratio ->
+            composeRule.runOnIdle { value = ratio }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.runOnIdle {
+                assertEquals(SCALE.position(value = ratio), state.position)
+                assertEquals(emptyList<Float>(), changes)
+            }
+        }
+    }
 
     @Test
     fun state_valueChangedDuringADrag_isFollowedOnRelease() {
@@ -120,6 +140,33 @@ class ZoomBarStateTest {
     }
 
     @Test
+    fun state_scaleChangedDuringADrag_keepsTheGestureAndContinuesOnTheNewScale() {
+        scale = FRONT_SCALE
+        setContent()
+        composeRule.onNodeWithTag(TAG).performTouchInput {
+            down(center)
+            moveBy(Offset(x = -touchSlop - 1.5f * TICK_SPACING_PX, y = 0f))
+        }
+        val original = state
+        composeRule.runOnIdle { scale = SCALE }
+        composeRule.runOnIdle {
+            assertSame(original, state)
+            assertTrue(state.isDragging)
+            assertEquals(SCALE.position(value = value), state.position)
+        }
+        val before = changes.size
+        composeRule.onNodeWithTag(TAG).performTouchInput {
+            moveBy(Offset(x = -1.5f * TICK_SPACING_PX, y = 0f))
+            up()
+        }
+
+        composeRule.runOnIdle {
+            assertTrue(changes.size > before)
+            assertEquals(SCALE.position(value = value), state.position)
+        }
+    }
+
+    @Test
     fun state_draggedAfterAScaleChange_movesOnFromTheValue() {
         scale = FRONT_SCALE
         setContent()
@@ -156,6 +203,7 @@ class ZoomBarStateTest {
                     onValueChangeFinished = {},
                     tickSpacing = TICK_SPACING_PX,
                 ),
+                animateValueChanges = animateValueChanges,
             )
             Box(
                 modifier = Modifier

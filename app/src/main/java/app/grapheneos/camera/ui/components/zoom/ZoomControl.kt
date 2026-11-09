@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
+import app.grapheneos.camera.ui.components.motion.crossfadeResizing
 import app.grapheneos.camera.ui.components.motion.revealResizing
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
@@ -44,9 +45,10 @@ import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
  * Collapsed, it shows [stops], and a tap on one reports it through [onStopClick]. A horizontal
  * swipe or a long press on the stops calls [onExpand], and the same touch goes on moving the value
  * as on the expanded bar. [expanded] belongs to the caller: it expands on [onExpand] and collapses
- * whenever the screen decides to. [interactionSource] holds a press for as long as a finger is on
- * the control, so a screen that collapses on a timer can wait for the release. [expandLabel] names
+ * whenever the screen decides to. [onPressChanged] reports a hold until release or cancellation,
+ * so a screen that collapses on a timer can wait for the release. [expandLabel] names
  * the accessibility action that expands the stops, the only way to the bar without a gesture.
+ * Set [animateValueChanges] to false when [value] is already driven by a continuous gesture.
  */
 @Composable
 internal fun ZoomControl(
@@ -61,7 +63,10 @@ internal fun ZoomControl(
     expandLabel: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    showCurrentValue: Boolean = true,
+    animateValueChanges: Boolean = true,
     onValueChangeFinished: () -> Unit = {},
+    onPressChanged: (Boolean) -> Unit = {},
     barColors: ZoomBarColors = ZoomBarColors.fromTheme(),
     stopsColors: PillSelectorColors = PillSelectorColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
@@ -83,11 +88,13 @@ internal fun ZoomControl(
             onValueChangeFinished = onValueChangeFinished,
             tickSpacing = metrics.tickSpacing,
         ),
+        animateValueChanges = animateValueChanges,
     )
     val expander = rememberZoomControlExpander(
         enabled = enabled,
         expanded = expanded,
         onExpand = onExpand,
+        onPressChanged = onPressChanged,
     )
     val alpha by animateEnabledAlpha(enabled = enabled)
     val valueDescription = rememberZoomFormat().format(value = value) + valueSuffix
@@ -107,6 +114,7 @@ internal fun ZoomControl(
         },
         expandLabel = expandLabel,
         enabled = enabled,
+        showCurrentValue = showCurrentValue,
         alpha = { alpha },
         state = state,
         scale = scale,
@@ -136,6 +144,7 @@ private fun ZoomControlLayers(
     onStopClick: (Float) -> Unit,
     expandLabel: String,
     enabled: Boolean,
+    showCurrentValue: Boolean,
     alpha: () -> Float,
     state: ZoomBarState,
     scale: ZoomBarScale,
@@ -185,6 +194,7 @@ private fun ZoomControlLayers(
                     onStopClick = onStopClick,
                     expandLabel = expandLabel,
                     enabled = enabled,
+                    showCurrentValue = showCurrentValue,
                     colors = stopsColors,
                 )
             }
@@ -201,22 +211,31 @@ private fun ZoomControlStops(
     onStopClick: (Float) -> Unit,
     expandLabel: String,
     enabled: Boolean,
+    showCurrentValue: Boolean,
     colors: PillSelectorColors,
 ) {
-    ZoomStops(
-        value = value,
-        stops = stops,
-        valueSuffix = valueSuffix,
-        onStopClick = onStopClick,
-        enabled = enabled,
-        customActions = listOf(
-            CustomAccessibilityAction(label = expandLabel) {
-                onExpand()
-                true
-            },
-        ),
-        colors = colors.copy(containerColor = Color.Transparent),
-    )
+    AnimatedContent(
+        targetState = stops,
+        transitionSpec = { crossfadeResizing() },
+        contentKey = { it.size },
+        contentAlignment = Alignment.Center,
+    ) { visibleStops ->
+        ZoomStops(
+            value = value,
+            stops = visibleStops,
+            valueSuffix = valueSuffix,
+            onStopClick = onStopClick,
+            enabled = enabled,
+            showCurrentValue = showCurrentValue,
+            customActions = listOf(
+                CustomAccessibilityAction(label = expandLabel) {
+                    onExpand()
+                    true
+                },
+            ),
+            colors = colors.copy(containerColor = Color.Transparent),
+        )
+    }
 }
 
 @Composable

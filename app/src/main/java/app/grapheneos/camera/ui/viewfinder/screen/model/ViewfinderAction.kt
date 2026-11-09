@@ -7,21 +7,12 @@ import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
-import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 
 sealed interface ViewfinderAction {
 
     sealed interface CameraAction : ViewfinderAction {
 
         data object FlipCameraClicked : CameraAction
-
-        data object ZoomInKeyPressed : CameraAction
-
-        data object ZoomOutKeyPressed : CameraAction
-
-        data class ZoomSliderDragged(
-            val linearZoom: Float,
-        ) : CameraAction
 
         data class ExposureSliderDragged(
             val compensationIndex: Int,
@@ -34,15 +25,6 @@ sealed interface ViewfinderAction {
         data class DisplayRotationChanged(
             val rotation: DeviceOrientation,
         ) : CameraAction
-
-        sealed interface ZoomStepKey : CameraAction {
-
-            data class Pressed(
-                val direction: ZoomDirection,
-            ) : ZoomStepKey
-
-            data object Released : ZoomStepKey
-        }
 
         sealed interface ModeStrip : CameraAction {
 
@@ -62,10 +44,6 @@ sealed interface ViewfinderAction {
         sealed interface Preview : CameraAction {
 
             data object Tapped : Preview
-
-            data class Pinched(
-                val scaleFactor: Float,
-            ) : Preview
 
             data class Swiped(
                 val direction: SwipeDirection,

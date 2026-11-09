@@ -27,7 +27,10 @@ internal fun PreviewFocus(
             visible = focus.visible,
             appearance = focus.appearance,
             lockIcon = Icons.Outlined.Lock,
-            modifier = modifier.absoluteOffset(x = x, y = y),
+            modifier = modifier.absoluteOffset(
+                x = x,
+                y = y,
+            ),
         )
     }
 }

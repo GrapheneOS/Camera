@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState as Controls
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -16,11 +15,6 @@ interface ViewfinderPreviewControlsDelegate {
         stateHolder: ViewfinderStateHolder,
     )
 
-    fun showFocusControls()
-
-    fun showZoomPanel()
-    fun hideZoomPanel()
-
     fun showExposurePanel()
     fun hideExposurePanel()
 }
@@ -32,13 +26,7 @@ internal class ViewfinderPreviewControlsDelegateImpl @Inject constructor() :
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private val zoomPanel = AutoHidingPanel { controls, shown ->
-        controls.copy(isZoomPanelShown = shown)
-    }
-
-    private val exposurePanel = AutoHidingPanel { controls, shown ->
-        controls.copy(isExposurePanelShown = shown)
-    }
+    private var timeout: Job? = null
 
     override fun bind(
         scope: CoroutineScope,
@@ -48,52 +36,23 @@ internal class ViewfinderPreviewControlsDelegateImpl @Inject constructor() :
         this.stateHolder = stateHolder
     }
 
-    override fun showFocusControls() {
-        exposurePanel.show()
-        zoomPanel.show()
-    }
-
-    override fun showZoomPanel() {
-        zoomPanel.show()
-    }
-
-    override fun hideZoomPanel() {
-        zoomPanel.hide()
-    }
-
     override fun showExposurePanel() {
-        exposurePanel.show()
+        setShown(true)
+        timeout?.cancel()
+        timeout = scope.launch {
+            delay(PANEL_VISIBILITY_DURATION)
+            setShown(false)
+        }
     }
 
     override fun hideExposurePanel() {
-        exposurePanel.hide()
+        timeout?.cancel()
+        setShown(false)
     }
 
-    private inner class AutoHidingPanel(
-        private val withShown: (Controls, Boolean) -> Controls,
-    ) {
-
-        private var timeout: Job? = null
-
-        fun show() {
-            setShown(true)
-
-            timeout?.cancel()
-            timeout = scope.launch {
-                delay(PANEL_VISIBILITY_DURATION)
-                setShown(false)
-            }
-        }
-
-        fun hide() {
-            timeout?.cancel()
-            setShown(false)
-        }
-
-        private fun setShown(shown: Boolean) {
-            stateHolder.update { state ->
-                state.copy(previewControls = withShown(state.previewControls, shown))
-            }
+    private fun setShown(shown: Boolean) {
+        stateHolder.update { state ->
+            state.copy(previewControls = state.previewControls.copy(isExposurePanelShown = shown))
         }
     }
 

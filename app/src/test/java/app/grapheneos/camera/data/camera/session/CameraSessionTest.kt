@@ -188,12 +188,19 @@ class CameraSessionTest {
     @Test
     fun bind_attachesTheControlsToTheBoundCamera() {
         runTest {
+            every { provider.hasCamera(any()) } returns true
             boundSession(PHOTO_SETTINGS)
 
             verify(exactly = 1) {
                 focusControl.attach(control = cameraControl, meteringPointFactory = any())
             }
-            verify(exactly = 1) { zoomControl.attach(camera) }
+            verify(exactly = 1) {
+                zoomControl.attach(
+                    camera = camera,
+                    lensFacing = LensFacing.BACK,
+                    remembersZoom = true,
+                )
+            }
         }
     }
 
@@ -292,7 +299,6 @@ class CameraSessionTest {
             focusControl = focusControl,
             sceneLightControl = sceneLightControl,
             mainDispatcher = dispatcher,
-            mainLooperDispatcher = dispatcher,
             qrAnalysisDispatcher = dispatcher,
             scope = backgroundScope,
         )

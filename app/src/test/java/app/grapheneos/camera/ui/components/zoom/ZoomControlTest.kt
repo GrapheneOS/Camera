@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -38,6 +39,7 @@ class ZoomControlTest {
     private var value by mutableFloatStateOf(1f)
     private var expanded by mutableStateOf(false)
     private var enabled by mutableStateOf(true)
+    private var stops by mutableStateOf(listOf(0.5f, 1f, 2f))
     private var touchSlop = 0f
     private var longPressTimeoutMillis = 0L
     private var isPressed = false
@@ -46,6 +48,27 @@ class ZoomControlTest {
     private val interactionSource = MutableInteractionSource()
     private val changes = mutableListOf<Float>()
     private val stopClicks = mutableListOf<Float>()
+
+    @Test
+    fun zoomControl_presetCountChanges_animateThePillWidth() {
+        setContent()
+        val node = composeRule.onNodeWithTag(TAG)
+        val initialWidth = node.fetchSemanticsNode().boundsInRoot.width
+        composeRule.mainClock.autoAdvance = false
+        composeRule.runOnIdle { stops = listOf(1f, 2f) }
+        composeRule.mainClock.advanceTimeByFrame()
+        composeRule.waitForIdle()
+        composeRule.mainClock.advanceTimeBy(64)
+        val intermediateWidth = node.fetchSemanticsNode().boundsInRoot.width
+        composeRule.mainClock.advanceTimeBy(1000)
+        val finalWidth = node.fetchSemanticsNode().boundsInRoot.width
+
+        assertTrue(
+            "Width must keep shrinking: $initialWidth > $intermediateWidth > $finalWidth",
+            finalWidth < intermediateWidth && intermediateWidth < initialWidth,
+        )
+        composeRule.onNodeWithContentDescription("1×").assertIsSelected()
+    }
 
     @Test
     fun zoomControl_collapsedStopTapped_reportsTheStop() {
@@ -194,7 +217,7 @@ class ZoomControlTest {
                         value = newValue
                     },
                     valueRange = 0.5f..8f,
-                    stops = listOf(0.5f, 1f, 2f),
+                    stops = stops,
                     valueSuffix = "×",
                     expanded = expanded,
                     onExpand = {

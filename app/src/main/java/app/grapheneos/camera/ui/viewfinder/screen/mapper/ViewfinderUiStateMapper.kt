@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
@@ -22,8 +21,6 @@ import kotlinx.collections.immutable.toImmutableSet
 
 interface ViewfinderUiStateMapper {
     fun map(state: ViewfinderState): ViewfinderUiState
-
-    fun mapZoom(state: ViewfinderState): ZoomUiState
 }
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiStateMapper {
@@ -50,20 +47,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
             dialog = state.dialog,
         )
-    }
-
-    override fun mapZoom(state: ViewfinderState): ZoomUiState {
-        val zoom = state.session.zoom
-        val panelVisible = state.previewControls.isZoomPanelShown
-
-        return when (zoom) {
-            null -> ZoomUiState(panelVisible = panelVisible)
-            else -> ZoomUiState(
-                zoomRatio = zoom.zoomRatio,
-                linearZoom = zoom.linearZoom,
-                panelVisible = panelVisible,
-            )
-        }
     }
 
     private fun preview(state: ViewfinderState): PreviewUiModel {

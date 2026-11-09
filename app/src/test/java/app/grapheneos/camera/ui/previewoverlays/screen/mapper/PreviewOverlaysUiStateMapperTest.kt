@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 
+import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.domain.camera.mapper.ZoomPresetsMapperImpl
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
@@ -16,6 +18,7 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ZoomState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.FocusUiModel
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
@@ -26,10 +29,128 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class PreviewOverlaysUiStateMapperTest {
 
-    private val mapper: PreviewOverlaysUiStateMapper = PreviewOverlaysUiStateMapperImpl()
+    private val mapper: PreviewOverlaysUiStateMapper = PreviewOverlaysUiStateMapperImpl(
+        zoomPresetsMapper = ZoomPresetsMapperImpl(),
+    )
+
+    @Test
+    fun zoom_currentValueIsShownExceptDuringAPresetTransition() {
+        val state = zoomState()
+        val selecting = state.copy(
+            zoom = state.zoom.copy(
+                pendingPreset = ZoomState.Preset(
+                    ratio = 2f,
+                    requestId = 1,
+                ),
+            ),
+        )
+
+        assertTrue(requireNotNull(mapper.map(state).zoom).isCurrentValueShown)
+        assertFalse(requireNotNull(mapper.map(selecting).zoom).isCurrentValueShown)
+    }
+
+    @Test
+    fun zoom_previewPinchIsPassedToTheControl() {
+        val state = zoomState()
+        val pinching = state.copy(zoom = state.zoom.copy(isPreviewPinching = true))
+
+        assertFalse(requireNotNull(mapper.map(state).zoom).isPinching)
+        assertTrue(requireNotNull(mapper.map(pinching).zoom).isPinching)
+    }
+
+    @Test
+    fun zoom_mapsTheRatioRangeAndBackCameraPresets() {
+        val state = zoomState()
+        val zoom = requireNotNull(mapper.map(state).zoom)
+
+        assertEquals(1f, zoom.ratio)
+        assertEquals(0.5f..8f, zoom.range)
+        assertEquals(listOf(0.5f, 1f, 2f), zoom.presets)
+        assertFalse(zoom.isExpanded)
+        val expanded = state.copy(zoom = state.zoom.copy(isExpanded = true))
+        assertTrue(requireNotNull(mapper.map(expanded).zoom).isExpanded)
+    }
+
+    @Test
+    fun frontZoom_usesItsOwnPresetsAndTheEntireCameraRange() {
+        val state = zoomState()
+        val front = state.copy(
+            previewContent = state.previewContent?.copy(lensFacing = LensFacing.FRONT),
+            zoom = state.zoom.copy(
+                value = state.zoom.value?.copy(
+                    minZoomRatio = 1f,
+                    maxZoomRatio = 4f,
+                ),
+            ),
+        )
+        val zoom = requireNotNull(mapper.map(front).zoom)
+
+        assertEquals(listOf(1f, 2f), zoom.presets)
+        assertEquals(1f..4f, zoom.range)
+    }
+
+    @Test
+    fun zoom_isHiddenUntilAnAdjustableRangeIsKnown() {
+        val state = zoomState()
+        val value = requireNotNull(state.zoom.value)
+        val unavailable = listOf(
+            null,
+            value.copy(
+                minZoomRatio = 1f,
+                maxZoomRatio = 1f,
+            ),
+            value.copy(
+                minZoomRatio = 2f,
+                maxZoomRatio = 1f,
+            ),
+            value.copy(minZoomRatio = 0f),
+            value.copy(maxZoomRatio = Float.POSITIVE_INFINITY),
+        )
+        unavailable.forEach { cameraZoom ->
+            assertNull(mapper.map(state.copy(zoom = ZoomState(value = cameraZoom))).zoom)
+        }
+    }
+
+    @Test
+    fun zoom_isHiddenWithoutContentAndBehindCaptureResultsOrFlash() {
+        val state = zoomState()
+        val content = requireNotNull(state.previewContent)
+        val unavailable = listOf(
+            state.copy(previewContent = null),
+            state.copy(isPreviewFlashVisible = true),
+            state.copy(previewContent = content.copy(mode = CameraMode.QR_SCAN)),
+            state.copy(previewContent = content.copy(isCaptureResultVisible = true)),
+        )
+
+        unavailable.forEach { hidden -> assertNull(mapper.map(hidden).zoom) }
+    }
+
+    @Test
+    fun zoom_staysVisibleWhileTheCameraIsSwitching() {
+        val state = zoomState()
+        val content = requireNotNull(state.previewContent)
+        val switching = listOf(
+            content.copy(isPreviewStreaming = false),
+            content.copy(isTransitionFrameVisible = true),
+            content.copy(
+                isPreviewStreaming = false,
+                isTransitionFrameVisible = true,
+                lensFacing = LensFacing.FRONT,
+            ),
+        )
+
+        switching.forEach { preview ->
+            val zoom = requireNotNull(mapper.map(state.copy(previewContent = preview)).zoom)
+
+            assertEquals(0.5f..8f, zoom.range)
+        }
+    }
 
     @Test
     fun focus_showsTheSelectionAtItsCoordinates() {
@@ -356,6 +477,19 @@ class PreviewOverlaysUiStateMapperTest {
         return PreviewOverlaysState(
             previewContent = PreviewContentState(isPreviewStreaming = true),
             focus = FocusState(selection = selection, press = press),
+        )
+    }
+    private fun zoomState(): PreviewOverlaysState {
+        return PreviewOverlaysState(
+            previewContent = PreviewContentState(isPreviewStreaming = true),
+            zoom = ZoomState(
+                value = CameraZoom(
+                    zoomRatio = 1f,
+                    linearZoom = 0f,
+                    minZoomRatio = 0.5f,
+                    maxZoomRatio = 8f,
+                ),
+            ),
         )
     }
 }

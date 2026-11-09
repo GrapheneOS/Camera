@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.domain.camera.mapper.ZoomPresetsMapper
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
@@ -11,7 +12,9 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverla
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.FocusUiModel
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.ZoomUiModel
 import javax.inject.Inject
+import kotlinx.collections.immutable.toImmutableList
 
 internal interface PreviewOverlaysUiStateMapper {
 
@@ -20,12 +23,14 @@ internal interface PreviewOverlaysUiStateMapper {
     fun mapLevel(state: PreviewOverlaysState): LevelUiState
 }
 
-internal class PreviewOverlaysUiStateMapperImpl @Inject constructor() :
-    PreviewOverlaysUiStateMapper {
+internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
+    private val zoomPresetsMapper: ZoomPresetsMapper,
+) : PreviewOverlaysUiStateMapper {
 
     override fun map(state: PreviewOverlaysState): PreviewOverlaysUiState {
         return PreviewOverlaysUiState(
             focus = focus(state),
+            zoom = zoom(state),
             gridPattern = gridPattern(state),
             selfTimerRemaining = state.visibleSelfTimerRemaining(),
         )
@@ -43,7 +48,7 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor() :
                 LevelPose.Horizon -> LevelIndicatorMode.Horizon
             },
             rollDegrees = level.tiltDegrees,
-            pitchDegrees = -level.horizonDegrees,
+            pitchDegrees = 0f - level.horizonDegrees,
             rotationDegrees = levelRotationDegrees(state),
         )
     }
@@ -89,6 +94,25 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor() :
                 visible = selection.visible && state.isFocusAvailable(),
             )
             else -> null
+        }
+    }
+
+    private fun zoom(state: PreviewOverlaysState): ZoomUiModel? {
+        val content = state.previewContent ?: return null
+        return state.zoom.value?.takeIf { state.isZoomVisible() }?.let { zoom ->
+            val range = zoom.minZoomRatio..zoom.maxZoomRatio
+            val presets = zoomPresetsMapper.map(
+                zoom = zoom,
+                lensFacing = content.lensFacing,
+            )
+            ZoomUiModel(
+                ratio = zoom.zoomRatio.coerceIn(range),
+                range = range,
+                presets = presets.toImmutableList(),
+                isCurrentValueShown = state.zoom.pendingPreset == null,
+                isExpanded = state.zoom.isExpanded,
+                isPinching = state.zoom.isPreviewPinching,
+            )
         }
     }
 
