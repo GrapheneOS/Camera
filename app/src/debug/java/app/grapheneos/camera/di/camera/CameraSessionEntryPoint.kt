@@ -1,6 +1,7 @@
 package app.grapheneos.camera.di.camera
 
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.ZoomControl
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityComponent
@@ -9,4 +10,5 @@ import dagger.hilt.android.components.ActivityComponent
 @InstallIn(ActivityComponent::class)
 internal interface CameraSessionEntryPoint {
     fun cameraSession(): CameraSession
+    fun zoomControl(): ZoomControl
 }

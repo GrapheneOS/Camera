@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
@@ -33,7 +34,7 @@ sealed interface ViewfinderAction {
         ) : CameraAction
 
         data class DisplayRotationChanged(
-            val rotation: Int,
+            val rotation: DeviceOrientation,
         ) : CameraAction
 
         sealed interface ZoomStepKey : CameraAction {

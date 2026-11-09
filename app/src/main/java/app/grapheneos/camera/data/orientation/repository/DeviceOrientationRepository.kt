@@ -31,7 +31,7 @@ interface DeviceOrientationRepository {
 
     val motion: Flow<DeviceMotion>
 
-    fun autoRotateEnabled(): Flow<Boolean>
+    val autoRotateEnabled: Flow<Boolean>
 }
 
 internal class DeviceOrientationRepositoryImpl @Inject constructor(
@@ -41,8 +41,6 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
     @ApplicationScope applicationScope: CoroutineScope,
 ) : DeviceOrientationRepository {
 
-    private var lastOrientation = DeviceOrientation.DEGREES_0
-
     override val motion: Flow<DeviceMotion> = observeMotion()
         .conflate()
         .shareIn(
@@ -51,35 +49,31 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
             replay = 1,
         )
 
+    override val autoRotateEnabled: Flow<Boolean> = observeAutoRotate()
+        .flowOn(ioDispatcher)
+
     private fun observeMotion(): Flow<DeviceMotion> {
         return callbackFlow {
+            var gravity: FloatArray? = null
+            var orientation = DeviceOrientation.DEGREES_0
             val gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
             val sensor = gravitySensor ?: sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-            val gravity = FloatArray(size = 3)
 
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
-                    for (axis in gravity.indices) {
-                        gravity[axis] = when {
-                            gravitySensor != null -> event.values[axis]
-                            else -> smooth(
-                                previous = gravity[axis],
-                                reading = event.values[axis],
-                            )
-                        }
+                    val reading = event.values.copyOf(newSize = GRAVITY_AXES)
+                    val previous = gravity
+                    val current = when {
+                        gravitySensor != null || previous == null -> reading
+                        else -> smooth(previous = previous, reading = reading)
                     }
+                    gravity = current
+                    orientation = orientationOf(
+                        gravityX = current[0],
+                        gravityY = current[1],
+                    ) ?: orientation
 
-                    lastOrientation = orientationOf(
-                        gravityX = gravity[0],
-                        gravityY = gravity[1],
-                    ) ?: lastOrientation
-
-                    trySend(
-                        motionOf(
-                            gravity = gravity,
-                            orientation = lastOrientation,
-                        ),
-                    )
+                    trySend(motionOf(gravity = current, orientation = orientation))
                 }
 
                 @Suppress("EmptyFunctionBlock")
@@ -98,7 +92,7 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun autoRotateEnabled(): Flow<Boolean> {
+    private fun observeAutoRotate(): Flow<Boolean> {
         return callbackFlow {
             val observer = object : ContentObserver(null) {
                 override fun onChange(selfChange: Boolean) {
@@ -116,14 +110,16 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
             awaitClose {
                 contentResolver.unregisterContentObserver(observer)
             }
-        }.flowOn(ioDispatcher)
+        }
     }
 
     private fun smooth(
-        previous: Float,
-        reading: Float,
-    ): Float {
-        return previous + (reading - previous) * READING_WEIGHT
+        previous: FloatArray,
+        reading: FloatArray,
+    ): FloatArray {
+        return FloatArray(size = reading.size) { axis ->
+            previous[axis] + (reading[axis] - previous[axis]) * READING_WEIGHT
+        }
     }
 
     private fun orientationOf(
@@ -194,6 +190,7 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
     }
 
     private companion object {
+        private const val GRAVITY_AXES = 3
         private const val READING_WEIGHT = 0.3f
         private const val TILT_THRESHOLD = 5f
     }

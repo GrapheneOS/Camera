@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.camera
 
+import app.grapheneos.camera.data.camera.session.ExposureControl
+import app.grapheneos.camera.data.camera.session.ExposureControlImpl
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.camera.session.TorchControlImpl
 import app.grapheneos.camera.domain.camera.usecase.BlinkTimerLight
@@ -13,6 +15,12 @@ import dagger.hilt.android.components.ActivityRetainedComponent
 @Module
 @InstallIn(ActivityRetainedComponent::class)
 internal abstract class CameraRetainedBindsModule {
+
+    @Binds
+    @Reusable
+    abstract fun bindExposureControl(
+        impl: ExposureControlImpl,
+    ): ExposureControl
 
     @Binds
     @Reusable

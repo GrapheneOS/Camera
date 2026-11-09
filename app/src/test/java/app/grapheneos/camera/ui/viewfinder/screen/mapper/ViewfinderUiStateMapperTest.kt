@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import android.net.Uri
-import android.view.Surface
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
@@ -174,7 +173,7 @@ class ViewfinderUiStateMapperTest {
                 mode = CameraMode.CAMERA,
                 requiresVideoModeOnly = false,
                 deviceOrientation = DeviceOrientation.DEGREES_90,
-                displayRotation = Surface.ROTATION_90,
+                displayRotation = DeviceOrientation.DEGREES_270,
                 autoRotateEnabled = true,
             ),
         )

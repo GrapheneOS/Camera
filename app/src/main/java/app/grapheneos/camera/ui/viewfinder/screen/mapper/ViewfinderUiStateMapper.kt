@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
@@ -297,16 +296,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         val displayDegrees = displayDegrees(state.displayRotation)
 
         return (displayDegrees - orientation.degrees).mod(FULL_TURN_DEGREES).toFloat()
-    }
-
-    @Suppress("MagicNumber")
-    private fun displayDegrees(displayRotation: Int): Int {
-        return when (displayRotation) {
-            Surface.ROTATION_90 -> 270
-            Surface.ROTATION_180 -> 180
-            Surface.ROTATION_270 -> 90
-            else -> 0
-        }
     }
 
     private fun captureResult(state: ViewfinderState): CaptureResultUiModel {

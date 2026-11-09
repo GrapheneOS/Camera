@@ -4,6 +4,8 @@ import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.ExposureControl
+import app.grapheneos.camera.data.camera.session.ZoomControl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.sound.model.CameraSound
@@ -43,6 +45,8 @@ class ViewfinderCameraControlsDelegateTest {
     private val scope = TestScope(mainDispatcherRule.testDispatcher)
 
     private val session = mockk<CameraSession>(relaxed = true)
+    private val zoomControl = mockk<ZoomControl>(relaxed = true)
+    private val exposureControl = mockk<ExposureControl>(relaxed = true)
     private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
     private val zoomEvents = MutableSharedFlow<CameraZoomEvent>(extraBufferCapacity = 8)
 
@@ -50,7 +54,7 @@ class ViewfinderCameraControlsDelegateTest {
 
     @Before
     fun setUp() {
-        every { session.zoomEvents } returns zoomEvents
+        every { zoomControl.events } returns zoomEvents
     }
 
     @After
@@ -81,7 +85,7 @@ class ViewfinderCameraControlsDelegateTest {
 
     @Test
     fun focusAndZoomKeys_inQrMode_areLeftAlone() {
-        every { session.zoom } returns ZOOM
+        every { zoomControl.zoom } returns ZOOM
         val delegate = createDelegate()
         stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
 
@@ -89,41 +93,41 @@ class ViewfinderCameraControlsDelegateTest {
         delegate.stepZoom(step = 1f)
 
         verify(exactly = 0) { session.cancelFocusAndMetering() }
-        verify(exactly = 0) { session.setZoomRatio(any()) }
+        verify(exactly = 0) { zoomControl.setZoomRatio(any()) }
     }
 
     @Test
     fun stepZoom_pastEitherEnd_stopsThere() {
-        every { session.zoom } returns ZOOM
+        every { zoomControl.zoom } returns ZOOM
 
         val delegate = createDelegate()
         delegate.stepZoom(step = 100f)
         delegate.stepZoom(step = -100f)
 
         verifyOrder {
-            session.setZoomRatio(ZOOM.maxZoomRatio)
-            session.setZoomRatio(ZOOM.minZoomRatio)
+            zoomControl.setZoomRatio(ZOOM.maxZoomRatio)
+            zoomControl.setZoomRatio(ZOOM.minZoomRatio)
         }
     }
 
     @Test
     fun stepZoom_outOfTheWideAngleCamera_stopsAtThePrimaryOne() {
-        every { session.zoom } returns ZOOM.copy(zoomRatio = 0.6f, minZoomRatio = 0.5f)
+        every { zoomControl.zoom } returns ZOOM.copy(zoomRatio = 0.6f, minZoomRatio = 0.5f)
 
         val delegate = createDelegate()
         delegate.stepZoom(step = 1f)
 
-        verify(exactly = 1) { session.setZoomRatio(1f) }
+        verify(exactly = 1) { zoomControl.setZoomRatio(1f) }
     }
 
     @Test
     fun stepZoom_beforeTheZoomIsKnown_leavesTheZoomAlone() {
-        every { session.zoom } returns null
+        every { zoomControl.zoom } returns null
 
         val delegate = createDelegate()
         delegate.stepZoom(step = 1f)
 
-        verify(exactly = 0) { session.setZoomRatio(any()) }
+        verify(exactly = 0) { zoomControl.setZoomRatio(any()) }
     }
 
     @Test
@@ -132,12 +136,12 @@ class ViewfinderCameraControlsDelegateTest {
 
         val delegate = createDelegate()
         delegate.startZoomStepping(ZoomDirection.IN)
-        verify(exactly = 1) { session.setZoomRatio(2f) }
+        verify(exactly = 1) { zoomControl.setZoomRatio(2f) }
 
         scope.advanceTimeBy(ZOOM_STOP_INTERVAL)
         scope.runCurrent()
 
-        verify(exactly = 1) { session.setZoomRatio(ZOOM.maxZoomRatio) }
+        verify(exactly = 1) { zoomControl.setZoomRatio(ZOOM.maxZoomRatio) }
     }
 
     @Test
@@ -150,17 +154,17 @@ class ViewfinderCameraControlsDelegateTest {
         scope.advanceTimeBy(ZOOM_STOP_INTERVAL * 4)
         scope.runCurrent()
 
-        verify(exactly = 1) { session.setZoomRatio(any()) }
+        verify(exactly = 1) { zoomControl.setZoomRatio(any()) }
     }
 
     @Test
     fun scaleZoom_scalesTheCurrentRatio() {
-        every { session.zoom } returns ZOOM
+        every { zoomControl.zoom } returns ZOOM
 
         val delegate = createDelegate()
         delegate.scaleZoom(scaleFactor = 1.5f)
 
-        verify(exactly = 1) { session.setZoomRatio(ZOOM.zoomRatio * 1.5f) }
+        verify(exactly = 1) { zoomControl.setZoomRatio(ZOOM.zoomRatio * 1.5f) }
     }
 
     @Test
@@ -170,13 +174,13 @@ class ViewfinderCameraControlsDelegateTest {
         val delegate = createDelegate()
         delegate.setExposureCompensation(compensationIndex = 5)
 
-        verify(exactly = 1) { session.setExposureCompensationIndex(5) }
+        verify(exactly = 1) { exposureControl.setCompensationIndex(5) }
         assertEquals(5, stateHolder.state.value.session.exposure?.compensationIndex)
     }
 
     @Test
     fun zoomStates_publishTheZoomAndOnlyAChangeIsHandedOn() {
-        every { session.zoom } returns ZOOM
+        every { zoomControl.zoom } returns ZOOM
         val delegate = createDelegate()
         var changes = 0
         scope.launch {
@@ -184,7 +188,7 @@ class ViewfinderCameraControlsDelegateTest {
         }
 
         zoomEvents.tryEmit(CameraZoomEvent.Loaded)
-        assertEquals(ZOOM, stateHolder.state.value.session.zoom)
+        assertEquals(ZOOM, stateHolder.state.value.zoomControl.zoom)
         assertEquals(0, changes)
 
         zoomEvents.tryEmit(CameraZoomEvent.Changed)
@@ -193,13 +197,15 @@ class ViewfinderCameraControlsDelegateTest {
 
     private fun trackZoomRatio() {
         var zoomRatio = 1f
-        every { session.zoom } answers { ZOOM.copy(zoomRatio = zoomRatio, minZoomRatio = 0.5f) }
-        every { session.setZoomRatio(any()) } answers { zoomRatio = firstArg() }
+        every { zoomControl.zoom } answers { ZOOM.copy(zoomRatio = zoomRatio, minZoomRatio = 0.5f) }
+        every { zoomControl.setZoomRatio(any()) } answers { zoomRatio = firstArg() }
     }
 
     private fun createDelegate(): ViewfinderCameraControlsDelegate {
         val delegate = ViewfinderCameraControlsDelegateImpl(
             session = session,
+            zoomControl = zoomControl,
+            exposureControl = exposureControl,
             playCameraSound = playCameraSound,
             nextZoomStopMapper = NextZoomStopMapperImpl(),
         )

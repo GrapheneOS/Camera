@@ -2,6 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.ExposureControl
+import app.grapheneos.camera.data.camera.session.ZoomControl
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
@@ -42,6 +44,8 @@ interface ViewfinderCameraControlsDelegate {
 
 internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
     private val session: CameraSession,
+    private val zoomControl: ZoomControl,
+    private val exposureControl: ExposureControl,
     private val playCameraSound: PlayCameraSound,
     private val nextZoomStopMapper: NextZoomStopMapper,
 ) : ViewfinderCameraControlsDelegate {
@@ -64,7 +68,7 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
     }
 
     override suspend fun trackZoom() {
-        session.zoomEvents.collect { event ->
+        zoomControl.events.collect { event ->
             refreshZoom()
 
             when (event) {
@@ -78,7 +82,7 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
         val state = stateHolder.state.value
         if (state.isQrMode()) return
 
-        val zoom = session.zoom ?: return
+        val zoom = zoomControl.zoom ?: return
         val requested = zoom.zoomRatio + step
 
         val zoomRatio = when {
@@ -89,7 +93,7 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
             else -> requested
         }
 
-        session.setZoomRatio(zoomRatio)
+        zoomControl.setZoomRatio(zoomRatio)
     }
 
     override fun startZoomStepping(direction: ZoomDirection) {
@@ -107,17 +111,17 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
     }
 
     override fun scaleZoom(scaleFactor: Float) {
-        val zoomRatio = session.zoom?.let { it.zoomRatio * scaleFactor } ?: 1f
+        val zoomRatio = zoomControl.zoom?.let { it.zoomRatio * scaleFactor } ?: 1f
 
-        session.setZoomRatio(zoomRatio)
+        zoomControl.setZoomRatio(zoomRatio)
     }
 
     override fun setLinearZoom(linearZoom: Float) {
-        session.setLinearZoom(linearZoom)
+        zoomControl.setLinearZoom(linearZoom)
     }
 
     override fun setExposureCompensation(compensationIndex: Int) {
-        session.setExposureCompensationIndex(compensationIndex)
+        exposureControl.setCompensationIndex(compensationIndex)
 
         stateHolder.update {
             val exposure = it.session.exposure?.copy(compensationIndex = compensationIndex)
@@ -155,15 +159,15 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
 
     private fun refreshZoom() {
         stateHolder.update {
-            it.copy(session = it.session.copy(zoom = session.zoom))
+            it.copy(session = it.session.copy(zoom = zoomControl.zoom))
         }
     }
 
     private fun stepToNextZoomStop(direction: ZoomDirection): Boolean {
-        val zoom = session.zoom.takeUnless { stateHolder.state.value.isQrMode() }
+        val zoom = zoomControl.zoom.takeUnless { stateHolder.state.value.isQrMode() }
         val stop = zoom?.let { nextZoomStopMapper.map(zoom = it, direction = direction) }
 
-        stop?.let(session::setZoomRatio)
+        stop?.let(zoomControl::setZoomRatio)
         return stop != null
     }
 

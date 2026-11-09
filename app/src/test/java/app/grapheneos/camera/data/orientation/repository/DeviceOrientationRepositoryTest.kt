@@ -2,6 +2,7 @@ package app.grapheneos.camera.data.orientation.repository
 
 import android.app.Application
 import android.hardware.Sensor
+import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.provider.Settings
@@ -100,6 +101,18 @@ class DeviceOrientationRepositoryTest {
                     SensorManager.SENSOR_DELAY_GAME,
                 )
             }
+        }
+    }
+
+    @Test
+    fun motion_fromTheAccelerometer_startsAtTheFirstReading() {
+        runTest {
+            val reported = collectMotion()
+
+            listener.captured.onSensorChanged(accelerometerEvent(x = -GRAVITY, y = 0f))
+            runCurrent()
+
+            assertEquals(DeviceOrientation.DEGREES_90, reported.single().orientation)
         }
     }
 
@@ -297,7 +310,7 @@ class DeviceOrientationRepositoryTest {
                 1,
             )
 
-            assertTrue(repository().autoRotateEnabled().first())
+            assertTrue(repository().autoRotateEnabled.first())
         }
     }
 
@@ -317,14 +330,20 @@ class DeviceOrientationRepositoryTest {
         z: Float = 0f,
     ) {
         repeat(SETTLING_EVENTS) {
-            val event = SensorEventBuilder.newBuilder()
-                .setSensor(accelerometer)
-                .setValues(floatArrayOf(x, y, z))
-                .build()
-
-            listener.captured.onSensorChanged(event)
+            listener.captured.onSensorChanged(accelerometerEvent(x = x, y = y, z = z))
             runCurrent()
         }
+    }
+
+    private fun accelerometerEvent(
+        x: Float,
+        y: Float,
+        z: Float = 0f,
+    ): SensorEvent {
+        return SensorEventBuilder.newBuilder()
+            .setSensor(accelerometer)
+            .setValues(floatArrayOf(x, y, z))
+            .build()
     }
 
     private fun TestScope.repository(): DeviceOrientationRepositoryImpl {
