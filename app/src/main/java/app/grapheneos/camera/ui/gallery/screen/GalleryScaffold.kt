@@ -66,7 +66,7 @@ internal fun GalleryScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val visibility = animateBarsVisibilityAsState(
-        isVisible = uiState.chrome.showsBars && !isPanelVisible,
+        visible = uiState.chrome.showsBars && !isPanelVisible,
         hidesInstantly = uiState.isZoomed || isPanelVisible,
     )
     val isShown by remember(visibility) { derivedStateOf { visibility.value > 0f } }
@@ -172,16 +172,16 @@ private fun ActionBarSlot(
 
 @Composable
 private fun animateBarsVisibilityAsState(
-    isVisible: Boolean,
+    visible: Boolean,
     hidesInstantly: Boolean,
 ): State<Float> {
     return animateFloatAsState(
         targetValue = when {
-            isVisible -> 1f
+            visible -> 1f
             else -> 0f
         },
         animationSpec = when {
-            hidesInstantly && !isVisible -> snap()
+            hidesInstantly && !visible -> snap()
             else -> CONTROLS_SPEC
         },
     )

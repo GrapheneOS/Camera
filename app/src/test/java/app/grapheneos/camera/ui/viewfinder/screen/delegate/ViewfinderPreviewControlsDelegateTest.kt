@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.testutil.immediateScope
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderFocusRequest
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import kotlin.time.Duration.Companion.seconds
@@ -25,41 +24,17 @@ class ViewfinderPreviewControlsDelegateTest {
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     @Test
-    fun focus_showsTheRingAtThePointAndBothPanels() {
+    fun focus_showsBothPanels() {
         runTest {
-            createDelegate().showFocus(x = 10f, y = 20f)
+            createDelegate().showFocusControls()
 
             assertEquals(
                 ViewfinderPreviewControlsState(
-                    focusRequest = ViewfinderFocusRequest(x = 10f, y = 20f, id = 1),
                     isZoomPanelShown = true,
                     isExposurePanelShown = true,
                 ),
                 state().previewControls,
             )
-        }
-    }
-
-    @Test
-    fun focus_atTheSamePointAgain_isANewRequest() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.showFocus(x = 10f, y = 20f)
-            delegate.showFocus(x = 10f, y = 20f)
-
-            assertEquals(2, state().previewControls.focusRequest?.id)
-        }
-    }
-
-    @Test
-    fun focusRing_outlivesThePanels() {
-        runTest {
-            createDelegate().showFocus(x = 10f, y = 20f)
-            advanceTimeBy(3.seconds)
-
-            assertFalse(state().previewControls.isZoomPanelShown)
-            assertEquals(1, state().previewControls.focusRequest?.id)
         }
     }
 
@@ -100,7 +75,7 @@ class ViewfinderPreviewControlsDelegateTest {
         runTest {
             val delegate = createDelegate()
 
-            delegate.showFocus(x = 10f, y = 20f)
+            delegate.showFocusControls()
             delegate.hideZoomPanel()
             assertFalse(state().previewControls.isZoomPanelShown)
             assertTrue(state().previewControls.isExposurePanelShown)

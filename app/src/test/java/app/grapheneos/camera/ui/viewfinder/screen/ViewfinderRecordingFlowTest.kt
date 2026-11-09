@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.TorchControl
+import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.LensFacing
@@ -24,7 +25,6 @@ import app.grapheneos.camera.domain.capture.usecase.DiscardRecordingImpl
 import app.grapheneos.camera.domain.capture.usecase.PublishRecordingImpl
 import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocationImpl
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.testutil.FakeVideoRecordingSession
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegateImpl
@@ -48,6 +48,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -74,7 +75,10 @@ class ViewfinderRecordingFlowTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val recordingSession = FakeVideoRecordingSession()
+    private val onRecordingEvent = slot<(RecordingEvent) -> Unit>()
+    private val recordingSession = mockk<VideoRecordingSession>(relaxUnitFun = true) {
+        every { start(request = any(), onEvent = capture(onRecordingEvent)) } returns true
+    }
 
     private val mappedState = slot<ViewfinderState>()
     private val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true) {
@@ -179,7 +183,7 @@ class ViewfinderRecordingFlowTest {
             viewModel.onAction(RecordingAction.RecordingStopRequested)
             outputCreated.complete(Unit)
 
-            assertEquals(0, recordingSession.startCount)
+            verify(exactly = 0) { recordingSession.start(request = any(), onEvent = any()) }
             assertFalse(state().recording.isActive())
             assertTrue(effects.none { it is PlayStartSound })
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
@@ -191,14 +195,15 @@ class ViewfinderRecordingFlowTest {
         runTest {
             val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
-
             viewModel.onAction(RecordingAction.RecordingRequested)
-            assertEquals(1, recordingSession.startCount)
-            assertTrue(recordingSession.isPaused)
+            verifyOrder {
+                recordingSession.start(request = any(), onEvent = any())
+                recordingSession.setPaused(true)
+            }
 
             finishStartSound(viewModel = viewModel, effects = effects)
 
-            assertFalse(recordingSession.isPaused)
+            verify(exactly = 1) { recordingSession.setPaused(false) }
         }
     }
 
@@ -211,12 +216,12 @@ class ViewfinderRecordingFlowTest {
             viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
             assertFalse(state().recording.isActive())
-            recordingSession.emit(
+            onRecordingEvent.captured(
                 RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten),
             )
             finishStartSound(viewModel = viewModel, effects = effects)
 
-            assertEquals(1, recordingSession.stopCount)
+            verify(exactly = 1) { recordingSession.stop() }
             assertFalse(state().recording.isActive())
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
@@ -233,46 +238,52 @@ class ViewfinderRecordingFlowTest {
             viewModel.onAction(RecordingAction.MuteToggleClicked)
             finishStartSound(viewModel = viewModel, effects = effects)
 
-            assertEquals(1, recordingSession.startCount)
-            assertTrue(recordingSession.isPaused)
-            assertTrue(recordingSession.isMuted)
+            verify(exactly = 1) { recordingSession.start(request = any(), onEvent = any()) }
+            verify(exactly = 0) { recordingSession.setPaused(false) }
+            verifyOrder {
+                recordingSession.start(request = any(), onEvent = any())
+                recordingSession.setMuted(true)
+            }
         }
     }
 
     @Test
-    fun aCaptureSessionRecording_keepsTheCameraUnboundUntilItIsRetaken() {
+    fun aCaptureSessionRecording_resumedWhilePublishing_keepsTheCameraUnbound() {
         runTest {
             outputPublished = CompletableDeferred()
-            val viewModel = createViewModel(
-                entryPoint = cameraEntryPoint(
-                    isCaptureSession = true,
-                    requiresVideoModeOnly = true,
-                    showsCameraModeTabs = false,
-                ),
-            )
-            val effects = collectEffects(viewModel)
-            assertEquals(CameraMode.VIDEO, state().mode)
-            viewModel.onAction(LifecycleAction.ScreenCreated(host))
-            advanceTimeBy(1.seconds)
-            runCurrent()
-
-            viewModel.onAction(RecordingAction.RecordingRequested)
-            finishStartSound(viewModel = viewModel, effects = effects)
-            recordingSession.emit(RecordingEvent.Started)
-            viewModel.onAction(RecordingAction.RecordingStopRequested)
-            recordingSession.emit(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
+            val viewModel = recordAndStopInACaptureSession()
 
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            assertEquals(1, recordingSession.stopCount)
+            verify(exactly = 1) { recordingSession.stop() }
             assertFalse(state().capture.hasResult())
             verify(exactly = 0) { cameraSession.bind(any()) }
+        }
+    }
+
+    @Test
+    fun aCaptureSessionRecording_resumedOncePublished_showsTheResultWithoutBinding() {
+        runTest {
+            outputPublished = CompletableDeferred()
+            val viewModel = recordAndStopInACaptureSession()
+            viewModel.onAction(LifecycleAction.ScreenResumed)
 
             outputPublished.complete(Unit)
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
             assertTrue(state().capture.hasResult())
             verify(exactly = 0) { cameraSession.bind(any()) }
+        }
+    }
+
+    @Test
+    fun aCaptureSessionResult_retaken_bindsTheCamera() {
+        runTest {
+            outputPublished = CompletableDeferred()
+            val viewModel = recordAndStopInACaptureSession()
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            outputPublished.complete(Unit)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
 
             viewModel.onAction(CaptureAction.RetakeClicked)
 
@@ -308,12 +319,11 @@ class ViewfinderRecordingFlowTest {
             ),
         )
 
-        assertEquals(CameraMode.VIDEO, state().mode)
-
         viewModel.onAction(LifecycleAction.ScreenCreated(host))
         viewModel.onAction(LifecycleAction.ScreenResumed)
         viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
+        assertEquals(CameraMode.VIDEO, state().mode)
         assertTrue(state().selfIlluminates())
         verify { settingsRepository.modeSettings(videoSlot) }
         verify(exactly = 0) {
@@ -342,6 +352,28 @@ class ViewfinderRecordingFlowTest {
         every { cameraSession.lensFacing } returns LensFacing.FRONT
         every { cameraSession.isLensFacingSupported(any(), any()) } returns true
         every { cameraSession.imageCapture } returns null
+    }
+
+    private fun TestScope.recordAndStopInACaptureSession(): ViewfinderViewModel {
+        val viewModel = createViewModel(
+            entryPoint = cameraEntryPoint(
+                isCaptureSession = true,
+                requiresVideoModeOnly = true,
+                showsCameraModeTabs = false,
+            ),
+        )
+        val effects = collectEffects(viewModel)
+        viewModel.onAction(LifecycleAction.ScreenCreated(host))
+        advanceTimeBy(1.seconds)
+        runCurrent()
+
+        viewModel.onAction(RecordingAction.RecordingRequested)
+        finishStartSound(viewModel = viewModel, effects = effects)
+        onRecordingEvent.captured(RecordingEvent.Started)
+        viewModel.onAction(RecordingAction.RecordingStopRequested)
+        onRecordingEvent.captured(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
+
+        return viewModel
     }
 
     private fun TestScope.createViewModel(

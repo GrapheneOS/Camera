@@ -4,7 +4,6 @@ import android.animation.ValueAnimator
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -14,11 +13,7 @@ import android.view.animation.RotateAnimation
 import android.widget.ImageView
 import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.updateLayoutParams
-import androidx.core.view.updateMargins
-import androidx.lifecycle.lifecycleScope
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
@@ -33,7 +28,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
@@ -41,11 +35,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.color.MaterialColors
-import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 internal class ViewfinderViewRenderer(
     private val activity: MainActivity,
@@ -69,15 +58,12 @@ internal class ViewfinderViewRenderer(
     private var settingsPanelFraction = 0f
     private val panelTextColor by lazy { panelTextColor() }
     private var renderedThumbnail: Bitmap? = null
-    private var renderedFocusRingId: Int? = null
     private var renderedLensFacing: LensFacing? = null
     private var renderedLastFrameVisible: Boolean? = null
     private var renderedStreaming: Boolean? = null
     private var blursLastFrame = true
     private var renderedResultVisible = false
     private var renderedResultImage: Bitmap? = null
-    private var isFocusRingRendered = false
-    private var focusRingTimeout: Job? = null
 
     fun render(state: ViewfinderUiState) {
         renderPreview(state)
@@ -89,7 +75,6 @@ internal class ViewfinderViewRenderer(
         renderThirdOption(state.thirdOption)
         renderSelfTimer(state.selfTimer)
         renderRecording(state.recording)
-        renderFocusRing(state.focusRing)
         renderExposure(state.exposure)
         renderKeepScreenOn(state.keepScreenOn)
         renderSelfIllumination(state.isSelfIlluminating)
@@ -251,66 +236,6 @@ internal class ViewfinderViewRenderer(
         activity.setMuteToggleState(muted = recording.isMuted)
         activity.timerView.visibility = visibleOrGone(recording.timerVisible)
         activity.timerView.text = recording.timerText
-    }
-
-    private fun renderFocusRing(focusRing: FocusRingUiModel?) {
-        // A recreated screen is handed the last request again, and that ring has already faded.
-        val newRing = focusRing?.takeIf { ring ->
-            isFocusRingRendered && ring.id != renderedFocusRingId
-        }
-        renderedFocusRingId = focusRing?.id
-        isFocusRingRendered = true
-
-        newRing?.let(::showFocusRing)
-    }
-
-    private fun showFocusRing(focusRing: FocusRingUiModel) {
-        val ring = activity.binding.focusRing
-        val radius = ring.width / 2f
-
-        ring.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            updateMargins(
-                left = (focusRing.x - radius).roundToInt(),
-                top = (focusRing.y - radius).roundToInt(),
-            )
-        }
-        ring.visibility = View.VISIBLE
-        ring.alpha = 1f
-
-        when {
-            areSystemAnimationsEnabled() -> {
-                ring.animate()
-                    .setStartDelay(FOCUS_RING_FADE_DELAY)
-                    .setDuration(FOCUS_RING_FADE_DURATION)
-                    .alpha(0f)
-                    .withEndAction { ring.visibility = View.INVISIBLE }
-                    .start()
-            }
-
-            else -> {
-                focusRingTimeout?.cancel()
-                focusRingTimeout = activity.lifecycleScope.launch {
-                    delay(FOCUS_RING_STILL_DURATION)
-                    ring.visibility = View.INVISIBLE
-                }
-            }
-        }
-    }
-
-    private fun areSystemAnimationsEnabled(): Boolean {
-        val resolver = activity.contentResolver
-        val duration = Settings.Global.getFloat(
-            resolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        )
-        val transition = Settings.Global.getFloat(
-            resolver,
-            Settings.Global.TRANSITION_ANIMATION_SCALE,
-            1f,
-        )
-
-        return duration != 0f && transition != 0f
     }
 
     private fun renderExposure(exposure: ExposureUiModel) {
@@ -527,11 +452,7 @@ internal class ViewfinderViewRenderer(
         private const val ROTATION_DURATION = 400L
         private const val SELF_ILLUMINATION_DURATION = 300L
         private const val PANEL_FADE_OUT_DURATION = 300L
-        private const val FOCUS_RING_FADE_DELAY = 500L
-        private const val FOCUS_RING_FADE_DURATION = 300L
         private const val LENS_SWITCH_DURATION = 400L
         private const val HALF_TURN_DEGREES = 180f
-
-        private val FOCUS_RING_STILL_DURATION = 800.milliseconds
     }
 }

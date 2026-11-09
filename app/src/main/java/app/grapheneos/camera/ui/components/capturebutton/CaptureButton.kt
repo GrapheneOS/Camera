@@ -121,7 +121,7 @@ private fun CaptureButtonLayers(
     val rotation = LocalContentRotation.current
     val isPressed by interactionSource.collectIsPressedAsState()
     val isFocused by interactionSource.collectIsFocusedAsState()
-    val targetVisibility by animateVisibility(isVisible = holdState.isHeld)
+    val targetVisibility by animateVisibility(visible = holdState.isHeld)
     val pull = animateHoldPull(
         holdState = holdState,
         targets = holdTargets,

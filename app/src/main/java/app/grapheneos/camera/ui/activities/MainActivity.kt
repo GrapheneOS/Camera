@@ -56,6 +56,7 @@ import app.grapheneos.camera.ui.camerascreen.CameraScreenNavigationHandlerImpl
 import app.grapheneos.camera.ui.camerascreen.HiddenStatusBar
 import app.grapheneos.camera.ui.camerasettings.navigation.CameraSettingsIntents
 import app.grapheneos.camera.ui.common.TunePlayer
+import app.grapheneos.camera.ui.components.focusindicator.FOCUS_INDICATOR_SIZE
 import app.grapheneos.camera.ui.core.gesture.MIN_FLING_DISTANCE
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
@@ -64,8 +65,8 @@ import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysViewModel
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigatorImpl
@@ -79,6 +80,7 @@ import app.grapheneos.camera.ui.viewfinder.components.ZoomBar
 import app.grapheneos.camera.ui.viewfinder.components.qr.QROverlay
 import app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewFocusCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.SettingsPanelDragCallbacks
@@ -93,6 +95,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
 import com.google.android.material.imageview.ShapeableImageView
@@ -148,10 +151,26 @@ open class MainActivity : AppCompatActivity() {
         extrasProducer = { cameraEntryPointCreationExtras() },
     )
 
+    private val focusHitRadius by lazy {
+        Density(context = this).run { FOCUS_INDICATOR_SIZE.toPx() / 2 }
+    }
+
     internal val gestureHandler by lazy {
         ViewfinderGestureHandler(
             context = this,
             onAction = viewfinder::onAction,
+            previewFocus = PreviewFocusCallbacks(
+                onPressed = { x, y ->
+                    previewOverlays.onAction(
+                        PreviewAction.PreviewPressed(x = x, y = y, hitRadius = focusHitRadius),
+                    )
+                },
+                onTapped = { previewOverlays.onAction(PreviewAction.PreviewTapped) },
+                onLongPressed = { previewOverlays.onAction(PreviewAction.PreviewLongPressed) },
+                onGestureStarted = {
+                    previewOverlays.onAction(PreviewAction.PreviewGestureStarted)
+                },
+            ),
             settingsPanelDrag = SettingsPanelDragCallbacks(
                 isShown = { !quickSettingsSheet.isHidden },
                 onDragStarted = quickSettingsSheet::startDrag,
@@ -320,7 +339,7 @@ open class MainActivity : AppCompatActivity() {
                 viewfinder.onAction(CaptureAction.CaptureKeyPressed)
             }
             KeyEvent.KEYCODE_FOCUS -> {
-                viewfinder.onAction(CameraAction.FocusKeyPressed)
+                previewOverlays.onAction(PreviewAction.FocusKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_IN -> {
                 viewfinder.onAction(CameraAction.ZoomInKeyPressed)
@@ -411,7 +430,7 @@ open class MainActivity : AppCompatActivity() {
             onAction = viewfinder::onAction,
             onPreviewFlashVisibilityChanged = { visible ->
                 previewOverlays.onAction(
-                    PreviewOverlaysAction.PreviewFlashVisibilityChanged(visible = visible),
+                    PreviewAction.PreviewFlashVisibilityChanged(visible = visible),
                 )
             },
         )
@@ -440,17 +459,7 @@ open class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.uiState.collect { state ->
                     previewOverlays.onAction(
-                        PreviewOverlaysAction.PreviewContentChanged(
-                            content = PreviewContentState(
-                                mode = state.mode,
-                                lensFacing = state.flipCamera.lensFacing,
-                                isPreviewStreaming = state.preview.isStreaming,
-                                isTakingPicture = state.isTakingPicture,
-                                isTransitionFrameVisible = state.preview.lastFrameVisible,
-                                isCaptureResultVisible = state.captureResult.visible,
-                                selfTimerRemaining = state.selfTimer.remaining,
-                            ),
-                        ),
+                        PreviewAction.PreviewContentChanged(content = previewContentOf(state)),
                     )
                     renderer.render(state)
                 }
@@ -839,11 +848,23 @@ open class MainActivity : AppCompatActivity() {
         renderer.reapplyPreviewRatio()
     }
 
+    private fun previewContentOf(state: ViewfinderUiState): PreviewContentState {
+        return PreviewContentState(
+            mode = state.mode,
+            lensFacing = state.flipCamera.lensFacing,
+            isPreviewStreaming = state.preview.isStreaming,
+            isTakingPicture = state.isTakingPicture,
+            isTransitionFrameVisible = state.preview.lastFrameVisible,
+            isCaptureResultVisible = state.captureResult.visible,
+            selfTimerRemaining = state.selfTimer.remaining,
+        )
+    }
+
     private fun updateDisplayRotation() {
         val rotation = displayOrientation()
 
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = rotation))
-        previewOverlays.onAction(PreviewOverlaysAction.DisplayRotationChanged(rotation = rotation))
+        previewOverlays.onAction(PreviewAction.DisplayRotationChanged(rotation = rotation))
     }
 
     private fun displayOrientation(): DeviceOrientation {

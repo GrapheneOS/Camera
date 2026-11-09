@@ -117,7 +117,7 @@ private fun SampleControls(
         verticalArrangement = Arrangement.spacedBy(space = 12.dp),
     ) {
         SampleValueChip(
-            isVisible = state.adjustment == SampleAdjustment.WhiteBalance,
+            visible = state.adjustment == SampleAdjustment.WhiteBalance,
             text = valueLabel,
         )
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -129,7 +129,7 @@ private fun SampleControls(
                     .padding(horizontal = OVERLAY_ICON_BUTTON_SIZE + RESET_BUTTON_GAP * 2),
             )
             SampleResetButton(
-                isVisible = state.isAdjusted,
+                visible = state.isAdjusted,
                 onClick = state::reset,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -141,7 +141,7 @@ private fun SampleControls(
 
 @Composable
 private fun SampleValueChip(
-    isVisible: Boolean,
+    visible: Boolean,
     text: String,
 ) {
     Box(contentAlignment = Alignment.Center) {
@@ -152,7 +152,7 @@ private fun SampleValueChip(
                 .clearAndSetSemantics {},
         )
         AnimatedVisibility(
-            visible = isVisible,
+            visible = visible,
             enter = POP_IN,
             exit = POP_OUT,
         ) {
@@ -163,12 +163,12 @@ private fun SampleValueChip(
 
 @Composable
 private fun SampleResetButton(
-    isVisible: Boolean,
+    visible: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
-        visible = isVisible,
+        visible = visible,
         modifier = modifier,
         enter = POP_IN,
         exit = POP_OUT,

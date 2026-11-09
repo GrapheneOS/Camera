@@ -6,7 +6,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
@@ -27,7 +26,6 @@ data class ViewfinderUiState(
     val qr: QrUiModel = QrUiModel(),
     val exposure: ExposureUiModel = ExposureUiModel(),
     val captureResult: CaptureResultUiModel = CaptureResultUiModel(),
-    val focusRing: FocusRingUiModel? = null,
     val iconRotationDegrees: Float = 0f,
     val cancelButtonVisible: Boolean = true,
     val isTakingPicture: Boolean = false,

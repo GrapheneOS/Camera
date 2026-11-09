@@ -45,17 +45,6 @@
                     app:layout_constraintEnd_toEndOf="@id/preview"
                     app:layout_constraintBottom_toBottomOf="@id/preview" />
 
-                <ImageView
-                    android:layout_width="84dp"
-                    android:layout_height="84dp"
-                    android:id="@+id/focusRing"
-                    android:src="@drawable/focus_ring"
-                    android:visibility="invisible"
-                    android:importantForAccessibility="no"
-                    app:layout_constraintTop_toTopOf="@id/preview"
-                    app:layout_constraintStart_toStartOf="@id/preview"/>
-
-                <!-- Hides part of focus ring that is outside of the preview by occupying the area below the preview. -->
                 <View
                     android:id="@+id/bottom_overlay"
                     android:layout_width="match_parent"

@@ -15,6 +15,7 @@ import kotlin.math.abs
 internal class ViewfinderGestureHandler(
     context: Context,
     private val onAction: (ViewfinderAction) -> Unit,
+    private val previewFocus: PreviewFocusCallbacks,
     private val settingsPanelDrag: SettingsPanelDragCallbacks,
 ) : GestureDetector.SimpleOnGestureListener(),
     View.OnTouchListener,
@@ -36,10 +37,17 @@ internal class ViewfinderGestureHandler(
 
     private var wasSwiping = false
 
+    private var pendingTap: PendingTap? = null
+
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            wasSwiping = false
-            isZooming = false
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                wasSwiping = false
+                isZooming = false
+            }
+
+            MotionEvent.ACTION_POINTER_DOWN -> cancelTap()
+            MotionEvent.ACTION_CANCEL -> cancelTap()
         }
 
         scaleGestureDetector.onTouchEvent(event)
@@ -58,9 +66,50 @@ internal class ViewfinderGestureHandler(
             return true
         }
 
-        onAction(CameraAction.Preview.Tapped(x = event.x, y = event.y))
+        when (pendingTap) {
+            PendingTap.WITH_FOCUS -> {
+                onAction(CameraAction.Preview.Tapped)
+                previewFocus.onTapped()
+            }
+
+            PendingTap.WITHOUT_FOCUS -> onAction(CameraAction.Preview.Tapped)
+            null -> Unit
+        }
 
         return v.performClick()
+    }
+
+    override fun onDown(event: MotionEvent): Boolean {
+        pendingTap = when {
+            settingsPanelDrag.isShown() -> PendingTap.WITHOUT_FOCUS
+            else -> PendingTap.WITH_FOCUS
+        }
+
+        if (pendingTap == PendingTap.WITH_FOCUS) {
+            previewFocus.onPressed(event.x, event.y)
+        }
+
+        return true
+    }
+
+    override fun onLongPress(event: MotionEvent) {
+        if (pendingTap == PendingTap.WITH_FOCUS) {
+            onAction(CameraAction.Preview.Tapped)
+            previewFocus.onLongPressed()
+        }
+
+        pendingTap = null
+    }
+
+    override fun onScroll(
+        first: MotionEvent?,
+        current: MotionEvent,
+        distanceX: Float,
+        distanceY: Float,
+    ): Boolean {
+        cancelTap()
+
+        return false
     }
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -76,6 +125,7 @@ internal class ViewfinderGestureHandler(
     override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
         if (settingsPanelDrag.isShown()) return false
 
+        cancelTap()
         stopSettingsPanelDrag(velocity = 0f)
 
         return true
@@ -106,6 +156,14 @@ internal class ViewfinderGestureHandler(
         }
 
         return direction != null
+    }
+
+    private fun cancelTap() {
+        if (pendingTap == PendingTap.WITH_FOCUS) {
+            previewFocus.onGestureStarted()
+        }
+
+        pendingTap = null
     }
 
     private fun trackSettingsPanelDrag(event: MotionEvent) {
@@ -186,6 +244,11 @@ internal class ViewfinderGestureHandler(
         velocity: Float,
     ): Boolean {
         return abs(distance) > SWIPE_THRESHOLD && abs(velocity) > SWIPE_VELOCITY_THRESHOLD
+    }
+
+    private enum class PendingTap {
+        WITH_FOCUS,
+        WITHOUT_FOCUS,
     }
 
     private companion object {

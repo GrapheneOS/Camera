@@ -52,10 +52,10 @@ internal fun animatePressedColor(
 }
 
 @Composable
-internal fun animateVisibility(isVisible: Boolean): State<Float> {
+internal fun animateVisibility(visible: Boolean): State<Float> {
     return animateFloatAsState(
         targetValue = when {
-            isVisible -> 1f
+            visible -> 1f
             else -> 0f
         },
         animationSpec = QUICK_SPEC,
