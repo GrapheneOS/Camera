@@ -1,12 +1,13 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.ExposureControl
 import app.grapheneos.camera.data.camera.session.TorchControl
+import app.grapheneos.camera.data.camera.session.ZoomControl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -62,6 +63,8 @@ class ViewfinderCameraDelegateTest {
         thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
     private val session = mockk<CameraSession>(relaxed = true)
+    private val zoomControl = mockk<ZoomControl>(relaxed = true)
+    private val exposureControl = mockk<ExposureControl>(relaxed = true)
     private val torch = mockk<TorchControl>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
     private val resolveDroppedVideoQuality = mockk<ResolveDroppedVideoQuality>()
@@ -191,8 +194,8 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun announceBind_publishesTheBoundCamerasZoomAndExposure() {
-        every { session.zoom } returns ZOOM
-        every { session.exposure } returns EXPOSURE
+        every { zoomControl.zoom } returns ZOOM
+        every { exposureControl.exposure } returns EXPOSURE
 
         val delegate = createAttachedDelegate(showsCameraModeTabs = false)
         delegate.announceBind()
@@ -343,9 +346,9 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun previewRotation_reachesTheSession() {
-        createAttachedDelegate().setPreviewRotation(Surface.ROTATION_270)
+        createAttachedDelegate().setPreviewRotation(DeviceOrientation.DEGREES_90)
 
-        verify(exactly = 1) { session.setPreviewRotation(Surface.ROTATION_270) }
+        verify(exactly = 1) { session.setPreviewRotation(DeviceOrientation.DEGREES_90) }
     }
 
     @Test
@@ -390,6 +393,8 @@ class ViewfinderCameraDelegateTest {
     ): ViewfinderCameraDelegate {
         val delegate = ViewfinderCameraDelegateImpl(
             session = session,
+            zoomControl = zoomControl,
+            exposureControl = exposureControl,
             torch = torch,
             entryPoint = cameraEntryPoint(showsCameraModeTabs = showsCameraModeTabs),
             resolveAvailableModes = resolveAvailableModes,

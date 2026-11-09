@@ -4,12 +4,14 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionImpl
 import app.grapheneos.camera.data.camera.session.ExtensionUsability
 import app.grapheneos.camera.data.camera.session.ExtensionUsabilityImpl
+import app.grapheneos.camera.data.camera.session.FocusControl
+import app.grapheneos.camera.data.camera.session.FocusControlImpl
 import app.grapheneos.camera.data.camera.session.SceneLightControl
 import app.grapheneos.camera.data.camera.session.SceneLightControlImpl
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.camera.session.VideoRecordingSessionImpl
-import app.grapheneos.camera.data.camera.session.ZoomStateTracker
-import app.grapheneos.camera.data.camera.session.ZoomStateTrackerImpl
+import app.grapheneos.camera.data.camera.session.ZoomControl
+import app.grapheneos.camera.data.camera.session.ZoomControlImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -34,6 +36,12 @@ internal abstract class CameraSessionBindsModule {
 
     @Binds
     @ActivityRetainedScoped
+    abstract fun bindFocusControl(
+        impl: FocusControlImpl,
+    ): FocusControl
+
+    @Binds
+    @ActivityRetainedScoped
     abstract fun bindSceneLightControl(
         impl: SceneLightControlImpl,
     ): SceneLightControl
@@ -46,7 +54,7 @@ internal abstract class CameraSessionBindsModule {
 
     @Binds
     @ActivityRetainedScoped
-    abstract fun bindZoomStateTracker(
-        impl: ZoomStateTrackerImpl,
-    ): ZoomStateTracker
+    abstract fun bindZoomControl(
+        impl: ZoomControlImpl,
+    ): ZoomControl
 }

@@ -27,6 +27,7 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
+import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -57,6 +58,8 @@ class CameraSessionTest {
     private val zoomStates = MutableLiveData<ZoomState>(mockk(relaxed = true))
 
     private val cameraControl = mockk<CameraControl>(relaxed = true)
+    private val focusControl = mockk<FocusControl>(relaxed = true)
+    private val zoomControl = mockk<ZoomControl>(relaxed = true)
 
     private val sceneLightControl = mockk<SceneLightControl>(relaxed = true)
 
@@ -183,47 +186,40 @@ class CameraSessionTest {
     }
 
     @Test
-    fun reattachZoomState_readsTheZoomStateOnALaterMessage() {
+    fun bind_attachesTheControlsToTheBoundCamera() {
         runTest {
-            val session = boundSession(PHOTO_SETTINGS)
-            val events = mutableListOf<CameraZoomEvent>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                session.zoomEvents.collect(events::add)
+            boundSession(PHOTO_SETTINGS)
+
+            verify(exactly = 1) {
+                focusControl.attach(control = cameraControl, meteringPointFactory = any())
             }
-
-            session.reattachZoomState()
-            verify(exactly = 0) { cameraInfo.zoomState }
-            assertEquals(emptyList<CameraZoomEvent>(), events)
-
-            runCurrent()
-            verify(exactly = 1) { cameraInfo.zoomState }
-            assertEquals(listOf(CameraZoomEvent.Loaded), events)
+            verify(exactly = 1) { zoomControl.attach(camera) }
         }
     }
 
     @Test
-    fun reattachZoomState_twiceBeforeItRuns_readsTheZoomStateOnce() {
+    fun unbind_detachesTheControls() {
         runTest {
             val session = boundSession(PHOTO_SETTINGS)
+            clearMocks(focusControl, zoomControl, answers = false)
 
-            session.reattachZoomState()
-            session.reattachZoomState()
-            runCurrent()
+            session.unbind()
 
-            verify(exactly = 1) { cameraInfo.zoomState }
+            verify(exactly = 1) { focusControl.detach() }
+            verify(exactly = 1) { zoomControl.detach() }
         }
     }
 
     @Test
-    fun reattachZoomState_thenThePreviewGoesAway_neverReadsTheZoomState() {
+    fun previewGoingAway_detachesTheControls() {
         runTest {
             val session = boundSession(PHOTO_SETTINGS)
+            clearMocks(focusControl, zoomControl, answers = false)
 
-            session.reattachZoomState()
             session.setPreviewTarget(null)
-            runCurrent()
 
-            verify(exactly = 0) { cameraInfo.zoomState }
+            verify(exactly = 1) { focusControl.detach() }
+            verify(exactly = 1) { zoomControl.detach() }
         }
     }
 
@@ -292,8 +288,8 @@ class CameraSessionTest {
             lowLightBoostSupport = mockk(relaxed = true),
             videoQualitySupport = mockk(relaxed = true),
             cameraXConstantsMapper = mockk(relaxed = true),
-            cameraXStateMapper = mockk(relaxed = true),
-            zoomStateTracker = ZoomStateTrackerImpl(),
+            zoomControl = zoomControl,
+            focusControl = focusControl,
             sceneLightControl = sceneLightControl,
             mainDispatcher = dispatcher,
             mainLooperDispatcher = dispatcher,

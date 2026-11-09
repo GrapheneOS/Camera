@@ -1,9 +1,9 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -332,10 +332,11 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(CameraAction.DisplayRotationChanged(rotation = Surface.ROTATION_90))
+            val rotation = DeviceOrientation.DEGREES_270
+            viewModel.onAction(CameraAction.DisplayRotationChanged(rotation = rotation))
 
-            verify(exactly = 1) { cameraDelegate.setPreviewRotation(Surface.ROTATION_90) }
-            verify(exactly = 1) { orientationDelegate.setDisplayRotation(Surface.ROTATION_90) }
+            verify(exactly = 1) { cameraDelegate.setPreviewRotation(rotation) }
+            verify(exactly = 1) { orientationDelegate.setDisplayRotation(rotation) }
         }
     }
 

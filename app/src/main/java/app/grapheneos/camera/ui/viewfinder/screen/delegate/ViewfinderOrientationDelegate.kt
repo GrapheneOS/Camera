@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import javax.inject.Inject
@@ -12,7 +13,7 @@ interface ViewfinderOrientationDelegate {
 
     fun bind(stateHolder: ViewfinderStateHolder)
 
-    fun setDisplayRotation(rotation: Int)
+    fun setDisplayRotation(rotation: DeviceOrientation)
 
     suspend fun trackOrientation()
 }
@@ -27,7 +28,7 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
         this.stateHolder = stateHolder
     }
 
-    override fun setDisplayRotation(rotation: Int) {
+    override fun setDisplayRotation(rotation: DeviceOrientation) {
         stateHolder.update { state -> state.copy(displayRotation = rotation) }
     }
 
@@ -50,7 +51,7 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
     }
 
     private suspend fun trackAutoRotate() {
-        deviceOrientationRepository.autoRotateEnabled().collect { enabled ->
+        deviceOrientationRepository.autoRotateEnabled.collect { enabled ->
             stateHolder.update { state ->
                 state.copy(autoRotateEnabled = enabled)
             }

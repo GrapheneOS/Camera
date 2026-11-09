@@ -840,18 +840,19 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDisplayRotation() {
-        val rotation = displayRotation()
-        val orientation = when (rotation) {
+        val rotation = displayOrientation()
+
+        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = rotation))
+        previewOverlays.onAction(PreviewOverlaysAction.DisplayRotationChanged(rotation = rotation))
+    }
+
+    private fun displayOrientation(): DeviceOrientation {
+        return when (displayRotation()) {
             Surface.ROTATION_90 -> DeviceOrientation.DEGREES_270
             Surface.ROTATION_180 -> DeviceOrientation.DEGREES_180
             Surface.ROTATION_270 -> DeviceOrientation.DEGREES_90
             else -> DeviceOrientation.DEGREES_0
         }
-
-        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = rotation))
-        previewOverlays.onAction(
-            PreviewOverlaysAction.DisplayRotationChanged(rotation = orientation),
-        )
     }
 
     private fun displayRotation(): Int {

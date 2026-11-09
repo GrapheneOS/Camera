@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
-import android.view.Surface
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -32,7 +31,7 @@ data class ViewfinderState(
     val isSettingsPanelOpen: Boolean = false,
     val previewControls: ViewfinderPreviewControlsState = ViewfinderPreviewControlsState(),
     val deviceOrientation: DeviceOrientation? = null,
-    val displayRotation: Int = Surface.ROTATION_0,
+    val displayRotation: DeviceOrientation = DeviceOrientation.DEGREES_0,
     val autoRotateEnabled: Boolean = false,
     val keepsScreenAwake: Boolean = false,
 ) {

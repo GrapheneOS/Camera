@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import android.view.Surface
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
@@ -75,10 +74,10 @@ class ViewfinderOrientationDelegateTest {
             val delegate = startTracking()
 
             autoRotate.emit(true)
-            delegate.setDisplayRotation(Surface.ROTATION_90)
+            delegate.setDisplayRotation(DeviceOrientation.DEGREES_270)
 
             assertTrue(state().autoRotateEnabled)
-            assertEquals(Surface.ROTATION_90, state().displayRotation)
+            assertEquals(DeviceOrientation.DEGREES_270, state().displayRotation)
         }
     }
 
@@ -88,7 +87,7 @@ class ViewfinderOrientationDelegateTest {
 
     private fun TestScope.startTracking(): ViewfinderOrientationDelegate {
         every { deviceOrientationRepository.motion } returns motion
-        every { deviceOrientationRepository.autoRotateEnabled() } returns autoRotate
+        every { deviceOrientationRepository.autoRotateEnabled } returns autoRotate
 
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderOrientationDelegateImpl(
