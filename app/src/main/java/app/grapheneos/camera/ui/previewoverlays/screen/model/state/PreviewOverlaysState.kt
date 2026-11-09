@@ -1,62 +1,52 @@
-package app.grapheneos.camera.ui.previewoverlays.screen.model
+package app.grapheneos.camera.ui.previewoverlays.screen.model.state
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import kotlin.time.Duration
 
 internal data class PreviewOverlaysState(
-    val gridType: GridType = GridType.NONE,
+    val settings: CameraSettings = CameraSettings(),
+    val focus: FocusState = FocusState(),
     val previewContent: PreviewContentState? = null,
     val isPreviewFlashVisible: Boolean = false,
     val level: LevelState = LevelState(),
     val displayRotation: DeviceOrientation = DeviceOrientation.DEGREES_0,
 ) {
 
-    fun resetLevelIfUnavailable(): PreviewOverlaysState {
-        return when {
-            canShowLevel() -> this
-            else -> resetLevel()
-        }
+    fun isFocusAvailable(): Boolean {
+        return isPreviewFocusable() && !isPreviewFlashVisible
     }
 
-    fun resetLevel(): PreviewOverlaysState {
-        return copy(level = LevelState(isEnabled = level.isEnabled))
-    }
-
-    fun showsGrid(): Boolean {
+    fun isPreviewFocusable(): Boolean {
         val content = previewContent ?: return false
-        val isGridAvailable = when (content.mode) {
-            CameraMode.QR_SCAN -> false
-            else -> true
-        }
+        return content.mode != CameraMode.QR_SCAN &&
+            content.isPreviewStreaming &&
+            !isPreviewReplaced(content)
+    }
 
-        return gridType != GridType.NONE &&
-            isGridAvailable &&
-            !content.isTransitionFrameVisible &&
-            !content.isCaptureResultVisible &&
-            !isPreviewFlashVisible
+    fun isGridVisible(): Boolean {
+        val content = previewContent ?: return false
+        return settings.gridType != GridType.NONE &&
+            content.mode != CameraMode.QR_SCAN &&
+            !isPreviewHidden(content)
     }
 
     fun visibleSelfTimerRemaining(): Duration? {
         val content = previewContent ?: return null
-
         return when {
-            content.mode == CameraMode.QR_SCAN ||
-                content.isTransitionFrameVisible ||
-                content.isCaptureResultVisible ||
-                isPreviewFlashVisible -> null
-
+            content.mode == CameraMode.QR_SCAN || isPreviewHidden(content) -> null
             else -> content.selfTimerRemaining
         }
     }
 
-    fun showsLevelOverlay(): Boolean {
-        return canShowLevel() && level.visible
+    fun isLevelVisible(): Boolean {
+        return isLevelAvailable() && level.visible
     }
 
-    fun canShowLevel(): Boolean {
+    fun isLevelAvailable(): Boolean {
         val content = previewContent ?: return false
         val isPhotoMode = when (content.mode) {
             CameraMode.QR_SCAN -> false
@@ -70,13 +60,19 @@ internal data class PreviewOverlaysState(
             -> true
         }
 
-        return level.isEnabled && isPhotoMode &&
+        return settings.gyroscopeSuggestions && isPhotoMode &&
             content.lensFacing == LensFacing.BACK &&
             content.isPreviewStreaming &&
             content.selfTimerRemaining == null &&
             !content.isTakingPicture &&
-            !content.isTransitionFrameVisible &&
-            !content.isCaptureResultVisible &&
-            !isPreviewFlashVisible
+            !isPreviewHidden(content)
+    }
+
+    private fun isPreviewHidden(content: PreviewContentState): Boolean {
+        return isPreviewReplaced(content) || isPreviewFlashVisible
+    }
+
+    private fun isPreviewReplaced(content: PreviewContentState): Boolean {
+        return content.isTransitionFrameVisible || content.isCaptureResultVisible
     }
 }

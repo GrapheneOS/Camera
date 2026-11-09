@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.previewoverlays.screen.model
+package app.grapheneos.camera.ui.previewoverlays.screen.model.ui
 
 import androidx.compose.runtime.Immutable
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode

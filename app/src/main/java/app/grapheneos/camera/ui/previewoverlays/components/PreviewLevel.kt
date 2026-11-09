@@ -13,7 +13,7 @@ import app.grapheneos.camera.ui.components.levelindicator.LevelIndicator
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 
 @Composable
 internal fun PreviewLevel(
