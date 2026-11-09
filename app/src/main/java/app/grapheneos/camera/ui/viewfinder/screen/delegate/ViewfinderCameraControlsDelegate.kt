@@ -1,11 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
-import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.ExposureControl
 import app.grapheneos.camera.data.camera.session.ZoomControl
-import app.grapheneos.camera.data.sound.model.CameraSound
-import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
@@ -37,16 +34,11 @@ interface ViewfinderCameraControlsDelegate {
     fun setLinearZoom(linearZoom: Float)
 
     fun setExposureCompensation(compensationIndex: Int)
-
-    fun focusAt(x: Float, y: Float)
-    fun cancelFocus()
 }
 
 internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
-    private val session: CameraSession,
     private val zoomControl: ZoomControl,
     private val exposureControl: ExposureControl,
-    private val playCameraSound: PlayCameraSound,
     private val nextZoomStopMapper: NextZoomStopMapper,
 ) : ViewfinderCameraControlsDelegate {
 
@@ -128,33 +120,6 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
 
             it.copy(session = it.session.copy(exposure = exposure))
         }
-    }
-
-    override fun focusAt(
-        x: Float,
-        y: Float,
-    ) {
-        val state = stateHolder.state.value
-
-        session.startFocusAndMetering(
-            x = x,
-            y = y,
-            autoCancelSeconds = state.settings.focusTimeoutSeconds,
-        )
-
-        if (!state.isVideoMode()) {
-            scope.launch {
-                playCameraSound(CameraSound.FOCUS_START)
-            }
-        }
-    }
-
-    override fun cancelFocus() {
-        if (stateHolder.state.value.isQrMode()) return
-
-        // cancel any manual focus
-        // CameraX will start the continuous autofocus (if supported) automatically
-        session.cancelFocusAndMetering()
     }
 
     private fun refreshZoom() {

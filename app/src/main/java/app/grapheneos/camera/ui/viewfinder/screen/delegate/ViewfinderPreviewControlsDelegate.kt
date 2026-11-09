@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderFocusRequest
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState as Controls
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -17,7 +16,7 @@ interface ViewfinderPreviewControlsDelegate {
         stateHolder: ViewfinderStateHolder,
     )
 
-    fun showFocus(x: Float, y: Float)
+    fun showFocusControls()
 
     fun showZoomPanel()
     fun hideZoomPanel()
@@ -49,21 +48,7 @@ internal class ViewfinderPreviewControlsDelegateImpl @Inject constructor() :
         this.stateHolder = stateHolder
     }
 
-    override fun showFocus(
-        x: Float,
-        y: Float,
-    ) {
-        stateHolder.update { state ->
-            val controls = state.previewControls
-            val request = ViewfinderFocusRequest(
-                x = x,
-                y = y,
-                id = (controls.focusRequest?.id ?: 0) + 1,
-            )
-
-            state.copy(previewControls = controls.copy(focusRequest = request))
-        }
-
+    override fun showFocusControls() {
         exposurePanel.show()
         zoomPanel.show()
     }

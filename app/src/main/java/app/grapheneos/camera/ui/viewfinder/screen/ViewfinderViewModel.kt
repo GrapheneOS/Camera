@@ -219,7 +219,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.Preview -> onPreviewAction(action)
             is CameraAction.ZoomInKeyPressed -> cameraControlsDelegate.stepZoom(ZOOM_KEY_STEP)
             is CameraAction.ZoomOutKeyPressed -> cameraControlsDelegate.stepZoom(-ZOOM_KEY_STEP)
-            is CameraAction.FocusKeyPressed -> cameraControlsDelegate.cancelFocus()
             is CameraAction.ZoomSliderDragged -> {
                 cameraControlsDelegate.setLinearZoom(action.linearZoom)
             }
@@ -365,7 +364,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.Preview.Swiped -> modeSwitchDelegate.onPreviewSwiped(action.direction)
             is CameraAction.Preview.Tapped -> when {
                 state.isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
-                else -> focusAt(x = action.x, y = action.y)
+                else -> onPreviewPressed()
             }
         }
     }
@@ -493,14 +492,10 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun focusAt(
-        x: Float,
-        y: Float,
-    ) {
+    private fun onPreviewPressed() {
         if (state.isQrMode()) return
 
-        cameraControlsDelegate.focusAt(x = x, y = y)
-        previewControlsDelegate.showFocus(x = x, y = y)
+        previewControlsDelegate.showFocusControls()
     }
 
     private fun onCaptureKeyPressed() {

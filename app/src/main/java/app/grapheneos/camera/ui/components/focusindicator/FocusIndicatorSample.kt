@@ -79,7 +79,7 @@ private fun FocusIndicatorSample() {
         ProvideContentRotation(degrees = state.rotation.degrees) {
             key(state.focusRequest) {
                 FocusIndicator(
-                    visible = state.isVisible,
+                    visible = state.visible,
                     appearance = state.appearance,
                     lockIcon = PREVIEW_LOCK_ICON,
                     modifier = Modifier.centerAt(point = state.point),
@@ -109,7 +109,7 @@ private class FocusIndicatorSampleState {
 
     var point by mutableStateOf(Offset.Zero)
         private set
-    var isVisible by mutableStateOf(false)
+    var visible by mutableStateOf(false)
         private set
     var appearance by mutableStateOf(FocusIndicatorAppearance.Focusing)
         private set
@@ -121,7 +121,7 @@ private class FocusIndicatorSampleState {
     val status: String
         get() {
             return when {
-                !isVisible -> "Tap to focus, hold to lock"
+                !visible -> "Tap to focus, hold to lock"
                 else -> appearance.name
             }
         }
@@ -131,7 +131,7 @@ private class FocusIndicatorSampleState {
         center: Offset,
         ringRadius: Float,
     ) {
-        isPressOnRing = isVisible &&
+        isPressOnRing = visible &&
             (point - this.point).getDistanceSquared() <= ringRadius * ringRadius
         if (!isPressOnRing) {
             show(point = center)
@@ -140,7 +140,7 @@ private class FocusIndicatorSampleState {
 
     fun tap() {
         if (isPressOnRing) {
-            isVisible = false
+            visible = false
         }
     }
 
@@ -157,7 +157,7 @@ private class FocusIndicatorSampleState {
     private fun show(point: Offset) {
         this.point = point
         appearance = FocusIndicatorAppearance.Focusing
-        isVisible = true
+        visible = true
         focusRequest += 1
     }
 }

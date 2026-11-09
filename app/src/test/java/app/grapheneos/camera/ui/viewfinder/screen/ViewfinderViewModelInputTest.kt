@@ -289,15 +289,15 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewTapped_withTheSettingsPanelOpen_onlyClosesIt() {
+    fun previewPressed_withTheSettingsPanelOpen_onlyClosesIt() {
         runTest {
             val viewModel = createViewModel()
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 
-            viewModel.onAction(CameraAction.Preview.Tapped(x = 1f, y = 2f))
+            viewModel.onAction(CameraAction.Preview.Tapped)
 
             verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
-            verify(exactly = 0) { cameraControlsDelegate.focusAt(x = any(), y = any()) }
+            verify(exactly = 0) { previewControlsDelegate.showFocusControls() }
         }
     }
 

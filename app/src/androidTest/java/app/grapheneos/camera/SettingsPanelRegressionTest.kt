@@ -63,7 +63,7 @@ class SettingsPanelRegressionTest {
             waitUntil(scenario, "the settings panel takes back") { interceptsBack(it) }
 
             scenario.onActivity {
-                it.viewfinder.onAction(CameraAction.Preview.Tapped(x = 0f, y = 0f))
+                it.viewfinder.onAction(CameraAction.Preview.Tapped)
             }
             waitUntil(scenario, "the settings panel gives back up") { !interceptsBack(it) }
         }

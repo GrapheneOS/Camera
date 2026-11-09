@@ -9,7 +9,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FocusRingUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
@@ -41,7 +40,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             selfTimer = selfTimer(state),
             recording = recording(state),
             qr = qr(state),
-            focusRing = focusRing(state),
             exposure = exposure(state),
             iconRotationDegrees = iconRotationDegrees(state),
             captureResult = captureResult(state),
@@ -262,16 +260,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun focusRing(state: ViewfinderState): FocusRingUiModel? {
-        val request = state.previewControls.focusRequest ?: return null
-
-        return FocusRingUiModel(
-            x = request.x,
-            y = request.y,
-            id = request.id,
-        )
-    }
-
     private fun exposure(state: ViewfinderState): ExposureUiModel {
         val exposure = state.session.exposure
 
@@ -293,9 +281,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         val orientation = state.recording.orientationAtStart
             ?: state.deviceOrientation
             ?: return 0f
-        val displayDegrees = displayDegrees(state.displayRotation)
+        val degrees = state.displayRotation.degrees - orientation.degrees
 
-        return (displayDegrees - orientation.degrees).mod(FULL_TURN_DEGREES).toFloat()
+        return degrees.mod(FULL_TURN_DEGREES).toFloat()
     }
 
     private fun captureResult(state: ViewfinderState): CaptureResultUiModel {

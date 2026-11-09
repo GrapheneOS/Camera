@@ -55,7 +55,7 @@ internal fun GalleryVideoOverlay(
             skip = playback.skip,
         )
         FastForwardIndicator(
-            isVisible = playback.isFastForwarding,
+            visible = playback.isFastForwarding,
             topPadding = PaddingValues(top = contentPadding.calculateTopPadding()),
             modifier = Modifier.align(Alignment.TopCenter),
         )
@@ -63,7 +63,7 @@ internal fun GalleryVideoOverlay(
             playback = playback,
             isMuted = video.isMuted,
             position = position,
-            isVisible = showsControls,
+            visible = showsControls,
             showsButtons = playback.skip == null,
             bottomPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
             onAction = onAction,
@@ -101,12 +101,12 @@ private fun SkipIndicator(
 
 @Composable
 private fun FastForwardIndicator(
-    isVisible: Boolean,
+    visible: Boolean,
     topPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
-        visible = isVisible,
+        visible = visible,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = modifier
@@ -124,14 +124,14 @@ private fun PlaybackControls(
     playback: VideoPlaybackUiModel.Active,
     isMuted: Boolean,
     position: () -> Duration,
-    isVisible: Boolean,
+    visible: Boolean,
     showsButtons: Boolean,
     bottomPadding: PaddingValues,
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val visibility = remember { MutableTransitionState(initialState = false) }
-    visibility.targetState = isVisible
+    visibility.targetState = visible
 
     AnimatedVisibility(
         visibleState = visibility,

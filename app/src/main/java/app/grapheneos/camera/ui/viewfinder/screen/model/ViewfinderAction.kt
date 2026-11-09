@@ -19,8 +19,6 @@ sealed interface ViewfinderAction {
 
         data object ZoomOutKeyPressed : CameraAction
 
-        data object FocusKeyPressed : CameraAction
-
         data class ZoomSliderDragged(
             val linearZoom: Float,
         ) : CameraAction
@@ -63,10 +61,7 @@ sealed interface ViewfinderAction {
 
         sealed interface Preview : CameraAction {
 
-            data class Tapped(
-                val x: Float,
-                val y: Float,
-            ) : Preview
+            data object Tapped : Preview
 
             data class Pinched(
                 val scaleFactor: Float,

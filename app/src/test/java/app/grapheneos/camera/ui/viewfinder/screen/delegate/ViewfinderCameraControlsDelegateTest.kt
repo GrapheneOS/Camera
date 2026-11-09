@@ -3,18 +3,13 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
-import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.ExposureControl
 import app.grapheneos.camera.data.camera.session.ZoomControl
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.sound.model.CameraSound
-import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -44,10 +39,8 @@ class ViewfinderCameraControlsDelegateTest {
 
     private val scope = TestScope(mainDispatcherRule.testDispatcher)
 
-    private val session = mockk<CameraSession>(relaxed = true)
     private val zoomControl = mockk<ZoomControl>(relaxed = true)
     private val exposureControl = mockk<ExposureControl>(relaxed = true)
-    private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
     private val zoomEvents = MutableSharedFlow<CameraZoomEvent>(extraBufferCapacity = 8)
 
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
@@ -63,36 +56,13 @@ class ViewfinderCameraControlsDelegateTest {
     }
 
     @Test
-    fun focusAt_focusesForTheChosenTimeoutWithTheSoundOnlyForPhotos() {
-        val delegate = createDelegate()
-        stateHolder.update {
-            it.copy(settings = CameraSettings(focusTimeoutSeconds = FOCUS_TIMEOUT_SECONDS))
-        }
-
-        delegate.focusAt(x = 10f, y = 20f)
-        stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-        delegate.focusAt(x = 10f, y = 20f)
-
-        verify(exactly = 2) {
-            session.startFocusAndMetering(
-                x = 10f,
-                y = 20f,
-                autoCancelSeconds = FOCUS_TIMEOUT_SECONDS,
-            )
-        }
-        coVerify(exactly = 1) { playCameraSound(CameraSound.FOCUS_START) }
-    }
-
-    @Test
-    fun focusAndZoomKeys_inQrMode_areLeftAlone() {
+    fun zoomKeys_inQrMode_areLeftAlone() {
         every { zoomControl.zoom } returns ZOOM
         val delegate = createDelegate()
         stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
 
-        delegate.cancelFocus()
         delegate.stepZoom(step = 1f)
 
-        verify(exactly = 0) { session.cancelFocusAndMetering() }
         verify(exactly = 0) { zoomControl.setZoomRatio(any()) }
     }
 
@@ -188,7 +158,7 @@ class ViewfinderCameraControlsDelegateTest {
         }
 
         zoomEvents.tryEmit(CameraZoomEvent.Loaded)
-        assertEquals(ZOOM, stateHolder.state.value.zoomControl.zoom)
+        assertEquals(ZOOM, stateHolder.state.value.session.zoom)
         assertEquals(0, changes)
 
         zoomEvents.tryEmit(CameraZoomEvent.Changed)
@@ -203,10 +173,8 @@ class ViewfinderCameraControlsDelegateTest {
 
     private fun createDelegate(): ViewfinderCameraControlsDelegate {
         val delegate = ViewfinderCameraControlsDelegateImpl(
-            session = session,
             zoomControl = zoomControl,
             exposureControl = exposureControl,
-            playCameraSound = playCameraSound,
             nextZoomStopMapper = NextZoomStopMapperImpl(),
         )
 
@@ -223,7 +191,6 @@ class ViewfinderCameraControlsDelegateTest {
 
     private companion object {
         val ZOOM_STOP_INTERVAL = 500.milliseconds
-
         val ZOOM = CameraZoom(
             zoomRatio = 2f,
             linearZoom = 0.5f,
@@ -235,7 +202,5 @@ class ViewfinderCameraControlsDelegateTest {
             compensationIndex = 1,
             compensationRange = -12..12,
         )
-
-        const val FOCUS_TIMEOUT_SECONDS = 3L
     }
 }
