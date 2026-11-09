@@ -1,9 +1,9 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelPose
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -23,7 +23,7 @@ internal class LevelStateMapperImpl @Inject constructor() : LevelStateMapper {
     ): LevelState {
         val current = state.level
         val pose = when {
-            state.canShowLevel() -> poseOf(current = current, motion = motion)
+            state.isLevelAvailable() -> poseOf(current = current, motion = motion)
             else -> null
         }
         val visible = current.visible && pose != null && pose == current.pose

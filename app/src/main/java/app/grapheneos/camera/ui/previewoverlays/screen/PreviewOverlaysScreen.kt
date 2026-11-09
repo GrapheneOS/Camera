@@ -19,12 +19,13 @@ import app.grapheneos.camera.ui.components.compositiongrid.CompositionGrid
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
+import app.grapheneos.camera.ui.previewoverlays.components.PreviewFocus
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewLayer
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewLevel
 import app.grapheneos.camera.ui.previewoverlays.components.SelfTimerCountdown
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -37,8 +38,8 @@ internal fun PreviewOverlaysScreen(
     val level = screenModel.levelUiState.collectAsStateWithLifecycle()
 
     LifecycleResumeEffect(screenModel) {
-        screenModel.onAction(Action.ScreenResumed)
-        onPauseOrDispose { screenModel.onAction(Action.ScreenPaused) }
+        screenModel.onAction(LifecycleAction.ScreenResumed)
+        onPauseOrDispose { screenModel.onAction(LifecycleAction.ScreenPaused) }
     }
 
     PreviewOverlaysContent(
@@ -58,9 +59,9 @@ private fun PreviewOverlaysContent(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         PreviewLayer(bounds = previewBounds) {
-            if (uiState.isGridVisible) {
+            uiState.gridPattern?.let { pattern ->
                 CompositionGrid(
-                    pattern = uiState.gridPattern,
+                    pattern = pattern,
                     modifier = Modifier.matchParentSize(),
                 )
             }
@@ -68,6 +69,9 @@ private fun PreviewOverlaysContent(
                 level = level,
                 modifier = Modifier.align(Alignment.Center),
             )
+            uiState.focus?.let { focus ->
+                PreviewFocus(focus = focus)
+            }
             uiState.selfTimerRemaining?.let { remaining ->
                 SelfTimerCountdown(
                     remaining = remaining,
@@ -88,7 +92,6 @@ private fun PreviewOverlaysPreview() {
             PreviewOverlaysContent(
                 uiState = PreviewOverlaysUiState(
                     gridPattern = CompositionGridPattern.GoldenRatio,
-                    isGridVisible = true,
                     selfTimerRemaining = 3.seconds,
                 ),
                 level = rememberUpdatedState(LevelUiState()),

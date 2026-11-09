@@ -2,10 +2,11 @@ package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelPose
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -18,7 +19,7 @@ class LevelStateMapperTest {
     private val mapper = LevelStateMapperImpl()
     private val photoState = PreviewOverlaysState(
         previewContent = PreviewContentState(isPreviewStreaming = true),
-        level = LevelState(isEnabled = true),
+        settings = CameraSettings(gyroscopeSuggestions = true),
     )
 
     @Test
@@ -45,7 +46,7 @@ class LevelStateMapperTest {
 
     @Test
     fun shownHorizon_staysVisibleInTheWiderRangeButCannotReappearThereAfterReset() {
-        val shown = LevelState(isEnabled = true, visible = true, pose = LevelPose.Horizon)
+        val shown = LevelState(visible = true, pose = LevelPose.Horizon)
         val retained = map(tilt = 45f, horizon = -45f, state = photoState.copy(level = shown))
 
         assertEquals(LevelPose.Horizon, retained.pose)
@@ -57,7 +58,7 @@ class LevelStateMapperTest {
 
     @Test
     fun shownHorizon_disappearsPastTheOriginalRangeOnEitherAxis() {
-        val shown = LevelState(isEnabled = true, visible = true, pose = LevelPose.Horizon)
+        val shown = LevelState(visible = true, pose = LevelPose.Horizon)
         val motions = listOf(
             motionOf(tilt = 46f),
             motionOf(tilt = -46f),
@@ -94,7 +95,7 @@ class LevelStateMapperTest {
 
     @Test
     fun changingPose_hidesThePreviousGuideBeforeShowingTheNextOne() {
-        val shown = LevelState(isEnabled = true, visible = true, pose = LevelPose.Horizon)
+        val shown = LevelState(visible = true, pose = LevelPose.Horizon)
         val level = map(horizon = 90f, state = photoState.copy(level = shown))
 
         assertEquals(LevelPose.FacingDown, level.pose)
@@ -103,7 +104,7 @@ class LevelStateMapperTest {
 
     @Test
     fun disabledLevel_hasNoEligiblePose() {
-        val state = photoState.copy(level = LevelState(isEnabled = false))
+        val state = photoState.copy(settings = CameraSettings(gyroscopeSuggestions = false))
 
         assertNull(map(state = state).pose)
         assertFalse(map(state = state).visible)
@@ -112,7 +113,6 @@ class LevelStateMapperTest {
     @Test
     fun selfTimer_hidesAnAlreadyShownLevel() {
         val shown = LevelState(
-            isEnabled = true,
             visible = true,
             pose = LevelPose.Horizon,
             tiltDegrees = 1f,

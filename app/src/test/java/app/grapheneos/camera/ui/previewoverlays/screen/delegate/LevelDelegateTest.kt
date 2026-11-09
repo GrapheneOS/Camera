@@ -5,13 +5,16 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.LevelStateMapperImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.PreviewOverlaysUiStateMapperImpl
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
 import io.mockk.every
 import io.mockk.mockk
 import kotlin.time.Duration.Companion.milliseconds
@@ -43,12 +46,57 @@ class LevelDelegateTest {
 
     private val previewContent = PreviewContentState(isPreviewStreaming = true)
 
-    private val stateHolder = StateHolder(
-        initial = PreviewOverlaysState(
-            level = LevelState(isEnabled = true),
-            previewContent = previewContent,
-        ),
+    private val framing = PreviewOverlaysState(
+        settings = CameraSettings(gyroscopeSuggestions = true),
+        previewContent = previewContent,
     )
+
+    private val stateHolder = StateHolder(initial = framing)
+
+    private val delegate = LevelDelegateImpl(
+        deviceOrientationRepository = deviceOrientationRepository,
+        levelStateMapper = LevelStateMapperImpl(),
+    )
+
+    @Test
+    fun levelAfterChange_clearsTheLevelWhenFramingIsInterrupted() {
+        val shown = framing.copy(level = SHOWN_LEVEL)
+        val interruptions = listOf(
+            shown.copy(previewContent = previewContent.copy(selfTimerRemaining = 3.seconds)),
+            shown.copy(previewContent = previewContent.copy(isTakingPicture = true)),
+            shown.copy(previewContent = previewContent.copy(isPreviewStreaming = false)),
+            shown.copy(previewContent = previewContent.copy(isTransitionFrameVisible = true)),
+            shown.copy(previewContent = previewContent.copy(isCaptureResultVisible = true)),
+            shown.copy(previewContent = previewContent.copy(mode = CameraMode.VIDEO)),
+            shown.copy(previewContent = previewContent.copy(mode = CameraMode.QR_SCAN)),
+            shown.copy(previewContent = previewContent.copy(mode = CameraMode.NIGHT)),
+            shown.copy(previewContent = previewContent.copy(lensFacing = LensFacing.FRONT)),
+            shown.copy(isPreviewFlashVisible = true),
+            shown.copy(settings = shown.settings.copy(gyroscopeSuggestions = false)),
+        )
+
+        interruptions.forEach { current ->
+            val level = delegate.levelAfterChange(previous = shown, current = current)
+
+            assertEquals(current.toString(), LevelState(), level)
+        }
+    }
+
+    @Test
+    fun levelAfterChange_keepsTheLevelWhileFramingContinues() {
+        val shown = framing.copy(level = SHOWN_LEVEL)
+        val updates = listOf(
+            shown,
+            shown.copy(displayRotation = DeviceOrientation.DEGREES_90),
+            shown.copy(settings = shown.settings.copy(gridType = GridType.GOLDEN_RATIO)),
+        )
+
+        updates.forEach { current ->
+            val level = delegate.levelAfterChange(previous = shown, current = current)
+
+            assertEquals(current.toString(), SHOWN_LEVEL, level)
+        }
+    }
 
     @Test
     fun level_disappearsOutsidePhotoMode() {
@@ -76,7 +124,7 @@ class LevelDelegateTest {
             runCurrent()
             assertTrue(stateHolder.state.value.level.visible)
 
-            stateHolder.update { it.copy(level = it.level.copy(isEnabled = false)) }
+            changeLevelSetting(enabled = false)
 
             assertFalse(stateHolder.state.value.level.visible)
         }
@@ -99,12 +147,12 @@ class LevelDelegateTest {
     @Test
     fun disabledLevel_doesNotSubscribeToMotion() {
         runTest {
-            stateHolder.update { it.copy(level = it.level.copy(isEnabled = false)) }
+            changeLevelSetting(enabled = false)
             startTracking()
 
             assertEquals(0, motion.subscriptionCount.value)
 
-            stateHolder.update { it.copy(level = it.level.copy(isEnabled = true)) }
+            changeLevelSetting(enabled = true)
             assertEquals(1, motion.subscriptionCount.value)
         }
     }
@@ -321,7 +369,7 @@ class LevelDelegateTest {
             motion.emit(motionOf())
             advanceTimeBy(900.milliseconds)
 
-            stateHolder.update { it.copy(level = LevelState(isEnabled = true)) }
+            stateHolder.update { it.copy(level = LevelState()) }
             advanceTimeBy(100.milliseconds)
             runCurrent()
             assertFalse(stateHolder.state.value.level.visible)
@@ -417,14 +465,16 @@ class LevelDelegateTest {
         }
     }
 
+    private fun changeLevelSetting(enabled: Boolean) {
+        stateHolder.update { state ->
+            state.copy(settings = state.settings.copy(gyroscopeSuggestions = enabled))
+        }
+    }
+
     private fun TestScope.startTracking(): Job {
         every { deviceOrientationRepository.motion } returns motion
 
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
-        val delegate = LevelDelegateImpl(
-            deviceOrientationRepository = deviceOrientationRepository,
-            levelStateMapper = LevelStateMapperImpl(),
-        )
         delegate.bind(stateHolder)
         return backgroundScope.launch(dispatcher) { delegate.trackLevel() }
     }
@@ -437,6 +487,14 @@ class LevelDelegateTest {
             orientation = DeviceOrientation.DEGREES_0,
             tiltDegrees = tilt,
             horizonDegrees = horizon,
+        )
+    }
+
+    private companion object {
+        private val SHOWN_LEVEL = LevelState(
+            visible = true,
+            pose = LevelPose.Horizon,
+            tiltDegrees = 3f,
         )
     }
 }

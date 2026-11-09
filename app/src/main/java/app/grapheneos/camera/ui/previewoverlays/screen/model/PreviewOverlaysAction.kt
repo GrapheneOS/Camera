@@ -1,22 +1,43 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.model
 
 import app.grapheneos.camera.data.core.model.DeviceOrientation
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
 
 internal sealed interface PreviewOverlaysAction {
 
-    data object ScreenResumed : PreviewOverlaysAction
+    sealed interface LifecycleAction : PreviewOverlaysAction {
 
-    data object ScreenPaused : PreviewOverlaysAction
+        data object ScreenResumed : LifecycleAction
 
-    data class DisplayRotationChanged(
-        val rotation: DeviceOrientation,
-    ) : PreviewOverlaysAction
+        data object ScreenPaused : LifecycleAction
+    }
 
-    data class PreviewContentChanged(
-        val content: PreviewContentState,
-    ) : PreviewOverlaysAction
+    sealed interface PreviewAction : PreviewOverlaysAction {
 
-    data class PreviewFlashVisibilityChanged(
-        val visible: Boolean,
-    ) : PreviewOverlaysAction
+        data object FocusKeyPressed : PreviewAction
+
+        data object PreviewTapped : PreviewAction
+
+        data object PreviewLongPressed : PreviewAction
+
+        data object PreviewGestureStarted : PreviewAction
+
+        data class PreviewPressed(
+            val x: Float,
+            val y: Float,
+            val hitRadius: Float,
+        ) : PreviewAction
+
+        data class DisplayRotationChanged(
+            val rotation: DeviceOrientation,
+        ) : PreviewAction
+
+        data class PreviewContentChanged(
+            val content: PreviewContentState,
+        ) : PreviewAction
+
+        data class PreviewFlashVisibilityChanged(
+            val visible: Boolean,
+        ) : PreviewAction
+    }
 }

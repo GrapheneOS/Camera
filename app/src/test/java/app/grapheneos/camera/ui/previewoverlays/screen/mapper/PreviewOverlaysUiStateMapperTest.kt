@@ -3,15 +3,22 @@ package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
+import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelPose
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPhase
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPress
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusSelection
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.FocusUiModel
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
@@ -25,8 +32,76 @@ class PreviewOverlaysUiStateMapperTest {
     private val mapper: PreviewOverlaysUiStateMapper = PreviewOverlaysUiStateMapperImpl()
 
     @Test
+    fun focus_showsTheSelectionAtItsCoordinates() {
+        val state = focusState(selection = FocusSelection(requestId = 3, x = 10f, y = 20f))
+
+        assertEquals(
+            FocusUiModel(requestId = 3, x = 10f, y = 20f, visible = true),
+            mapper.map(state).focus,
+        )
+    }
+
+    @Test
+    fun focus_appearanceFollowsThePhase() {
+        val appearances = mapOf(
+            FocusPhase.Focusing to FocusIndicatorAppearance.Focusing,
+            FocusPhase.Focused to FocusIndicatorAppearance.Focused,
+            FocusPhase.Locked to FocusIndicatorAppearance.Locked,
+        )
+
+        appearances.forEach { (phase, appearance) ->
+            val selection = FocusSelection(requestId = 1, x = 10f, y = 20f, phase = phase)
+            val focus = mapper.map(focusState(selection = selection)).focus
+
+            assertEquals(appearance, focus?.appearance)
+        }
+    }
+
+    @Test
+    fun hiddenSelectionOrCaptureFlash_hidesTheRing() {
+        val selection = FocusSelection(requestId = 1, x = 10f, y = 20f)
+        val hiddenStates = listOf(
+            focusState(selection = selection.copy(visible = false)),
+            focusState(selection = selection).copy(isPreviewFlashVisible = true),
+        )
+
+        hiddenStates.forEach { state ->
+            assertFalse(requireNotNull(mapper.map(state).focus).visible)
+        }
+    }
+
+    @Test
+    fun pressOnANewPoint_showsAFocusingRingInsteadOfTheSelection() {
+        val state = focusState(
+            selection = FocusSelection(
+                requestId = 1,
+                x = 10f,
+                y = 20f,
+                phase = FocusPhase.Locked,
+            ),
+            press = FocusPress.NewPoint(requestId = 2, x = 30f, y = 40f),
+        )
+
+        assertEquals(
+            FocusUiModel(requestId = 2, x = 30f, y = 40f, visible = true),
+            mapper.map(state).focus,
+        )
+    }
+
+    @Test
+    fun pressOnTheRing_keepsShowingTheSelection() {
+        val state = focusState(
+            selection = FocusSelection(requestId = 1, x = 10f, y = 20f),
+            press = FocusPress.OnRing(x = 12f, y = 21f),
+        )
+
+        assertEquals(1L, mapper.map(state).focus?.requestId)
+    }
+
+    @Test
     fun beforePreviewContentArrives_showsNothing() {
-        val state = mapper.map(PreviewOverlaysState(gridType = GridType.THREE_BY_THREE))
+        val settings = CameraSettings(gridType = GridType.THREE_BY_THREE)
+        val state = mapper.map(PreviewOverlaysState(settings = settings))
 
         assertEquals(PreviewOverlaysUiState(), state)
     }
@@ -37,7 +112,7 @@ class PreviewOverlaysUiStateMapperTest {
             PreviewOverlaysState(previewContent = PreviewContentState()),
         )
 
-        assertFalse(state.isGridVisible)
+        assertNull(state.gridPattern)
     }
 
     @Test
@@ -62,12 +137,11 @@ class PreviewOverlaysUiStateMapperTest {
             patterns.forEach { (gridType, pattern) ->
                 val state = mapper.map(
                     PreviewOverlaysState(
-                        gridType = gridType,
+                        settings = CameraSettings(gridType = gridType),
                         previewContent = PreviewContentState(mode = mode),
                     ),
                 )
 
-                assertTrue(state.isGridVisible)
                 assertEquals(pattern, state.gridPattern)
             }
         }
@@ -85,12 +159,12 @@ class PreviewOverlaysUiStateMapperTest {
             GridType.entries.forEach { gridType ->
                 val state = mapper.map(
                     PreviewOverlaysState(
-                        gridType = gridType,
+                        settings = CameraSettings(gridType = gridType),
                         previewContent = content,
                     ),
                 )
 
-                assertFalse(state.isGridVisible)
+                assertNull(state.gridPattern)
             }
         }
     }
@@ -98,13 +172,16 @@ class PreviewOverlaysUiStateMapperTest {
     @Test
     fun previewFlash_hidesTheGridUntilItEnds() {
         val state = PreviewOverlaysState(
-            gridType = GridType.GOLDEN_RATIO,
+            settings = CameraSettings(gridType = GridType.GOLDEN_RATIO),
             previewContent = PreviewContentState(),
             isPreviewFlashVisible = true,
         )
 
-        assertFalse(mapper.map(state).isGridVisible)
-        assertTrue(mapper.map(state.copy(isPreviewFlashVisible = false)).isGridVisible)
+        assertNull(mapper.map(state).gridPattern)
+        assertEquals(
+            CompositionGridPattern.GoldenRatio,
+            mapper.map(state.copy(isPreviewFlashVisible = false)).gridPattern,
+        )
     }
 
     @Test
@@ -157,9 +234,9 @@ class PreviewOverlaysUiStateMapperTest {
     @Test
     fun level_mapsTheSensorAxesToRollAndPitch() {
         val state = PreviewOverlaysState(
+            settings = CameraSettings(gyroscopeSuggestions = true),
             previewContent = PreviewContentState(isPreviewStreaming = true),
             level = LevelState(
-                isEnabled = true,
                 visible = true,
                 pose = LevelPose.Horizon,
                 tiltDegrees = -3f,
@@ -249,12 +326,13 @@ class PreviewOverlaysUiStateMapperTest {
     fun level_isHiddenOutsidePhotoModeAndBehindOtherPreviewContent() {
         val content = PreviewContentState(isPreviewStreaming = true)
         val shown = PreviewOverlaysState(
+            settings = CameraSettings(gyroscopeSuggestions = true),
             previewContent = content,
-            level = LevelState(isEnabled = true, visible = true, pose = LevelPose.Horizon),
+            level = LevelState(visible = true, pose = LevelPose.Horizon),
         )
         val hiddenStates = listOf(
             shown.copy(level = shown.level.copy(pose = null)),
-            shown.copy(level = shown.level.copy(isEnabled = false)),
+            shown.copy(settings = CameraSettings(gyroscopeSuggestions = false)),
             shown.copy(previewContent = null),
             shown.copy(previewContent = content.copy(mode = CameraMode.VIDEO)),
             shown.copy(previewContent = content.copy(mode = CameraMode.QR_SCAN)),
@@ -269,5 +347,15 @@ class PreviewOverlaysUiStateMapperTest {
 
         assertTrue(mapper.mapLevel(shown).visible)
         hiddenStates.forEach { state -> assertFalse(mapper.mapLevel(state).visible) }
+    }
+
+    private fun focusState(
+        selection: FocusSelection,
+        press: FocusPress? = null,
+    ): PreviewOverlaysState {
+        return PreviewOverlaysState(
+            previewContent = PreviewContentState(isPreviewStreaming = true),
+            focus = FocusState(selection = selection, press = press),
+        )
     }
 }

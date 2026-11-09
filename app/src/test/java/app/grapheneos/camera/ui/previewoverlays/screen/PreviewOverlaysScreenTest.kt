@@ -10,9 +10,14 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.grapheneos.camera.ui.core.theme.CameraTheme
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -26,10 +31,16 @@ class PreviewOverlaysScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private val actions = mutableListOf<Action>()
+    private val model = mockk<PreviewOverlaysScreenModel> {
+        every { uiState } returns MutableStateFlow(PreviewOverlaysUiState())
+        every { levelUiState } returns MutableStateFlow(LevelUiState())
+        every { onAction(capture(actions)) } just runs
+    }
+
     @Test
     fun lifecycleAndRemovalFromComposition_startAndStopLevelTracking() {
         val owner = ScreenOwner()
-        val model = FakeScreenModel()
         val visible = mutableStateOf(true)
         composeRule.runOnIdle { owner.registry.currentState = Lifecycle.State.STARTED }
         composeRule.setContent {
@@ -46,38 +57,31 @@ class PreviewOverlaysScreenTest {
         }
 
         composeRule.runOnIdle {
-            assertEquals(emptyList<Action>(), model.actions)
+            assertEquals(emptyList<Action>(), actions)
             owner.registry.currentState = Lifecycle.State.RESUMED
         }
         composeRule.runOnIdle {
-            assertEquals(listOf(Action.ScreenResumed), model.actions)
+            assertEquals(listOf(LifecycleAction.ScreenResumed), actions)
             owner.registry.currentState = Lifecycle.State.STARTED
         }
         composeRule.runOnIdle {
-            assertEquals(listOf(Action.ScreenResumed, Action.ScreenPaused), model.actions)
+            assertEquals(
+                listOf(LifecycleAction.ScreenResumed, LifecycleAction.ScreenPaused),
+                actions,
+            )
             owner.registry.currentState = Lifecycle.State.RESUMED
         }
         composeRule.runOnIdle { visible.value = false }
         composeRule.runOnIdle {
             assertEquals(
                 listOf(
-                    Action.ScreenResumed,
-                    Action.ScreenPaused,
-                    Action.ScreenResumed,
-                    Action.ScreenPaused,
+                    LifecycleAction.ScreenResumed,
+                    LifecycleAction.ScreenPaused,
+                    LifecycleAction.ScreenResumed,
+                    LifecycleAction.ScreenPaused,
                 ),
-                model.actions,
+                actions,
             )
-        }
-    }
-
-    private class FakeScreenModel : PreviewOverlaysScreenModel {
-        override val uiState = MutableStateFlow(PreviewOverlaysUiState())
-        override val levelUiState = MutableStateFlow(LevelUiState())
-        val actions = mutableListOf<Action>()
-
-        override fun onAction(action: Action) {
-            actions += action
         }
     }
 

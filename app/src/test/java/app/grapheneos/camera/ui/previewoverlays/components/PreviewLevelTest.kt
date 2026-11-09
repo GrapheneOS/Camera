@@ -7,7 +7,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import app.grapheneos.camera.ui.core.theme.CameraTheme
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Rule

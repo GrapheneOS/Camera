@@ -10,24 +10,31 @@ import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.core.screen.StateHolder
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.PreviewOverlaysUiStateMapper
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelPose
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.LevelUiState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewContentState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusSelection
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -57,7 +64,12 @@ class PreviewOverlaysViewModelTest {
     private val mapper = mockk<PreviewOverlaysUiStateMapper>()
     private val mappedState = slot<PreviewOverlaysState>()
     private val boundStateHolder = slot<StateHolder<PreviewOverlaysState>>()
-    private val levelDelegate = mockk<LevelDelegate>(relaxed = true)
+    private val levelDelegate = mockk<LevelDelegate>(relaxed = true) {
+        every { levelAfterChange(any(), any()) } answers { secondArg<PreviewOverlaysState>().level }
+    }
+    private val focusDelegate = mockk<FocusDelegate>(relaxed = true) {
+        every { focusAfterChange(any(), any()) } answers { secondArg<PreviewOverlaysState>().focus }
+    }
     private val viewModels = mutableListOf<PreviewOverlaysViewModel>()
 
     @After
@@ -68,11 +80,13 @@ class PreviewOverlaysViewModelTest {
     @Test
     fun initialState_readsSessionSettingsAndWaitsForPreviewContent() {
         runTest {
-            settings.value = settings.value.copy(gyroscopeSuggestions = true)
+            settings.value = settings.value.copy(
+                focusTimeoutSeconds = 7,
+                gyroscopeSuggestions = true,
+            )
             createViewModel()
 
-            assertEquals(GridType.FOUR_BY_FOUR, mappedState.captured.gridType)
-            assertTrue(mappedState.captured.level.isEnabled)
+            assertEquals(settings.value, mappedState.captured.settings)
             assertNull(mappedState.captured.previewContent)
         }
     }
@@ -88,7 +102,7 @@ class PreviewOverlaysViewModelTest {
             )
             every { mapper.map(capture(mappedState)) } returns mapped
 
-            viewModel.onAction(Action.PreviewContentChanged(content = content))
+            viewModel.onAction(PreviewAction.PreviewContentChanged(content = content))
 
             assertEquals(content, mappedState.captured.previewContent)
             assertSame(mapped, viewModel.uiState.value)
@@ -96,58 +110,42 @@ class PreviewOverlaysViewModelTest {
     }
 
     @Test
-    fun settingsChanges_preservePreviewContentAndFlashButClearAnUnavailableLevel() {
+    fun settingsChange_reachesTheDelegatesWithThePreviewAndFlashKept() {
         runTest {
             val viewModel = createViewModel()
-            val content = PreviewContentState(
-                mode = CameraMode.QR_SCAN,
-                selfTimerRemaining = 3.seconds,
-            )
-            viewModel.onAction(Action.PreviewContentChanged(content = content))
-            viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = true))
-            val level = LevelState(
-                pose = LevelPose.Horizon,
-                tiltDegrees = 3f,
-                horizonDegrees = 12f,
-                orientation = DeviceOrientation.DEGREES_90,
-            )
-            boundStateHolder.captured.update { it.copy(level = level) }
+            val content = PreviewContentState(mode = CameraMode.QR_SCAN)
+            viewModel.onAction(PreviewAction.PreviewContentChanged(content = content))
+            viewModel.onAction(PreviewAction.PreviewFlashVisibilityChanged(visible = true))
+            val changed = settings.value.copy(gridType = GridType.GOLDEN_RATIO)
 
-            settings.value = settings.value.copy(
-                gridType = GridType.GOLDEN_RATIO,
-                gyroscopeSuggestions = true,
-            )
+            settings.value = changed
 
-            assertEquals(
-                PreviewOverlaysState(
-                    gridType = GridType.GOLDEN_RATIO,
-                    previewContent = content,
-                    isPreviewFlashVisible = true,
-                    level = LevelState(isEnabled = true),
-                ),
-                mappedState.captured,
+            val expected = PreviewOverlaysState(
+                settings = changed,
+                previewContent = content,
+                isPreviewFlashVisible = true,
             )
-
-            settings.value = settings.value.copy(gyroscopeSuggestions = false)
-            assertEquals(LevelState(isEnabled = false), mappedState.captured.level)
+            assertEquals(expected, mappedState.captured)
+            verify { levelDelegate.levelAfterChange(previous = any(), current = expected) }
+            verify { focusDelegate.focusAfterChange(previous = any(), current = expected) }
         }
     }
 
     @Test
-    fun endingAFlash_preservesPreviewContentAndGrid() {
+    fun endingAFlash_preservesPreviewContentAndSettings() {
         runTest {
             val viewModel = createViewModel()
             val content = PreviewContentState(
                 isCaptureResultVisible = true,
                 selfTimerRemaining = 3.seconds,
             )
-            viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = true))
-            viewModel.onAction(Action.PreviewContentChanged(content = content))
-            viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = false))
+            viewModel.onAction(PreviewAction.PreviewFlashVisibilityChanged(visible = true))
+            viewModel.onAction(PreviewAction.PreviewContentChanged(content = content))
+            viewModel.onAction(PreviewAction.PreviewFlashVisibilityChanged(visible = false))
 
             assertEquals(
                 PreviewOverlaysState(
-                    gridType = GridType.FOUR_BY_FOUR,
+                    settings = settings.value,
                     previewContent = content,
                 ),
                 mappedState.captured,
@@ -201,7 +199,7 @@ class PreviewOverlaysViewModelTest {
     }
 
     @Test
-    fun screenPaused_stopsLevelTrackingAndClearsThePreviewFlash() {
+    fun screenPaused_stopsTrackingAndClearsThePreviewFlash() {
         runTest {
             var started = false
             var stopped = false
@@ -216,98 +214,49 @@ class PreviewOverlaysViewModelTest {
             val viewModel = createViewModel()
             assertFalse(started)
 
-            viewModel.onAction(Action.ScreenResumed)
-            viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = true))
-            boundStateHolder.captured.update { state ->
-                state.copy(level = state.level.copy(visible = true))
-            }
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            viewModel.onAction(PreviewAction.PreviewFlashVisibilityChanged(visible = true))
+
             assertTrue(started)
 
-            viewModel.onAction(Action.ScreenPaused)
+            viewModel.onAction(LifecycleAction.ScreenPaused)
 
             assertTrue(stopped)
             assertFalse(mappedState.captured.isPreviewFlashVisible)
-            assertFalse(mappedState.captured.level.visible)
+            verify { levelDelegate.onScreenPaused() }
+            verify { focusDelegate.onScreenPaused() }
         }
     }
 
     @Test
-    fun previewContextChanges_clearTrackingImmediatelyAndDoNotRestoreItOnReturn() {
+    fun previewAndFlashChanges_publishBothDelegatesTransitionsInOneUpdate() {
         runTest {
-            settings.value = settings.value.copy(gyroscopeSuggestions = true)
             val viewModel = createViewModel()
-            val content = PreviewContentState(isPreviewStreaming = true)
-            val changes = listOf<Action>(
-                Action.PreviewContentChanged(content.copy(selfTimerRemaining = 3.seconds)),
-                Action.PreviewContentChanged(content.copy(isTakingPicture = true)),
-                Action.PreviewContentChanged(content.copy(isPreviewStreaming = false)),
-                Action.PreviewContentChanged(content.copy(isTransitionFrameVisible = true)),
-                Action.PreviewContentChanged(content.copy(isCaptureResultVisible = true)),
-                Action.PreviewContentChanged(content.copy(mode = CameraMode.VIDEO)),
-                Action.PreviewContentChanged(content.copy(mode = CameraMode.QR_SCAN)),
-                Action.PreviewContentChanged(content.copy(mode = CameraMode.NIGHT)),
-                Action.PreviewContentChanged(content.copy(lensFacing = LensFacing.FRONT)),
-                Action.PreviewFlashVisibilityChanged(visible = true),
+            val level = LevelState(tiltDegrees = 3f)
+            val focus = FocusState(
+                selection = FocusSelection(requestId = 1, x = 10f, y = 20f, visible = false),
+            )
+            every { levelDelegate.levelAfterChange(any(), any()) } returns level
+            every { focusDelegate.focusAfterChange(any(), any()) } returns focus
+            val published = mutableListOf<PreviewOverlaysState>()
+            val collection = backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                boundStateHolder.captured.state.collect { published += it }
+            }
+            val changes = listOf(
+                PreviewAction.PreviewContentChanged(PreviewContentState(mode = CameraMode.NIGHT)),
+                PreviewAction.PreviewFlashVisibilityChanged(visible = true),
             )
 
             changes.forEach { action ->
-                viewModel.onAction(Action.PreviewContentChanged(content = content))
-                boundStateHolder.captured.update { state ->
-                    state.copy(
-                        level = LevelState(
-                            isEnabled = true,
-                            visible = true,
-                            pose = LevelPose.Horizon,
-                            tiltDegrees = 3f,
-                        ),
-                    )
-                }
+                published.clear()
 
                 viewModel.onAction(action)
 
-                assertEquals(
-                    action.toString(),
-                    LevelState(isEnabled = true),
-                    mappedState.captured.level,
-                )
-
-                viewModel.onAction(Action.PreviewFlashVisibilityChanged(visible = false))
-                viewModel.onAction(Action.PreviewContentChanged(content = content))
-
-                assertEquals(LevelState(isEnabled = true), mappedState.captured.level)
+                val changed = published.single()
+                assertEquals(action.toString(), level, changed.level)
+                assertEquals(action.toString(), focus, changed.focus)
             }
-        }
-    }
-
-    @Test
-    fun uninterruptedFraming_preservesTrackingAcrossUiUpdates() {
-        runTest {
-            settings.value = settings.value.copy(gyroscopeSuggestions = true)
-            val viewModel = createViewModel()
-            val content = PreviewContentState(isPreviewStreaming = true)
-            val level = LevelState(
-                isEnabled = true,
-                visible = true,
-                pose = LevelPose.Horizon,
-                tiltDegrees = 3f,
-            )
-            viewModel.onAction(Action.PreviewContentChanged(content = content))
-            boundStateHolder.captured.update { it.copy(level = level) }
-
-            val actions = listOf(
-                Action.PreviewContentChanged(content = content),
-                Action.DisplayRotationChanged(rotation = DeviceOrientation.DEGREES_90),
-                Action.PreviewFlashVisibilityChanged(visible = false),
-            )
-            actions.forEach { action ->
-                viewModel.onAction(action)
-
-                assertEquals(action.toString(), level, mappedState.captured.level)
-            }
-
-            settings.value = settings.value.copy(gridType = GridType.GOLDEN_RATIO)
-
-            assertEquals(level, mappedState.captured.level)
+            collection.cancel()
         }
     }
 
@@ -315,21 +264,28 @@ class PreviewOverlaysViewModelTest {
     fun repeatedResume_keepsOneSubscriptionAndPauseAllowsRestarting() {
         runTest {
             var trackingStarts = 0
+            var focusTrackingStarts = 0
             coEvery { levelDelegate.trackLevel() } coAnswers {
                 trackingStarts += 1
                 awaitCancellation()
             }
+            coEvery { focusDelegate.trackFocus() } coAnswers {
+                focusTrackingStarts += 1
+                awaitCancellation()
+            }
             val viewModel = createViewModel()
 
-            viewModel.onAction(Action.ScreenResumed)
-            viewModel.onAction(Action.ScreenResumed)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
 
             assertEquals(1, trackingStarts)
+            assertEquals(1, focusTrackingStarts)
 
-            viewModel.onAction(Action.ScreenPaused)
-            viewModel.onAction(Action.ScreenResumed)
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
 
             assertEquals(2, trackingStarts)
+            assertEquals(2, focusTrackingStarts)
         }
     }
 
@@ -341,7 +297,7 @@ class PreviewOverlaysViewModelTest {
             every { mapper.mapLevel(any()) } returns rotated
 
             viewModel.onAction(
-                Action.DisplayRotationChanged(rotation = DeviceOrientation.DEGREES_270),
+                PreviewAction.DisplayRotationChanged(rotation = DeviceOrientation.DEGREES_270),
             )
 
             assertEquals(DeviceOrientation.DEGREES_270, mappedState.captured.displayRotation)
@@ -357,6 +313,7 @@ class PreviewOverlaysViewModelTest {
             settingsRepository = settingsRepository,
             uiStateMapper = mapper,
             levelDelegate = levelDelegate,
+            focusDelegate = focusDelegate,
         )
 
         viewModels += viewModel
