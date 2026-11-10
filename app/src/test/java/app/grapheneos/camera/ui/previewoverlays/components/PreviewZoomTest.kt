@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTouchInput
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction as Action
-import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.ZoomUiModel
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewControlUiModel
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -27,7 +27,7 @@ class PreviewZoomTest {
     @Test
     fun currentValue_isShownAfterThePresetTransitionEnds() {
         var zoom by mutableStateOf(
-            ZoomUiModel(
+            PreviewControlUiModel.Zoom(
                 ratio = 1.8f,
                 range = 0.5f..8f,
                 presets = persistentListOf(0.5f, 1f, 2f),
@@ -58,7 +58,7 @@ class PreviewZoomTest {
         composeRule.setContent {
             CameraTheme {
                 PreviewZoom(
-                    zoom = ZoomUiModel(
+                    zoom = PreviewControlUiModel.Zoom(
                         ratio = 1f,
                         range = 0.5f..8f,
                         presets = persistentListOf(0.5f, 1f, 2f),
@@ -93,7 +93,7 @@ class PreviewZoomTest {
             CameraTheme {
                 if (visible) {
                     PreviewZoom(
-                        zoom = ZoomUiModel(
+                        zoom = PreviewControlUiModel.Zoom(
                             ratio = 1f,
                             range = 0.5f..8f,
                             presets = persistentListOf(0.5f, 1f, 2f),

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.AdjustmentBarState
+import app.grapheneos.camera.ui.components.adjustmentbar.gesture.adjustmentBarPress
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.rememberAdjustmentBarState
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
@@ -43,6 +45,9 @@ import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_TINT
  * every tick that passes the indicator during a drag, and for the nearest tick on release before
  * [onValueChangeFinished]. Tapping or holding [startIcon] or [endIcon] steps toward that end of
  * [valueRange]. Any change of [value] that is not a drag, such as a step or a reset, is animated to.
+ * [onPressChanged] reports a hold on the scale or either icon until all pointers are released,
+ * the gesture is canceled, or the bar is disabled or removed. Set [showContainer] to false when the
+ * caller draws the container behind the bar.
  */
 @Composable
 internal fun AdjustmentBar(
@@ -55,11 +60,14 @@ internal fun AdjustmentBar(
     majorTickInterval: Int = 4,
     startIcon: ImageVector? = null,
     endIcon: ImageVector? = null,
+    showContainer: Boolean = true,
     onValueChangeFinished: () -> Unit = {},
+    onPressChanged: (Boolean) -> Unit = {},
     colors: AdjustmentBarColors = AdjustmentBarColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
+    val currentOnPressChanged by rememberUpdatedState(onPressChanged)
     val scale = remember(valueRange, steps, majorTickInterval) {
         AdjustmentBarScale(
             valueRange = valueRange,
@@ -85,6 +93,10 @@ internal fun AdjustmentBar(
         modifier = modifier
             .size(size = RULER_SIZE)
             .graphicsLayer { this.alpha = alpha }
+            .adjustmentBarPress(
+                enabled = enabled,
+                onPressChanged = { pressed -> currentOnPressChanged(pressed) },
+            )
             .rulerInput(
                 state = state,
                 rangeInfo = ProgressBarRangeInfo(
@@ -103,6 +115,7 @@ internal fun AdjustmentBar(
             scale = scale,
             startIcon = startIcon,
             endIcon = endIcon,
+            showContainer = showContainer,
             tint = tint,
             metrics = metrics,
             colors = colors,
@@ -118,6 +131,7 @@ private fun BoxScope.AdjustmentBarLayers(
     scale: AdjustmentBarScale,
     startIcon: ImageVector?,
     endIcon: ImageVector?,
+    showContainer: Boolean,
     tint: AdjustmentBarTint,
     metrics: RulerMetrics,
     colors: AdjustmentBarColors,
@@ -141,6 +155,7 @@ private fun BoxScope.AdjustmentBarLayers(
                         scale = scale,
                         window = window,
                         isFocused = isFocused,
+                        showContainer = showContainer,
                         tint = tint,
                         metrics = metrics,
                         colors = colors,

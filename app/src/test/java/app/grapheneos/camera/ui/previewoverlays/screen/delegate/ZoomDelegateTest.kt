@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.delegate
 
+import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.session.ZoomControl
@@ -10,8 +11,11 @@ import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.domain.camera.mapper.ZoomPresetsMapperImpl
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.core.screen.StateHolder
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.input.ZoomDirection
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ExposureState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewControl
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -74,6 +78,39 @@ class ZoomDelegateTest {
     )
 
     @Test
+    fun zoomInput_takesTheSharedControlButAReleaseDoesNot() {
+        runTest {
+            trackZoom()
+            selectExposure()
+
+            delegate.onAction(ZoomAction.ControlPressChanged(isPressed = false))
+            delegate.onAction(ZoomAction.PreviewPinchFinished)
+            assertTrue(stateHolder.state.value.isExposureVisible())
+
+            delegate.onAction(ZoomAction.PreviewPinchStarted)
+
+            assertTrue(stateHolder.state.value.isZoomVisible())
+        }
+    }
+
+    @Test
+    fun selectingExposure_finishesThePendingPresetAndClosesTheZoomPanel() {
+        runTest {
+            coEvery { control.animateZoomRatio(2f) } coAnswers { awaitCancellation() }
+            trackZoom()
+            delegate.onAction(ZoomAction.Expanded)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
+            coVerify { control.animateZoomRatio(2f) }
+
+            selectExposure()
+
+            verify(exactly = 1) { control.setZoomRatio(2f) }
+            assertNull(stateHolder.state.value.zoom.pendingPreset)
+            assertFalse(stateHolder.state.value.zoom.isExpanded)
+        }
+    }
+
+    @Test
     fun startingCollection_readsTheCurrentCameraWithoutReplayingAnEvent() {
         runTest {
             trackZoom()
@@ -87,7 +124,7 @@ class ZoomDelegateTest {
     fun zoomKey_stepsByOneExpandsAndCollapsesAfterTwoSeconds() {
         runTest {
             trackZoom()
-            delegate.onZoomKeyPressed(ZoomDirection.IN)
+            delegate.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
             runCurrent()
             verify(exactly = 1) { control.setZoomRatio(2f) }
             assertTrue(stateHolder.state.value.zoom.isExpanded)
@@ -105,8 +142,8 @@ class ZoomDelegateTest {
     fun zoomKey_outOfTheWideAngleCamera_stopsAtThePrimaryOne() {
         runTest {
             trackZoom()
-            delegate.onRatioChanged(ratio = 0.6f)
-            delegate.onZoomKeyPressed(ZoomDirection.IN)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 0.6f))
+            delegate.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
 
             verify(exactly = 1) { control.setZoomRatio(1f) }
         }
@@ -118,13 +155,13 @@ class ZoomDelegateTest {
             trackZoom()
             setVolumeKeyAction(VolumeKeyAction.ZOOM)
 
-            delegate.onVolumeKeyPressed(ZoomDirection.IN)
+            delegate.onAction(ZoomAction.VolumeKeyPressed(ZoomDirection.IN))
             runCurrent()
             verify(exactly = 1) { control.setZoomRatio(2f) }
             advanceTimeBy(2.seconds)
             runCurrent()
-            delegate.onVolumeKeyReleased()
-            delegate.onVolumeKeyPressed(ZoomDirection.OUT)
+            delegate.onAction(ZoomAction.VolumeKeyReleased)
+            delegate.onAction(ZoomAction.VolumeKeyPressed(ZoomDirection.OUT))
             advanceTimeBy(2.seconds)
             runCurrent()
 
@@ -145,9 +182,9 @@ class ZoomDelegateTest {
             trackZoom()
             setVolumeKeyAction(VolumeKeyAction.ZOOM)
 
-            delegate.onVolumeKeyPressed(ZoomDirection.IN)
+            delegate.onAction(ZoomAction.VolumeKeyPressed(ZoomDirection.IN))
             runCurrent()
-            delegate.onVolumeKeyReleased()
+            delegate.onAction(ZoomAction.VolumeKeyReleased)
             advanceTimeBy(2.seconds)
             runCurrent()
 
@@ -161,7 +198,7 @@ class ZoomDelegateTest {
             trackZoom()
             setVolumeKeyAction(VolumeKeyAction.SHUTTER)
 
-            delegate.onVolumeKeyPressed(ZoomDirection.IN)
+            delegate.onAction(ZoomAction.VolumeKeyPressed(ZoomDirection.IN))
             advanceTimeBy(2.seconds)
             runCurrent()
 
@@ -175,7 +212,7 @@ class ZoomDelegateTest {
             val acknowledged = CompletableDeferred<Unit>()
             coEvery { control.animateZoomRatio(2f) } coAnswers { acknowledged.await() }
             trackZoom()
-            delegate.onPresetSelected(ratio = 2f)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
             coVerify(exactly = 1) { control.animateZoomRatio(2f) }
             assertFalse(stateHolder.state.value.zoom.isExpanded)
             assertEquals(2f, stateHolder.state.value.zoom.pendingPreset?.ratio)
@@ -203,12 +240,12 @@ class ZoomDelegateTest {
                 }
             }
             trackZoom()
-            delegate.onPresetSelected(ratio = 2f)
-            delegate.onPresetSelected(ratio = 8f)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 8f))
             runCurrent()
 
             assertEquals(listOf(2f), cancelled)
-            delegate.onRatioChanged(ratio = 1.5f)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 1.5f))
             runCurrent()
 
             assertEquals(listOf(2f, 8f), cancelled)
@@ -222,12 +259,12 @@ class ZoomDelegateTest {
         runTest {
             coEvery { control.animateZoomRatio(any()) } coAnswers { awaitCancellation() }
             val collection = trackZoom()
-            delegate.onPresetSelected(ratio = 2f)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
             val previous = stateHolder.state.value.zoom.pendingPreset
             collection.cancel()
             delegate.onScreenPaused()
             trackZoom()
-            delegate.onPresetSelected(ratio = 2f)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
             runCurrent()
 
             assertTrue(stateHolder.state.value.zoom.pendingPreset != previous)
@@ -246,7 +283,7 @@ class ZoomDelegateTest {
             }
             trackZoom()
             val previous = stateHolder.state.value.zoom.value
-            delegate.onPresetSelected(ratio = 2f)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
 
             cameraZoom = null
             detached.complete(Unit)
@@ -261,8 +298,8 @@ class ZoomDelegateTest {
     fun ratioRequests_areClampedToTheAttachedCamerasRange() {
         runTest {
             trackZoom()
-            delegate.onRatioChanged(ratio = 100f)
-            delegate.onRatioChanged(ratio = 0.1f)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 100f))
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 0.1f))
 
             verifyOrder {
                 control.setZoomRatio(8f)
@@ -275,13 +312,13 @@ class ZoomDelegateTest {
     fun restingAFingerOnTheControl_holdsThePanelUntilTwoSecondsAfterRelease() {
         runTest {
             trackZoom()
-            delegate.onExpanded()
+            delegate.onAction(ZoomAction.Expanded)
             advanceTimeBy(1.seconds)
-            delegate.onControlPressChanged(isPressed = true)
+            delegate.onAction(ZoomAction.ControlPressChanged(isPressed = true))
             advanceTimeBy(10.seconds)
             assertTrue(stateHolder.state.value.zoom.isExpanded)
 
-            delegate.onControlPressChanged(isPressed = false)
+            delegate.onAction(ZoomAction.ControlPressChanged(isPressed = false))
             advanceTimeBy(1999.milliseconds)
             assertTrue(stateHolder.state.value.zoom.isExpanded)
             advanceTimeBy(1.milliseconds)
@@ -295,9 +332,9 @@ class ZoomDelegateTest {
     fun previewPinch_accumulatesRatiosAndHoldsThePanelUntilTheGestureEnds() {
         runTest {
             trackZoom()
-            delegate.onPreviewPinchStarted()
-            delegate.onPreviewPinchScaleChanged(scaleFactor = 1.5f)
-            delegate.onPreviewPinchScaleChanged(scaleFactor = 0.5f)
+            delegate.onAction(ZoomAction.PreviewPinchStarted)
+            delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 1.5f))
+            delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 0.5f))
             advanceTimeBy(10.seconds)
 
             verifyOrder {
@@ -306,7 +343,7 @@ class ZoomDelegateTest {
             }
             assertTrue(stateHolder.state.value.zoom.isExpanded)
 
-            delegate.onPreviewPinchFinished()
+            delegate.onAction(ZoomAction.PreviewPinchFinished)
             advanceTimeBy(2.seconds)
             runCurrent()
 
@@ -318,9 +355,9 @@ class ZoomDelegateTest {
     fun anotherInteractionAtTheSameRatio_restartsTheCollapseDelay() {
         runTest {
             trackZoom()
-            delegate.onExpanded()
+            delegate.onAction(ZoomAction.Expanded)
             advanceTimeBy(1.5.seconds)
-            delegate.onRatioChanged(ratio = 1f)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 1f))
             advanceTimeBy(1.seconds)
             assertTrue(stateHolder.state.value.zoom.isExpanded)
 
@@ -335,12 +372,12 @@ class ZoomDelegateTest {
         runTest {
             trackZoom(dispatcher = StandardTestDispatcher(testScheduler))
             runCurrent()
-            delegate.onExpanded()
+            delegate.onAction(ZoomAction.Expanded)
             runCurrent()
             advanceTimeBy(1.5.seconds)
             changePreview { state -> state.copy(isPreviewFlashVisible = true) }
             changePreview { state -> state.copy(isPreviewFlashVisible = false) }
-            delegate.onExpanded()
+            delegate.onAction(ZoomAction.Expanded)
             runCurrent()
             advanceTimeBy(1.seconds)
             assertTrue(stateHolder.state.value.zoom.isExpanded)
@@ -378,7 +415,7 @@ class ZoomDelegateTest {
 
                 assertFalse(stateHolder.state.value.zoom.isExpanded)
                 assertFalse(stateHolder.state.value.zoom.isControlPressed)
-                delegate.onRatioChanged(ratio = 2f)
+                delegate.onAction(ZoomAction.RatioChanged(ratio = 2f))
             }
 
             verify(exactly = 0) { control.setZoomRatio(any()) }
@@ -389,7 +426,7 @@ class ZoomDelegateTest {
     fun newlyAttachedCamera_keepsThePanelAndTheOngoingPinch() {
         runTest {
             trackZoom()
-            delegate.onPreviewPinchStarted()
+            delegate.onAction(ZoomAction.PreviewPinchStarted)
             cameraZoom = cameraZoom?.copy(
                 minZoomRatio = 1f,
                 maxZoomRatio = 4f,
@@ -407,7 +444,7 @@ class ZoomDelegateTest {
     fun aPinchDuringAModeSwitch_keepsZoomingAndAppliesTheLatestRatioToTheNewBinding() {
         runTest {
             trackZoom()
-            delegate.onPreviewPinchStarted()
+            delegate.onAction(ZoomAction.PreviewPinchStarted)
             cameraZoom = null
             changePreview { state ->
                 state.copy(
@@ -418,8 +455,8 @@ class ZoomDelegateTest {
                     ),
                 )
             }
-            delegate.onPreviewPinchScaleChanged(scaleFactor = 1.5f)
-            delegate.onPreviewPinchScaleChanged(scaleFactor = 0.5f)
+            delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 1.5f))
+            delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 0.5f))
             verify(exactly = 0) { control.setZoomRatio(any()) }
             verify(exactly = 1) {
                 control.rememberZoomRatio(
@@ -441,7 +478,7 @@ class ZoomDelegateTest {
             assertEquals(0.5625f, stateHolder.state.value.zoom.value?.zoomRatio)
             assertTrue(stateHolder.state.value.zoom.isExpanded)
             assertTrue(stateHolder.state.value.zoom.isPreviewPinching)
-            delegate.onRatioChanged(ratio = 4f)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 4f))
             verify(exactly = 1) { control.setZoomRatio(4f) }
         }
     }
@@ -459,8 +496,8 @@ class ZoomDelegateTest {
                     ),
                 )
             }
-            delegate.onPresetSelected(ratio = 2f)
-            delegate.onRatioChanged(ratio = 3f)
+            delegate.onAction(ZoomAction.PresetSelected(ratio = 2f))
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 3f))
             events.emit(CameraZoomEvent.Changed)
             runCurrent()
             verify(exactly = 0) { control.setZoomRatio(any()) }
@@ -492,10 +529,10 @@ class ZoomDelegateTest {
     fun unavailableRangeAndInvalidInput_doNotReachTheCamera() {
         runTest {
             trackZoom()
-            delegate.onRatioChanged(ratio = Float.NaN)
-            delegate.onRatioChanged(ratio = Float.POSITIVE_INFINITY)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = Float.NaN))
+            delegate.onAction(ZoomAction.RatioChanged(ratio = Float.POSITIVE_INFINITY))
             listOf(0f, -1f, Float.NaN, Float.POSITIVE_INFINITY).forEach { factor ->
-                delegate.onPreviewPinchScaleChanged(scaleFactor = factor)
+                delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = factor))
             }
             cameraZoom = cameraZoom?.copy(
                 minZoomRatio = 1f,
@@ -503,8 +540,8 @@ class ZoomDelegateTest {
             )
             events.emit(CameraZoomEvent.Loaded)
             runCurrent()
-            delegate.onExpanded()
-            delegate.onRatioChanged(ratio = 1f)
+            delegate.onAction(ZoomAction.Expanded)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 1f))
 
             assertFalse(stateHolder.state.value.zoom.isExpanded)
             verify(exactly = 0) { control.setZoomRatio(any()) }
@@ -515,9 +552,9 @@ class ZoomDelegateTest {
     fun pause_clearsThePanelAndKeepsTheZoom() {
         runTest {
             val collection = trackZoom()
-            delegate.onRatioChanged(ratio = 2f)
+            delegate.onAction(ZoomAction.RatioChanged(ratio = 2f))
             cameraZoom = cameraZoom?.copy(zoomRatio = 2f)
-            delegate.onExpanded()
+            delegate.onAction(ZoomAction.Expanded)
             collection.cancel()
             delegate.onScreenPaused()
             advanceTimeBy(3.seconds)
@@ -529,6 +566,21 @@ class ZoomDelegateTest {
             assertEquals(2f, stateHolder.state.value.zoom.value?.zoomRatio)
             assertFalse(stateHolder.state.value.zoom.isExpanded)
             verify(exactly = 1) { control.setZoomRatio(2f) }
+        }
+    }
+
+    private fun selectExposure() {
+        val exposure = CameraExposure(
+            compensationIndex = 0,
+            compensationRange = -2..2,
+            compensationStep = 1f,
+            isCompensationSupported = true,
+        )
+        stateHolder.update { state ->
+            state.copy(
+                activeControl = PreviewControl.Exposure,
+                exposure = ExposureState(value = exposure),
+            )
         }
     }
 

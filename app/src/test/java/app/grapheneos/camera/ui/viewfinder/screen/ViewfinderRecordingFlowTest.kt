@@ -388,13 +388,11 @@ class ViewfinderRecordingFlowTest {
             modeDelegate = ViewfinderModeDelegateImpl(entryPoint = entryPoint),
             cameraDelegate = ViewfinderCameraDelegateImpl(
                 session = cameraSession,
-                exposureControl = mockk(relaxed = true),
                 torch = torch,
                 entryPoint = entryPoint,
                 resolveAvailableModes = mockk(relaxed = true),
                 resolveDroppedVideoQuality = mockk(relaxed = true),
             ),
-            cameraControlsDelegate = mockk(relaxed = true),
             captureDelegate = ViewfinderCaptureDelegateImpl(
                 captureImage = mockk(relaxed = true),
                 capturePreviewImage = mockk(relaxed = true),
@@ -418,7 +416,6 @@ class ViewfinderRecordingFlowTest {
             galleryDelegate = mockk(relaxed = true),
             dialogDelegate = mockk(relaxed = true),
             modeSwitchDelegate = mockk(relaxed = true),
-            previewControlsDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,

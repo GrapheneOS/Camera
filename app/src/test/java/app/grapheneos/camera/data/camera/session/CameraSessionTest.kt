@@ -4,6 +4,7 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -11,7 +12,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.MutableLiveData
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapperImpl
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
@@ -33,10 +37,12 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
+import io.mockk.verifyOrder
 import io.mockk.verifySequence
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -60,11 +66,23 @@ class CameraSessionTest {
     private val cameraControl = mockk<CameraControl>(relaxed = true)
     private val focusControl = mockk<FocusControl>(relaxed = true)
     private val zoomControl = mockk<ZoomControl>(relaxed = true)
+    private val exposure = MutableStateFlow<CameraExposure?>(
+        CameraExposure(
+            compensationIndex = 0,
+            compensationRange = -12..12,
+            compensationStep = 1f / 6f,
+            isCompensationSupported = true,
+        ),
+    )
+    private val exposureControl = mockk<ExposureControl>(relaxed = true) {
+        every { exposure } returns this@CameraSessionTest.exposure
+    }
 
     private val sceneLightControl = mockk<SceneLightControl>(relaxed = true)
 
     private val cameraInfo = mockk<CameraInfo>(relaxed = true) {
         every { zoomState } returns zoomStates
+        every { hasFlashUnit() } returns true
     }
 
     private val camera = mockk<Camera>(relaxed = true) {
@@ -231,14 +249,79 @@ class CameraSessionTest {
     }
 
     @Test
+    fun photoExposure_suppressesFlashUntilCompensationReturnsToZero() {
+        runTest {
+            val session = boundSession(PHOTO_SETTINGS)
+            val imageCapture = mockk<ImageCapture>(relaxed = true)
+            session.imageCapture = imageCapture
+            runCurrent()
+            session.setFlashMode(FlashMode.ON)
+            verify { imageCapture.flashMode = ImageCapture.FLASH_MODE_ON }
+            clearMocks(imageCapture)
+
+            exposure.value = exposure.value?.copy(compensationIndex = 3)
+            runCurrent()
+
+            assertEquals(true, session.boundCamera.value?.isExposureCompensated)
+            verify(exactly = 1) { imageCapture.flashMode = ImageCapture.FLASH_MODE_OFF }
+
+            exposure.value = exposure.value?.copy(compensationIndex = -3)
+            runCurrent()
+            exposure.value = exposure.value?.copy(compensationIndex = 0)
+            runCurrent()
+
+            assertEquals(false, session.boundCamera.value?.isExposureCompensated)
+            verifySequence {
+                imageCapture.flashMode = ImageCapture.FLASH_MODE_OFF
+                imageCapture.flashMode = ImageCapture.FLASH_MODE_ON
+            }
+        }
+    }
+
+    @Test
+    fun lowLightBoost_staysSelectedDuringCompensationUntilTurnedOff() {
+        runTest {
+            every { cameraInfo.isLowLightBoostSupported } returns true
+            val session = boundSession(PHOTO_SETTINGS)
+            runCurrent()
+            clearMocks(sceneLightControl, answers = false)
+
+            session.setFlashMode(FlashMode.LOW_LIGHT_BOOST)
+            exposure.value = exposure.value?.copy(compensationIndex = 3)
+            runCurrent()
+
+            verify(exactly = 0) { sceneLightControl.setFlashMode(FlashMode.OFF) }
+
+            session.setFlashMode(FlashMode.OFF)
+
+            verify(exactly = 1) { sceneLightControl.setFlashMode(FlashMode.OFF) }
+        }
+    }
+
+    @Test
+    fun videoLight_staysSelectedDuringCompensation() {
+        runTest {
+            val session = boundSession(VIDEO_SETTINGS)
+            runCurrent()
+            clearMocks(sceneLightControl, answers = false)
+
+            session.setFlashMode(FlashMode.ON)
+            exposure.value = exposure.value?.copy(compensationIndex = 3)
+            runCurrent()
+
+            verify(atLeast = 1) { sceneLightControl.setFlashMode(FlashMode.ON) }
+            verify(exactly = 0) { sceneLightControl.setFlashMode(FlashMode.OFF) }
+        }
+    }
+
+    @Test
     fun bind_attachesTheSceneLightToTheBoundCamera() {
         runTest {
             val session = boundSession(VIDEO_SETTINGS)
 
             session.setFlashMode(FlashMode.ON)
 
-            verifySequence {
-                sceneLightControl.detach()
+            verifyOrder {
                 sceneLightControl.attach(
                     control = cameraControl,
                     boundCamera = match { boundCamera -> boundCamera.isVideoMode },
@@ -255,8 +338,7 @@ class CameraSessionTest {
 
             session.unbind()
 
-            verifySequence {
-                sceneLightControl.detach()
+            verifyOrder {
                 sceneLightControl.attach(control = cameraControl, boundCamera = any())
                 sceneLightControl.detach()
             }
@@ -270,8 +352,7 @@ class CameraSessionTest {
 
             session.bind(VIDEO_SETTINGS)
 
-            verifySequence {
-                sceneLightControl.detach()
+            verifyOrder {
                 sceneLightControl.attach(control = cameraControl, boundCamera = any())
                 sceneLightControl.detach()
                 sceneLightControl.attach(control = cameraControl, boundCamera = any())
@@ -294,9 +375,11 @@ class CameraSessionTest {
             videoBitrateSupport = mockk(relaxed = true),
             lowLightBoostSupport = mockk(relaxed = true),
             videoQualitySupport = mockk(relaxed = true),
-            cameraXConstantsMapper = mockk(relaxed = true),
+            cameraXConstantsMapper = CameraXConstantsMapperImpl(),
+            flashMapper = CameraFlashMapperImpl(),
             zoomControl = zoomControl,
             focusControl = focusControl,
+            exposureControl = exposureControl,
             sceneLightControl = sceneLightControl,
             mainDispatcher = dispatcher,
             qrAnalysisDispatcher = dispatcher,

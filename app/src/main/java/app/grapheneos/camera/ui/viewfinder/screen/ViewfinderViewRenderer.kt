@@ -5,17 +5,13 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
 import android.widget.ImageView
-import androidx.annotation.IdRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
-import androidx.transition.Fade
-import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.LensFacing
@@ -25,7 +21,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
@@ -74,7 +69,6 @@ internal class ViewfinderViewRenderer(
         renderThirdOption(state.thirdOption)
         renderSelfTimer(state.selfTimer)
         renderRecording(state.recording)
-        renderExposure(state.exposure)
         renderKeepScreenOn(state.keepScreenOn)
         renderSelfIllumination(state.isSelfIlluminating)
         renderRotation(state.iconRotationDegrees)
@@ -228,36 +222,6 @@ internal class ViewfinderViewRenderer(
         activity.timerView.text = recording.timerText
     }
 
-    private fun renderExposure(exposure: ExposureUiModel) {
-        activity.exposureBar.render(exposure)
-        renderPanel(
-            panel = activity.exposureBarPanel,
-            visible = exposure.panelVisible,
-            fadeTarget = R.id.exposure_bar,
-        )
-    }
-
-    private fun renderPanel(
-        panel: View,
-        visible: Boolean,
-        @IdRes fadeTarget: Int,
-    ) {
-        val visibility = visibleOrGone(visible)
-        if (panel.visibility == visibility) return
-
-        val transition = Fade().addTarget(fadeTarget)
-        transition.duration = when {
-            visible -> 0L
-            else -> PANEL_FADE_OUT_DURATION
-        }
-
-        TransitionManager.beginDelayedTransition(
-            activity.window.decorView.rootView as ViewGroup,
-            transition,
-        )
-        panel.visibility = visibility
-    }
-
     private fun renderKeepScreenOn(keepScreenOn: Boolean) {
         if (keepScreenOn == renderedKeepScreenOn) return
         renderedKeepScreenOn = keepScreenOn
@@ -392,8 +356,6 @@ internal class ViewfinderViewRenderer(
             activity.flipCameraCircle,
             activity.cancelButtonView,
             activity.thirdOption,
-            activity.binding.exposurePlusIcon,
-            activity.binding.exposureNegIcon,
             activity.micOffIcon,
             activity.muteToggle,
         )
@@ -439,7 +401,6 @@ internal class ViewfinderViewRenderer(
     private companion object {
         private const val ROTATION_DURATION = 400L
         private const val SELF_ILLUMINATION_DURATION = 300L
-        private const val PANEL_FADE_OUT_DURATION = 300L
         private const val LENS_SWITCH_DURATION = 400L
         private const val HALF_TURN_DEGREES = 180f
     }

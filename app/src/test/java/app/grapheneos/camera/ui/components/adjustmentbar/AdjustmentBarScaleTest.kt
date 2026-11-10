@@ -43,11 +43,26 @@ class AdjustmentBarScaleTest {
         assertEquals(0, scale.nearestTick(position = -1f))
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun scale_withoutSteps_isRejected() {
-        AdjustmentBarScale(
+    @Test
+    fun scale_withoutIntermediateSteps_usesOnlyTheTwoEnds() {
+        val scale = AdjustmentBarScale(
             valueRange = 0f..1f,
             steps = 0,
+            majorTickInterval = 4,
+        )
+
+        assertEquals(1, scale.lastTick)
+        assertEquals(0f, scale.value(position = 0f))
+        assertEquals(1f, scale.value(position = 1f))
+        assertEquals(0, scale.tickOf(value = 0.4f))
+        assertEquals(1, scale.tickOf(value = 0.6f))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun scale_withNegativeSteps_isRejected() {
+        AdjustmentBarScale(
+            valueRange = 0f..1f,
+            steps = -1,
             majorTickInterval = 4,
         )
     }

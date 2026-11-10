@@ -13,21 +13,24 @@ internal sealed interface PreviewOverlaysAction {
         data object ScreenPaused : LifecycleAction
     }
 
-    sealed interface PreviewAction : PreviewOverlaysAction {
+    sealed interface FocusAction : PreviewOverlaysAction {
 
-        data object FocusKeyPressed : PreviewAction
+        data object FocusKeyPressed : FocusAction
 
-        data object PreviewTapped : PreviewAction
+        data object PreviewTapped : FocusAction
 
-        data object PreviewLongPressed : PreviewAction
+        data object PreviewLongPressed : FocusAction
 
-        data object PreviewGestureStarted : PreviewAction
+        data object PreviewGestureStarted : FocusAction
 
         data class PreviewPressed(
             val x: Float,
             val y: Float,
             val hitRadius: Float,
-        ) : PreviewAction
+        ) : FocusAction
+    }
+
+    sealed interface PreviewAction : PreviewOverlaysAction {
 
         data class DisplayRotationChanged(
             val rotation: DeviceOrientation,
@@ -40,6 +43,19 @@ internal sealed interface PreviewOverlaysAction {
         data class PreviewFlashVisibilityChanged(
             val visible: Boolean,
         ) : PreviewAction
+    }
+
+    sealed interface ExposureAction : PreviewOverlaysAction {
+
+        data object ResetClicked : ExposureAction
+
+        data class ValueChanged(
+            val value: Float,
+        ) : ExposureAction
+
+        data class PressChanged(
+            val isPressed: Boolean,
+        ) : ExposureAction
     }
 
     sealed interface ZoomAction : PreviewOverlaysAction {

@@ -1,10 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.ExposureControl
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -61,7 +59,6 @@ class ViewfinderCameraDelegateTest {
         thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
     private val session = mockk<CameraSession>(relaxed = true)
-    private val exposureControl = mockk<ExposureControl>(relaxed = true)
     private val torch = mockk<TorchControl>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
     private val resolveDroppedVideoQuality = mockk<ResolveDroppedVideoQuality>()
@@ -187,16 +184,6 @@ class ViewfinderCameraDelegateTest {
         delegate.announceBind()
 
         assertEquals(modes, stateHolder.state.value.session.availableModes)
-    }
-
-    @Test
-    fun announceBind_publishesTheBoundCamerasExposure() {
-        every { exposureControl.exposure } returns EXPOSURE
-
-        val delegate = createAttachedDelegate(showsCameraModeTabs = false)
-        delegate.announceBind()
-
-        assertEquals(EXPOSURE, stateHolder.state.value.session.exposure)
     }
 
     @Test
@@ -388,7 +375,6 @@ class ViewfinderCameraDelegateTest {
     ): ViewfinderCameraDelegate {
         val delegate = ViewfinderCameraDelegateImpl(
             session = session,
-            exposureControl = exposureControl,
             torch = torch,
             entryPoint = cameraEntryPoint(showsCameraModeTabs = showsCameraModeTabs),
             resolveAvailableModes = resolveAvailableModes,
@@ -409,11 +395,6 @@ class ViewfinderCameraDelegateTest {
     }
 
     private companion object {
-        val EXPOSURE = CameraExposure(
-            compensationIndex = 1,
-            compensationRange = -12..12,
-        )
-
         const val SENSOR_ORIENTATION = 90
         const val QR_TEXT = "https://grapheneos.org"
     }

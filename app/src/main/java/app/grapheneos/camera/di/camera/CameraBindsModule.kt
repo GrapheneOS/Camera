@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.camera
 
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapper
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapperImpl
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
@@ -8,6 +10,8 @@ import app.grapheneos.camera.data.camera.mapper.RecordingEventMapper
 import app.grapheneos.camera.data.camera.mapper.RecordingEventMapperImpl
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapper
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapperImpl
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.CameraProviderSourceImpl
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
@@ -96,6 +100,18 @@ internal abstract class CameraBindsModule {
     abstract fun bindCameraFeatureSupport(
         impl: CameraFeatureSupportImpl,
     ): CameraFeatureSupport
+
+    @Binds
+    @Reusable
+    abstract fun bindCameraFlashMapper(
+        impl: CameraFlashMapperImpl,
+    ): CameraFlashMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindVideoQualityMapper(
+        impl: VideoQualityMapperImpl,
+    ): VideoQualityMapper
 
     @Binds
     @Reusable

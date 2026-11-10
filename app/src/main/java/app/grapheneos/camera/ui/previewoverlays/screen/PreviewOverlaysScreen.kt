@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.previewoverlays.screen
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,15 +22,17 @@ import app.grapheneos.camera.ui.components.compositiongrid.CompositionGrid
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
+import app.grapheneos.camera.ui.previewoverlays.components.PreviewControls
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewFocus
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewLayer
 import app.grapheneos.camera.ui.previewoverlays.components.PreviewLevel
-import app.grapheneos.camera.ui.previewoverlays.components.PreviewZoom
 import app.grapheneos.camera.ui.previewoverlays.components.SelfTimerCountdown
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.FocusUiModel
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 private val CONTROLS_GAP = 24.dp
@@ -68,39 +71,50 @@ private fun PreviewOverlaysContent(
     modifier: Modifier = Modifier,
     onAction: (Action) -> Unit = {},
 ) {
-    val gridPattern = uiState.gridPattern
-    val focus = uiState.focus
-    val selfTimerRemaining = uiState.selfTimerRemaining
-
     Box(modifier = modifier.fillMaxSize()) {
-        PreviewLayer(bounds = previewBounds) {
-            gridPattern?.let { pattern ->
-                CompositionGrid(
-                    pattern = pattern,
-                    modifier = Modifier.matchParentSize(),
-                )
-            }
-            PreviewLevel(
-                level = level,
-                modifier = Modifier.align(Alignment.Center),
+        PreviewIndicators(
+            gridPattern = uiState.gridPattern,
+            focus = uiState.focus,
+            selfTimerRemaining = uiState.selfTimerRemaining,
+            level = level,
+            previewBounds = previewBounds,
+        )
+        PreviewControls(
+            control = uiState.control,
+            onAction = onAction,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = shutterRowInset + CONTROLS_GAP),
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.PreviewIndicators(
+    gridPattern: CompositionGridPattern?,
+    focus: FocusUiModel?,
+    selfTimerRemaining: Duration?,
+    level: State<LevelUiState>,
+    previewBounds: DpRect,
+) {
+    PreviewLayer(bounds = previewBounds) {
+        gridPattern?.let { pattern ->
+            CompositionGrid(
+                pattern = pattern,
+                modifier = Modifier.matchParentSize(),
             )
-            focus?.let { visibleFocus ->
-                PreviewFocus(focus = visibleFocus)
-            }
-            selfTimerRemaining?.let { remaining ->
-                SelfTimerCountdown(
-                    remaining = remaining,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
         }
-        uiState.zoom?.let { zoom ->
-            PreviewZoom(
-                zoom = zoom,
-                onAction = onAction,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = shutterRowInset + CONTROLS_GAP),
+        PreviewLevel(
+            level = level,
+            modifier = Modifier.align(Alignment.Center),
+        )
+        focus?.let { visibleFocus ->
+            PreviewFocus(focus = visibleFocus)
+        }
+        selfTimerRemaining?.let { remaining ->
+            SelfTimerCountdown(
+                remaining = remaining,
+                modifier = Modifier.align(Alignment.Center),
             )
         }
     }

@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import android.net.Uri
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -15,12 +14,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
-import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
@@ -527,37 +524,18 @@ class ViewfinderUiStateMapperTest {
             session = ViewfinderSessionState(
                 sensorOrientationDegrees = 270,
                 availableModes = modes,
-                exposure = CameraExposure(
-                    compensationIndex = 3,
-                    compensationRange = -12..12,
-                ),
             ),
         )
 
         assertEquals(270, state.preview.sensorOrientationDegrees)
         assertEquals(modes, state.modeTabs.availableModes)
-        assertEquals(ExposureUiModel(range = -12..12, progress = 3), state.exposure)
     }
 
     @Test
-    fun cameraState_beforeTheCameraIsBound_showsNoExposure() {
+    fun cameraState_beforeTheCameraIsBound_hasNoSensorOrientation() {
         val state = map()
 
-        assertNull(state.exposure.range)
         assertNull(state.preview.sensorOrientationDegrees)
-    }
-
-    @Test
-    fun exposurePanel_followsItsState() {
-        val state = mapper.map(
-            ViewfinderState(
-                mode = CameraMode.CAMERA,
-                requiresVideoModeOnly = false,
-                previewControls = ViewfinderPreviewControlsState(isExposurePanelShown = true),
-            ),
-        )
-
-        assertTrue(state.exposure.panelVisible)
     }
 
     @Test

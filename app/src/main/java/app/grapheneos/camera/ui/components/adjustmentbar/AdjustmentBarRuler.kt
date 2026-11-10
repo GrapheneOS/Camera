@@ -14,11 +14,14 @@ internal fun DrawScope.drawAdjustmentBar(
     scale: AdjustmentBarScale,
     window: RulerWindow,
     isFocused: Boolean,
+    showContainer: Boolean,
     tint: AdjustmentBarTint,
     metrics: RulerMetrics,
     colors: AdjustmentBarColors,
 ) {
-    drawRulerContainer(color = colors.containerColor)
+    if (showContainer) {
+        drawRulerContainer(color = colors.containerColor)
+    }
     tint.draw(
         drawScope = this,
         position = position,

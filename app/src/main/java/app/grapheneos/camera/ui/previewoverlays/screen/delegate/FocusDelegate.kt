@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.core.screen.StateHolder
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.FocusAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPhase
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPress
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusSelection
@@ -29,19 +30,7 @@ internal interface FocusDelegate {
         current: PreviewOverlaysState,
     ): FocusState
 
-    fun onPreviewPressed(
-        x: Float,
-        y: Float,
-        hitRadius: Float,
-    )
-
-    fun onPreviewTapped()
-
-    fun onPreviewLongPressed()
-
-    fun onPreviewGestureStarted()
-
-    fun cancelFocus()
+    fun onAction(action: FocusAction)
 
     fun onScreenPaused()
 
@@ -59,6 +48,7 @@ internal class FocusDelegateImpl @Inject constructor(
         get() = stateHolder.state.value
 
     private var lastRequestId = 0L
+    private var activeRequestId: Long? = null
 
     override fun bind(stateHolder: StateHolder<PreviewOverlaysState>) {
         this.stateHolder = stateHolder
@@ -75,12 +65,26 @@ internal class FocusDelegateImpl @Inject constructor(
         }
     }
 
-    override fun onPreviewPressed(
+    override fun onAction(action: FocusAction) {
+        when (action) {
+            is FocusAction.FocusKeyPressed -> cancelFocus()
+            is FocusAction.PreviewTapped -> onPreviewTapped()
+            is FocusAction.PreviewLongPressed -> onPreviewLongPressed()
+            is FocusAction.PreviewGestureStarted -> onPreviewGestureStarted()
+            is FocusAction.PreviewPressed -> onPreviewPressed(
+                x = action.x,
+                y = action.y,
+                hitRadius = action.hitRadius,
+            )
+        }
+    }
+
+    private fun onPreviewPressed(
         x: Float,
         y: Float,
         hitRadius: Float,
     ) {
-        if (!state.isFocusAvailable()) return
+        if (!state.isPreviewInputAvailable()) return
 
         val selection = state.focus.selection
         val isOnRing = selection != null && selection.visible &&
@@ -102,7 +106,7 @@ internal class FocusDelegateImpl @Inject constructor(
         updateFocus { focus -> focus.copy(press = press) }
     }
 
-    override fun onPreviewTapped() {
+    private fun onPreviewTapped() {
         when (val press = takePress()) {
             null -> Unit
             is FocusPress.OnRing -> cancelFocus()
@@ -113,7 +117,7 @@ internal class FocusDelegateImpl @Inject constructor(
         }
     }
 
-    override fun onPreviewLongPressed() {
+    private fun onPreviewLongPressed() {
         when (val press = takePress()) {
             null -> Unit
             is FocusPress.OnRing -> lockFocus(press)
@@ -124,17 +128,17 @@ internal class FocusDelegateImpl @Inject constructor(
         }
     }
 
-    override fun onPreviewGestureStarted() {
+    private fun onPreviewGestureStarted() {
         updateFocus { focus -> focus.copy(press = null) }
     }
 
-    override fun cancelFocus() {
-        focusControl.cancel()
+    private fun cancelFocus() {
+        cancelMetering()
         updateFocus { focus -> focus.hidden() }
     }
 
     override fun onScreenPaused() {
-        focusControl.cancel()
+        cancelMetering()
         updateFocus { FocusState() }
     }
 
@@ -160,8 +164,13 @@ internal class FocusDelegateImpl @Inject constructor(
                         selection.copy(phase = FocusPhase.Locked)
                     }
 
-                    is CameraFocusEvent.Cancelled -> updateSelection(event.requestId) { selection ->
-                        selection.copy(visible = false)
+                    is CameraFocusEvent.Cancelled -> {
+                        if (activeRequestId == event.requestId) {
+                            activeRequestId = null
+                        }
+                        updateSelection(event.requestId) { selection ->
+                            selection.copy(visible = false)
+                        }
                     }
                 }
             }
@@ -177,11 +186,20 @@ internal class FocusDelegateImpl @Inject constructor(
             }
             .distinctUntilChanged()
             .filterNotNull()
-            .collect { focusControl.cancel() }
+            .collect { requestId ->
+                if (activeRequestId == requestId) {
+                    cancelMetering()
+                }
+            }
+    }
+
+    private fun cancelMetering() {
+        activeRequestId = null
+        focusControl.cancel()
     }
 
     private fun takePress(): FocusPress? {
-        val press = state.focus.press?.takeIf { state.isFocusAvailable() }
+        val press = state.focus.press?.takeIf { state.isPreviewInputAvailable() }
         updateFocus { focus -> focus.copy(press = null) }
         return press
     }
@@ -203,6 +221,7 @@ internal class FocusDelegateImpl @Inject constructor(
         press: FocusPress.NewPoint,
         isLocked: Boolean,
     ) {
+        activeRequestId = press.requestId
         updateFocus {
             FocusState(
                 selection = FocusSelection(

@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_HIGH_ICON
 import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_LOW_ICON
 import app.grapheneos.camera.ui.core.theme.CameraTheme
+import io.mockk.mockk
+import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlin.math.sign
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -45,11 +48,82 @@ class AdjustmentBarTest {
 
     private var value by mutableFloatStateOf(0f)
     private var enabled by mutableStateOf(true)
+    private var visible by mutableStateOf(true)
     private var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
     private var touchSlop = 0f
     private var longPressTimeoutMillis = 0L
     private val changes = mutableListOf<Float>()
+    private var onPressChanged by mutableStateOf(mockk<(Boolean) -> Unit>(relaxed = true))
     private var finishes = 0
+
+    @Test
+    fun adjustmentBar_heldWithoutDragging_reportsThePressUntilRelease() {
+        setContent()
+
+        bar().performTouchInput { down(center) }
+        composeRule.mainClock.advanceTimeBy(3000)
+        composeRule.runOnIdle {
+            verify(exactly = 1) { onPressChanged(true) }
+            verify(exactly = 0) { onPressChanged(false) }
+            assertEquals(emptyList<Float>(), changes)
+        }
+        bar().performTouchInput { up() }
+
+        verify(exactly = 1) { onPressChanged(false) }
+    }
+
+    @Test
+    fun adjustmentBar_removedWhilePressed_endsThePress() {
+        setContent()
+
+        bar().performTouchInput { down(center) }
+        composeRule.runOnIdle { visible = false }
+        composeRule.waitForIdle()
+
+        verifyOrder {
+            onPressChanged(true)
+            onPressChanged(false)
+        }
+    }
+
+    @Test
+    fun adjustmentBar_callbackChangedDuringAPress_releasesOnlyTheNewCallback() {
+        val original = onPressChanged
+        val updated = mockk<(Boolean) -> Unit>(relaxed = true)
+        setContent()
+
+        bar().performTouchInput { down(center) }
+        composeRule.runOnIdle { onPressChanged = updated }
+        composeRule.waitForIdle()
+        verify(exactly = 0) { updated(any()) }
+
+        bar().performTouchInput { up() }
+
+        verify(exactly = 1) {
+            original(true)
+            updated(false)
+        }
+        verify(exactly = 0) {
+            original(false)
+            updated(true)
+        }
+    }
+
+    @Test
+    fun adjustmentBar_multiplePointers_endsThePressWhenTheLastOneIsReleased() {
+        setContent()
+
+        bar().performTouchInput {
+            down(pointerId = 0, position = center)
+            down(pointerId = 1, position = centerRight)
+            up(pointerId = 0)
+        }
+        verify(exactly = 1) { onPressChanged(true) }
+        verify(exactly = 0) { onPressChanged(false) }
+        bar().performTouchInput { up(pointerId = 1) }
+
+        verify(exactly = 1) { onPressChanged(false) }
+    }
 
     @Test
     fun adjustmentBar_reportsItsRange() {
@@ -96,6 +170,10 @@ class AdjustmentBarTest {
         composeRule.runOnIdle {
             assertEquals(listOf(1f, 2f), changes)
             assertEquals(1, finishes)
+            verifyOrder {
+                onPressChanged(true)
+                onPressChanged(false)
+            }
         }
     }
 
@@ -132,6 +210,7 @@ class AdjustmentBarTest {
 
         bar().assertIsNotEnabled()
         assertEquals(emptyList<Float>(), changes)
+        verify(exactly = 0) { onPressChanged(any()) }
     }
 
     @Test
@@ -155,6 +234,7 @@ class AdjustmentBarTest {
 
         assertEquals(listOf(1f), changes)
         assertEquals(1, finishes)
+        verify(exactly = 0) { onPressChanged(any()) }
     }
 
     @Test
@@ -235,6 +315,7 @@ class AdjustmentBarTest {
         tapIcon(atLeft = true)
 
         assertEquals(emptyList<Float>(), changes)
+        verify(exactly = 0) { onPressChanged(any()) }
     }
 
     @Test
@@ -246,7 +327,12 @@ class AdjustmentBarTest {
             bar().performTouchInput { down(Offset(x = width - height / 2f, y = centerY)) }
             composeRule.mainClock.advanceTimeBy(longPressTimeoutMillis + BEFORE_REPEAT_MILLIS)
             enabled = false
+            composeRule.mainClock.advanceTimeByFrame()
             composeRule.waitForIdle()
+            verifyOrder {
+                onPressChanged(true)
+                onPressChanged(false)
+            }
             composeRule.mainClock.advanceTimeBy(TWO_REPEATS_MILLIS)
             bar().performTouchInput { up() }
         } finally {
@@ -262,20 +348,23 @@ class AdjustmentBarTest {
             longPressTimeoutMillis = LocalViewConfiguration.current.longPressTimeoutMillis
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 CameraTheme {
-                    AdjustmentBar(
-                        value = value,
-                        onValueChange = { newValue ->
-                            changes += newValue
-                            value = newValue
-                        },
-                        valueRange = -12f..12f,
-                        steps = 23,
-                        modifier = Modifier.testTag(TAG),
-                        enabled = enabled,
-                        startIcon = PREVIEW_BRIGHTNESS_LOW_ICON,
-                        endIcon = PREVIEW_BRIGHTNESS_HIGH_ICON,
-                        onValueChangeFinished = { finishes += 1 },
-                    )
+                    if (visible) {
+                        AdjustmentBar(
+                            value = value,
+                            onValueChange = { newValue ->
+                                changes += newValue
+                                value = newValue
+                            },
+                            valueRange = -12f..12f,
+                            steps = 23,
+                            modifier = Modifier.testTag(TAG),
+                            enabled = enabled,
+                            startIcon = PREVIEW_BRIGHTNESS_LOW_ICON,
+                            endIcon = PREVIEW_BRIGHTNESS_HIGH_ICON,
+                            onValueChangeFinished = { finishes += 1 },
+                            onPressChanged = onPressChanged,
+                        )
+                    }
                 }
             }
         }

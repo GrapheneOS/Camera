@@ -1,6 +1,7 @@
 package app.grapheneos.camera.domain.capture.usecase
 
 import android.location.Location
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.takePicture
 import app.grapheneos.camera.data.camera.session.CameraSession
@@ -32,7 +33,16 @@ internal class CaptureImageImpl @Inject constructor(
         needsThumbnail: () -> Boolean,
         onEvent: (CapturedImageEvent) -> Unit,
     ) {
-        val imageCapture = cameraSession.imageCapture ?: return
+        val imageCapture = cameraSession.imageCapture
+        if (imageCapture == null) {
+            val notBound = ImageCaptureException(
+                ImageCapture.ERROR_INVALID_CAMERA,
+                NOT_BOUND_MESSAGE,
+                null,
+            )
+            onEvent(captureFailed(notBound))
+            return
+        }
 
         val reversedHorizontal = cameraSession.lensFacing == LensFacing.FRONT &&
             request.saveAsPreviewed
@@ -52,15 +62,18 @@ internal class CaptureImageImpl @Inject constructor(
         val image = try {
             imageCapture.takePicture()
         } catch (exception: ImageCaptureException) {
-            val failure = CapturedImageEvent.CaptureFailed(
-                errorCode = exception.imageCaptureError,
-                cause = exception,
-            )
-            onEvent(failure)
+            onEvent(captureFailed(exception))
             return
         }
 
         imageSaver.onCaptureSuccess(image)
+    }
+
+    private fun captureFailed(exception: ImageCaptureException): CapturedImageEvent {
+        return CapturedImageEvent.CaptureFailed(
+            errorCode = exception.imageCaptureError,
+            cause = exception,
+        )
     }
 
     private suspend fun location(
@@ -76,5 +89,9 @@ internal class CaptureImageImpl @Inject constructor(
                 null
             }
         }
+    }
+
+    private companion object {
+        private const val NOT_BOUND_MESSAGE = "No image capture is bound"
     }
 }

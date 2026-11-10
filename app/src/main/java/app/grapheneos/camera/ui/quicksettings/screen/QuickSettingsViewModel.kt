@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.quicksettings.screen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.BuildConfig
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapper
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.AspectRatio
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
@@ -49,6 +51,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val session: CameraSession,
     private val recordingSession: VideoRecordingSession,
+    private val flashMapper: CameraFlashMapper,
     private val copyText: CopyText,
     private val appLabel: AppLabel,
 ) : ViewModel(),
@@ -163,9 +166,15 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun setFlashMode(mode: FlashMode) {
-        val slot = state.boundCamera?.modeSlot() ?: return
+        val camera = state.boundCamera ?: return
+        val flash = flashMapper.map(
+            camera = camera,
+            requestedMode = mode,
+            frameRate = state.modeSettings.videoFrameRate,
+        )
+        if (mode != flash.selectedMode) return
 
-        settingsRepository.updateMode(slot = slot) { it.copy(flashMode = mode) }
+        settingsRepository.updateMode(slot = camera.modeSlot()) { it.copy(flashMode = mode) }
     }
 
     private fun setVideoFrameRate(frameRate: VideoFrameRate) {

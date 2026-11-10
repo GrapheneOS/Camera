@@ -9,7 +9,6 @@ import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.ExposureControl
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
@@ -72,7 +71,6 @@ interface ViewfinderCameraDelegate {
 
 internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val session: CameraSession,
-    private val exposureControl: ExposureControl,
     private val torch: TorchControl,
     private val entryPoint: CameraEntryPoint,
     private val resolveAvailableModes: ResolveAvailableModes,
@@ -207,14 +205,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     override fun announceBind() {
         loadTabs()
-
-        stateHolder.update {
-            it.copy(
-                session = it.session.copy(
-                    exposure = exposureControl.exposure,
-                ),
-            )
-        }
     }
 
     override fun unbindCamera() {

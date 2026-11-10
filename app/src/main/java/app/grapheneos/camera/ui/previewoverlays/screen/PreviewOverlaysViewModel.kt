@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.core.screen.StateHolder
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ExposureDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ZoomDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.PreviewOverlaysUiStateMapper
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ExposureAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.FocusAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction
@@ -37,6 +40,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
     private val focusDelegate: FocusDelegate,
     private val levelDelegate: LevelDelegate,
     private val zoomDelegate: ZoomDelegate,
+    private val exposureDelegate: ExposureDelegate,
 ) : ViewModel(),
     PreviewOverlaysScreenModel {
 
@@ -64,6 +68,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         levelDelegate.bind(stateHolder)
         focusDelegate.bind(stateHolder)
         zoomDelegate.bind(stateHolder)
+        exposureDelegate.bind(stateHolder)
 
         viewModelScope.launch {
             settingsRepository.settings.collect { settings ->
@@ -76,7 +81,9 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         when (action) {
             is LifecycleAction -> onLifecycleAction(action)
             is PreviewAction -> onPreviewAction(action)
-            is ZoomAction -> onZoomAction(action)
+            is FocusAction -> focusDelegate.onAction(action)
+            is ZoomAction -> zoomDelegate.onAction(action)
+            is ExposureAction -> exposureDelegate.onAction(action)
         }
     }
 
@@ -89,58 +96,10 @@ internal class PreviewOverlaysViewModel @Inject constructor(
 
     private fun onPreviewAction(action: PreviewAction) {
         when (action) {
-            is PreviewAction.FocusKeyPressed -> onFocusKeyPressed()
-            is PreviewAction.PreviewTapped -> onTapped()
-            is PreviewAction.PreviewPressed -> onPressed(action)
-            is PreviewAction.PreviewLongPressed -> onLongPressed()
-            is PreviewAction.PreviewGestureStarted -> onGestureStarted()
             is PreviewAction.DisplayRotationChanged -> onRotationChanged(action)
             is PreviewAction.PreviewContentChanged -> onContentChanged(action)
             is PreviewAction.PreviewFlashVisibilityChanged -> onFlashChanged(action)
         }
-    }
-
-    private fun onZoomAction(action: ZoomAction) {
-        when (action) {
-            is ZoomAction.ZoomKeyPressed -> zoomDelegate.onZoomKeyPressed(action.direction)
-            is ZoomAction.VolumeKeyPressed -> zoomDelegate.onVolumeKeyPressed(action.direction)
-            is ZoomAction.VolumeKeyReleased -> zoomDelegate.onVolumeKeyReleased()
-            is ZoomAction.Expanded -> zoomDelegate.onExpanded()
-            is ZoomAction.RatioChanged -> zoomDelegate.onRatioChanged(action.ratio)
-            is ZoomAction.PresetSelected -> zoomDelegate.onPresetSelected(action.ratio)
-            is ZoomAction.PreviewPinchStarted -> zoomDelegate.onPreviewPinchStarted()
-            is ZoomAction.PreviewPinchFinished -> zoomDelegate.onPreviewPinchFinished()
-            is ZoomAction.PreviewPinchScaleChanged -> {
-                zoomDelegate.onPreviewPinchScaleChanged(action.scaleFactor)
-            }
-            is ZoomAction.ControlPressChanged -> {
-                zoomDelegate.onControlPressChanged(action.isPressed)
-            }
-        }
-    }
-
-    private fun onFocusKeyPressed() {
-        focusDelegate.cancelFocus()
-    }
-
-    private fun onTapped() {
-        focusDelegate.onPreviewTapped()
-    }
-
-    private fun onPressed(action: PreviewAction.PreviewPressed) {
-        focusDelegate.onPreviewPressed(
-            x = action.x,
-            y = action.y,
-            hitRadius = action.hitRadius,
-        )
-    }
-
-    private fun onLongPressed() {
-        focusDelegate.onPreviewLongPressed()
-    }
-
-    private fun onGestureStarted() {
-        focusDelegate.onPreviewGestureStarted()
     }
 
     private fun onRotationChanged(action: PreviewAction.DisplayRotationChanged) {
@@ -171,7 +130,11 @@ internal class PreviewOverlaysViewModel @Inject constructor(
                     previous = previous,
                     current = current,
                 ),
-            )
+                exposure = exposureDelegate.exposureAfterChange(
+                    previous = previous,
+                    current = current,
+                ),
+            ).withVisibleControlActive()
         }
     }
 
@@ -182,6 +145,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
             launch { levelDelegate.trackLevel() }
             launch { focusDelegate.trackFocus() }
             launch { zoomDelegate.trackZoom() }
+            launch { exposureDelegate.trackExposure() }
         }
     }
 
@@ -191,6 +155,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
         levelDelegate.onScreenPaused()
         focusDelegate.onScreenPaused()
         zoomDelegate.onScreenPaused()
+        exposureDelegate.onScreenPaused()
         stateHolder.update { state -> state.copy(isPreviewFlashVisible = false) }
     }
 }

@@ -2,6 +2,8 @@ package app.grapheneos.camera.di.camera
 
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionImpl
+import app.grapheneos.camera.data.camera.session.ExposureControl
+import app.grapheneos.camera.data.camera.session.ExposureControlImpl
 import app.grapheneos.camera.data.camera.session.ExtensionUsability
 import app.grapheneos.camera.data.camera.session.ExtensionUsabilityImpl
 import app.grapheneos.camera.data.camera.session.FocusControl
@@ -27,6 +29,12 @@ internal abstract class CameraSessionBindsModule {
     abstract fun bindCameraSession(
         impl: CameraSessionImpl,
     ): CameraSession
+
+    @Binds
+    @ActivityRetainedScoped
+    abstract fun bindExposureControl(
+        impl: ExposureControlImpl,
+    ): ExposureControl
 
     @Binds
     @ActivityRetainedScoped

@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.quicksettings.screen
 
 import app.grapheneos.camera.BuildConfig
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapperImpl
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapperImpl
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
@@ -77,6 +79,26 @@ class QuickSettingsViewModelTest {
     private val copyText = mockk<CopyText>()
 
     @Test
+    fun compensatedExposure_preservesTheSavedFlashModeAndAllowsOtherSettings() {
+        runTest {
+            storedModeSettings[PHOTO_SLOT] = ModeSettings(flashMode = FlashMode.AUTO)
+            val viewModel = viewModel()
+
+            boundCamera.value = PHOTO_CAMERA.copy(isExposureCompensated = true)
+            viewModel.onAction(Action.FlashModeSelected(FlashMode.ON))
+            viewModel.onAction(RequiresIdleRecorder.SelfTimerSelected(SELF_TIMER))
+
+            assertEquals(FlashMode.OFF, viewModel.uiState.value.flash?.selected)
+            assertEquals(FlashMode.AUTO, storedModeSettings.getValue(PHOTO_SLOT).flashMode)
+            assertEquals(SELF_TIMER, storedSettings.value.selfTimerDuration)
+
+            boundCamera.value = PHOTO_CAMERA
+
+            assertEquals(FlashMode.AUTO, viewModel.uiState.value.flash?.selected)
+        }
+    }
+
+    @Test
     fun modeSettings_followTheSlotOfTheBoundCamera() {
         runTest {
             storedModeSettings[FRONT_VIDEO_SLOT] = STORED_FRONT_VIDEO
@@ -103,7 +125,7 @@ class QuickSettingsViewModelTest {
     @Test
     fun flashModeSelected_inVideo_storesItForTheBoundVideoSlot() {
         runTest {
-            boundCamera.value = FRONT_VIDEO_CAMERA
+            boundCamera.value = FRONT_VIDEO_CAMERA.copy(isLowLightBoostSupported = true)
             storedModeSettings[FRONT_VIDEO_SLOT] = ModeSettings(flashMode = FlashMode.AUTO)
             val viewModel = viewModel()
 
@@ -289,14 +311,19 @@ class QuickSettingsViewModelTest {
     private fun viewModel(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
     ): QuickSettingsViewModel {
+        val flashMapper = CameraFlashMapperImpl()
         return QuickSettingsViewModel(
             entryPoint = entryPoint,
             settingsRepository = settingsRepository,
             session = session,
             recordingSession = recordingSession,
+            flashMapper = flashMapper,
             copyText = copyText,
             appLabel = { APP_LABEL },
-            uiStateMapper = QuickSettingsUiStateMapperImpl(),
+            uiStateMapper = QuickSettingsUiStateMapperImpl(
+                flashMapper = flashMapper,
+                videoQualityMapper = VideoQualityMapperImpl(),
+            ),
         )
     }
 

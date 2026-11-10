@@ -312,6 +312,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 finish(pending)
 
                 if (pending.isCancelled) {
+                    Log.w(TAG, "a cancelled picture capture failed", event.cause)
                     return
                 }
             }

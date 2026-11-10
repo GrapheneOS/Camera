@@ -12,7 +12,6 @@ import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
@@ -22,7 +21,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
@@ -72,7 +70,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val settingsDelegate: ViewfinderSettingsDelegate,
     private val modeDelegate: ViewfinderModeDelegate,
     private val cameraDelegate: ViewfinderCameraDelegate,
-    private val cameraControlsDelegate: ViewfinderCameraControlsDelegate,
     private val captureDelegate: ViewfinderCaptureDelegate,
     private val recordingDelegate: ViewfinderRecordingDelegate,
     private val permissionDelegate: ViewfinderPermissionDelegate,
@@ -82,7 +79,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val galleryDelegate: ViewfinderGalleryDelegate,
     private val dialogDelegate: ViewfinderDialogDelegate,
     private val modeSwitchDelegate: ViewfinderModeSwitchDelegate,
-    private val previewControlsDelegate: ViewfinderPreviewControlsDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
@@ -127,17 +123,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         modeSwitchDelegate.bind(stateHolder)
         cameraDelegate.bind(stateHolder)
         orientationDelegate.bind(stateHolder)
-        cameraControlsDelegate.bind(stateHolder)
 
         captureDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
         galleryDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
-        previewControlsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
@@ -198,14 +189,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.ModeStrip -> onModeStripAction(action)
             is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
             is CameraAction.Preview -> onPreviewAction(action)
-            is CameraAction.ExposureSliderDragged -> {
-                cameraControlsDelegate.setExposureCompensation(action.compensationIndex)
-                previewControlsDelegate.showExposurePanel()
-            }
-
-            is CameraAction.DisplayRotationChanged -> {
-                onDisplayRotationChanged(action.rotation)
-            }
+            is CameraAction.DisplayRotationChanged -> onDisplayRotationChanged(action.rotation)
         }
     }
 
@@ -316,10 +300,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPreviewAction(action: CameraAction.Preview) {
         when (action) {
             is CameraAction.Preview.Swiped -> modeSwitchDelegate.onPreviewSwiped(action.direction)
-            is CameraAction.Preview.Tapped -> when {
-                state.isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
-                else -> onPreviewPressed()
-            }
+            is CameraAction.Preview.Tapped -> settingsDelegate.closeSettingsPanel()
         }
     }
 
@@ -444,12 +425,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             state.capture.isSelfTimerRunning() -> captureDelegate.cancelSelfTimer()
             else -> captureDelegate.startSelfTimer()
         }
-    }
-
-    private fun onPreviewPressed() {
-        if (state.isQrMode()) return
-
-        previewControlsDelegate.showExposurePanel()
     }
 
     private fun onVolumeKeyEvent(event: CaptureAction.VolumeKeyEvent) {
@@ -673,8 +648,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         if (state.capture.hasResult() || !cameraDelegate.canBeginBind(forced)) return
 
         captureDelegate.cancelPictureCapture()
-
-        previewControlsDelegate.hideExposurePanel()
 
         slotCurrentMode()
 

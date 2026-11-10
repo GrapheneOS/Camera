@@ -13,7 +13,6 @@ import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
@@ -42,6 +41,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.PreviewTarget
+import app.grapheneos.camera.data.camera.session.ZoomControl
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
@@ -65,6 +65,7 @@ import app.grapheneos.camera.ui.mediaactions.CapturedItemIntents
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.PreviewOverlaysViewModel
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.FocusAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.input.ZoomDirection
@@ -77,7 +78,6 @@ import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
 import app.grapheneos.camera.ui.videoplayer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
-import app.grapheneos.camera.ui.viewfinder.components.ExposureBar
 import app.grapheneos.camera.ui.viewfinder.components.qr.QROverlay
 import app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
@@ -106,8 +106,6 @@ import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
 import javax.inject.Inject
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -136,6 +134,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     internal lateinit var videoPlayerLauncher: VideoPlayerLauncher
+
+    @Inject
+    internal lateinit var zoomControl: ZoomControl
 
     internal lateinit var binding: ActivityMainBinding
 
@@ -166,13 +167,13 @@ open class MainActivity : AppCompatActivity() {
             previewFocus = PreviewFocusCallbacks(
                 onPressed = { x, y ->
                     previewOverlays.onAction(
-                        PreviewAction.PreviewPressed(x = x, y = y, hitRadius = focusHitRadius),
+                        FocusAction.PreviewPressed(x = x, y = y, hitRadius = focusHitRadius),
                     )
                 },
-                onTapped = { previewOverlays.onAction(PreviewAction.PreviewTapped) },
-                onLongPressed = { previewOverlays.onAction(PreviewAction.PreviewLongPressed) },
+                onTapped = { previewOverlays.onAction(FocusAction.PreviewTapped) },
+                onLongPressed = { previewOverlays.onAction(FocusAction.PreviewLongPressed) },
                 onGestureStarted = {
-                    previewOverlays.onAction(PreviewAction.PreviewGestureStarted)
+                    previewOverlays.onAction(FocusAction.PreviewGestureStarted)
                 },
             ),
             previewZoom = PreviewZoomCallbacks(
@@ -249,12 +250,6 @@ open class MainActivity : AppCompatActivity() {
 
     val previewLoader: ProgressBar
         get() = binding.previewLoading
-
-    val exposureBar: ExposureBar
-        get() = binding.exposureBar
-
-    val exposureBarPanel: LinearLayout
-        get() = binding.exposureBarPanel
 
     val qrOverlay: QROverlay
         get() = binding.qrOverlay
@@ -344,7 +339,7 @@ open class MainActivity : AppCompatActivity() {
                 viewfinder.onAction(CaptureAction.CaptureKeyPressed)
             }
             KeyEvent.KEYCODE_FOCUS -> {
-                previewOverlays.onAction(PreviewAction.FocusKeyPressed)
+                previewOverlays.onAction(FocusAction.FocusKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_IN -> {
                 previewOverlays.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
@@ -487,10 +482,9 @@ open class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                previewOverlays.uiState
-                    .map { state -> state.zoom?.ratio }
-                    .distinctUntilChanged()
-                    .collect { previewFrames.discardPrefetch() }
+                zoomControl.events.collect {
+                    previewFrames.discardPrefetch()
+                }
             }
         }
 
@@ -600,12 +594,6 @@ open class MainActivity : AppCompatActivity() {
             viewfinder.onAction(CaptureAction.CaptureButtonClicked)
         }
 
-        exposureBar.onCompensationDragged = { compensationIndex ->
-            viewfinder.onAction(
-                CameraAction.ExposureSliderDragged(compensationIndex = compensationIndex),
-            )
-        }
-
         setContentView(binding.getRoot())
 
         var isInsetSet = false
@@ -634,7 +622,6 @@ open class MainActivity : AppCompatActivity() {
                 it
             }
 
-            exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
             binding.bottomRow.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 bottomMargin = insets.bottom +
                     resources.getDimensionPixelSize(R.dimen.bottom_row_above_navigation_bar)

@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.mapper
 
+import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -10,6 +11,7 @@ import app.grapheneos.camera.domain.camera.mapper.ZoomPresetsMapperImpl
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ExposureState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPhase
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPress
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusSelection
@@ -17,15 +19,18 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewControl
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ZoomState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.FocusUiModel
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewControlUiModel
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -38,6 +43,74 @@ class PreviewOverlaysUiStateMapperTest {
     private val mapper: PreviewOverlaysUiStateMapper = PreviewOverlaysUiStateMapperImpl(
         zoomPresetsMapper = ZoomPresetsMapperImpl(),
     )
+
+    @Test
+    fun exposure_mapsCameraIndicesToEvAndTakesTheZoomSlot() {
+        val state = zoomState().copy(
+            activeControl = PreviewControl.Exposure,
+            exposure = ExposureState(
+                value = CameraExposure(
+                    compensationIndex = 3,
+                    compensationRange = -12..12,
+                    compensationStep = 1f / 6f,
+                    isCompensationSupported = true,
+                ),
+                isAdjusted = true,
+            ),
+        )
+
+        val mapped = mapper.map(state)
+        val exposure = requireNotNull(mapped.exposure)
+
+        assertEquals(0.5f, exposure.value)
+        assertEquals(-2f..2f, exposure.range)
+        assertEquals(23, exposure.steps)
+        assertEquals(6, exposure.majorTickInterval)
+        assertTrue(exposure.isResetVisible)
+        assertNull(mapped.zoom)
+        val zoomSelected = mapper.map(state.copy(activeControl = PreviewControl.Zoom))
+        assertNotNull(zoomSelected.zoom)
+        assertNull(zoomSelected.exposure)
+    }
+
+    @Test
+    fun unavailableExposure_fallsBackToZoom() {
+        val value = CameraExposure(
+            compensationIndex = 0,
+            compensationRange = 0..0,
+            compensationStep = 0f,
+            isCompensationSupported = false,
+        )
+        val state = zoomState().copy(
+            activeControl = PreviewControl.Exposure,
+            exposure = ExposureState(value = value),
+        )
+
+        val mapped = mapper.map(state)
+
+        assertNull(mapped.exposure)
+        assertNotNull(mapped.zoom)
+    }
+
+    @Test
+    fun exposure_twoSupportedIndices_haveNoIntermediateSteps() {
+        val state = zoomState().copy(
+            activeControl = PreviewControl.Exposure,
+            exposure = ExposureState(
+                value = CameraExposure(
+                    compensationIndex = 0,
+                    compensationRange = 0..1,
+                    compensationStep = 0.5f,
+                    isCompensationSupported = true,
+                ),
+            ),
+        )
+
+        val exposure = requireNotNull(mapper.map(state).exposure)
+
+        assertEquals(0f..0.5f, exposure.range)
+        assertEquals(0, exposure.steps)
+    }
 
     @Test
     fun zoom_currentValueIsShownExceptDuringAPresetTransition() {
@@ -492,4 +565,14 @@ class PreviewOverlaysUiStateMapperTest {
             ),
         )
     }
+
+    private val PreviewOverlaysUiState.zoom: PreviewControlUiModel.Zoom?
+        get() {
+            return control as? PreviewControlUiModel.Zoom
+        }
+
+    private val PreviewOverlaysUiState.exposure: PreviewControlUiModel.Exposure?
+        get() {
+            return control as? PreviewControlUiModel.Exposure
+        }
 }

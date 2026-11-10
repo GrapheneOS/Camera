@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -49,6 +50,7 @@ import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
  * so a screen that collapses on a timer can wait for the release. [expandLabel] names
  * the accessibility action that expands the stops, the only way to the bar without a gesture.
  * Set [animateValueChanges] to false when [value] is already driven by a continuous gesture.
+ * Set [showContainer] to false when the caller draws the container behind the control.
  */
 @Composable
 internal fun ZoomControl(
@@ -64,6 +66,7 @@ internal fun ZoomControl(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     showCurrentValue: Boolean = true,
+    showContainer: Boolean = true,
     animateValueChanges: Boolean = true,
     onValueChangeFinished: () -> Unit = {},
     onPressChanged: (Boolean) -> Unit = {},
@@ -97,11 +100,9 @@ internal fun ZoomControl(
         onPressChanged = onPressChanged,
     )
     val alpha by animateEnabledAlpha(enabled = enabled)
-    val valueDescription = rememberZoomFormat().format(value = value) + valueSuffix
 
     ZoomControlLayers(
         value = value,
-        valueDescription = valueDescription,
         valueRange = valueRange,
         stops = stops,
         valueSuffix = valueSuffix,
@@ -115,6 +116,7 @@ internal fun ZoomControl(
         expandLabel = expandLabel,
         enabled = enabled,
         showCurrentValue = showCurrentValue,
+        showContainer = showContainer,
         alpha = { alpha },
         state = state,
         scale = scale,
@@ -135,7 +137,6 @@ internal fun ZoomControl(
 @Composable
 private fun ZoomControlLayers(
     value: Float,
-    valueDescription: String,
     valueRange: ClosedFloatingPointRange<Float>,
     stops: List<Float>,
     valueSuffix: String,
@@ -145,6 +146,7 @@ private fun ZoomControlLayers(
     expandLabel: String,
     enabled: Boolean,
     showCurrentValue: Boolean,
+    showContainer: Boolean,
     alpha: () -> Float,
     state: ZoomBarState,
     scale: ZoomBarScale,
@@ -154,19 +156,23 @@ private fun ZoomControlLayers(
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
 ) {
+    val valueDescription = rememberZoomFormat().format(value = value) + valueSuffix
+
     Box(
-        modifier = modifier,
+        modifier = modifier.clip(shape = CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Spacer(
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer { this.alpha = alpha() }
-                .background(
-                    color = barColors.containerColor,
-                    shape = CircleShape,
-                ),
-        )
+        if (showContainer) {
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer { this.alpha = alpha() }
+                    .background(
+                        color = barColors.containerColor,
+                        shape = CircleShape,
+                    ),
+            )
+        }
         AnimatedContent(
             targetState = expanded,
             transitionSpec = { revealResizing() },

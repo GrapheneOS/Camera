@@ -18,7 +18,10 @@ internal data class ZoomState(
     }
 
     fun idle(): ZoomState {
-        return ZoomState(value = value)
+        return ZoomState(
+            value = value,
+            interactionId = interactionId,
+        )
     }
 
     data class Preset(
