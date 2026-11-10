@@ -106,6 +106,7 @@ class ImageCapturer(val mActivity: MainActivity) {
             imageFileFormat,
             imageMetadata,
             camConfig.removeExifAfterCapture,
+            camConfig.removeICCAfterCapture,
             targetThumbnailWidth = preview.width,
             targetThumbnailHeight = preview.height,
         )
