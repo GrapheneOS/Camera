@@ -6,7 +6,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
@@ -16,7 +15,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
@@ -55,12 +53,6 @@ open class ViewfinderViewModelTestBase {
     protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
     protected val dialogDelegate = mockk<ViewfinderDialogDelegate>(relaxed = true)
     protected val modeSwitchDelegate = mockk<ViewfinderModeSwitchDelegate>(relaxed = true)
-    protected val cameraControlsDelegate = mockk<ViewfinderCameraControlsDelegate>(
-        relaxed = true,
-    )
-    protected val previewControlsDelegate = mockk<ViewfinderPreviewControlsDelegate>(
-        relaxed = true,
-    )
 
     protected val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true)
     protected val cameraBindSettingsMapper = mockk<CameraBindSettingsMapper>(relaxed = true)
@@ -96,7 +88,6 @@ open class ViewfinderViewModelTestBase {
             settingsDelegate = settingsDelegate,
             modeDelegate = modeDelegate,
             cameraDelegate = cameraDelegate,
-            cameraControlsDelegate = cameraControlsDelegate,
             captureDelegate = captureDelegate,
             recordingDelegate = recordingDelegate,
             permissionDelegate = permissionDelegate,
@@ -106,7 +97,6 @@ open class ViewfinderViewModelTestBase {
             galleryDelegate = galleryDelegate,
             dialogDelegate = dialogDelegate,
             modeSwitchDelegate = modeSwitchDelegate,
-            previewControlsDelegate = previewControlsDelegate,
             uiStateMapper = uiStateMapper,
             cameraBindSettingsMapper = cameraBindSettingsMapper,
         )

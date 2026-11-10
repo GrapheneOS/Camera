@@ -14,10 +14,6 @@ sealed interface ViewfinderAction {
 
         data object FlipCameraClicked : CameraAction
 
-        data class ExposureSliderDragged(
-            val compensationIndex: Int,
-        ) : CameraAction
-
         data class ModeSelected(
             val mode: CameraMode,
         ) : CameraAction

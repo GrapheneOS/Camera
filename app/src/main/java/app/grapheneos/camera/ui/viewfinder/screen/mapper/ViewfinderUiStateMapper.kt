@@ -6,7 +6,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
@@ -37,7 +36,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             selfTimer = selfTimer(state),
             recording = recording(state),
             qr = qr(state),
-            exposure = exposure(state),
             iconRotationDegrees = iconRotationDegrees(state),
             captureResult = captureResult(state),
             keepScreenOn = keepScreenOn(state),
@@ -240,16 +238,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         return QrUiModel(
             overlayVisible = state.isQrMode(),
             scanTogglesVisible = state.isQrMode() && !state.settings.scanAllCodes,
-        )
-    }
-
-    private fun exposure(state: ViewfinderState): ExposureUiModel {
-        val exposure = state.session.exposure
-
-        return ExposureUiModel(
-            range = exposure?.compensationRange,
-            progress = exposure?.compensationIndex ?: 0,
-            panelVisible = state.previewControls.isExposurePanelShown,
         )
     }
 

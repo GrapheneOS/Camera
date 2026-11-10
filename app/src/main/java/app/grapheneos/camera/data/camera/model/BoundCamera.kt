@@ -4,7 +4,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
-import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 
 data class BoundCamera(
@@ -15,6 +14,7 @@ data class BoundCamera(
     val videoQualities: List<VideoQuality>,
     val isLowLightBoostSupported: Boolean = false,
     val highFrameRate: HighFrameRateSupport? = null,
+    val isExposureCompensated: Boolean = false,
 ) {
 
     fun modeSlot(): ModeSlot {
@@ -39,35 +39,6 @@ data class BoundCamera(
             if (isLowLightBoostSupported) {
                 add(FlashMode.LOW_LIGHT_BOOST)
             }
-        }
-    }
-
-    fun appliedFlashMode(
-        stored: FlashMode,
-        frameRate: VideoFrameRate,
-    ): FlashMode {
-        val isApplied = stored in flashModes() &&
-            (stored != FlashMode.LOW_LIGHT_BOOST || !limitsLowLightBoost(frameRate))
-
-        return when {
-            isApplied -> stored
-            else -> FlashMode.OFF
-        }
-    }
-
-    // CameraX turns low light boost off above 30 fps.
-    fun limitsLowLightBoost(frameRate: VideoFrameRate): Boolean {
-        return isLowLightBoostSupported &&
-            isVideoMode &&
-            frameRate == VideoFrameRate.FPS_60 &&
-            highFrameRate == HighFrameRateSupport.Supported
-    }
-
-    fun recordedVideoQuality(stored: VideoQuality): VideoQuality {
-        // CameraX lists the supported qualities from the highest down.
-        return when (stored) {
-            VideoQuality.HIGHEST -> videoQualities.firstOrNull() ?: stored
-            else -> stored
         }
     }
 }

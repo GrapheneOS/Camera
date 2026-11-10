@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.statusbar.screen.mapper
 
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapper
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapper
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarState
@@ -14,12 +16,16 @@ internal interface StatusBarUiStateMapper {
     fun map(state: StatusBarState): StatusBarUiState
 }
 
-internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiStateMapper {
+internal class StatusBarUiStateMapperImpl @Inject constructor(
+    private val flashMapper: CameraFlashMapper,
+    private val videoQualityMapper: VideoQualityMapper,
+) : StatusBarUiStateMapper {
 
     override fun map(state: StatusBarState): StatusBarUiState {
         val camera = state.boundCamera ?: return StatusBarUiState()
-        val flashMode = camera.appliedFlashMode(
-            stored = state.modeSettings.flashMode,
+        val flash = flashMapper.map(
+            camera = camera,
+            requestedMode = state.modeSettings.flashMode,
             frameRate = state.modeSettings.videoFrameRate,
         )
 
@@ -27,9 +33,9 @@ internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiSta
             items = items(
                 state = state,
                 camera = camera,
-                flashMode = flashMode,
+                flashMode = flash.selectedMode,
             ),
-            isSelfIlluminating = flashMode == FlashMode.SELF_ILLUMINATION,
+            isSelfIlluminating = flash.isSelfIlluminating(),
         )
     }
 
@@ -49,7 +55,10 @@ internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiSta
                 add(StatusItemUiModel.SelfTimer(duration = selfTimer))
             }
             if (camera.isVideoMode) {
-                val quality = camera.recordedVideoQuality(stored = state.modeSettings.videoQuality)
+                val quality = videoQualityMapper.map(
+                    camera = camera,
+                    requestedQuality = state.modeSettings.videoQuality,
+                )
 
                 add(StatusItemUiModel.Resolution(quality = quality))
             }

@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureResultUiModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
@@ -24,7 +23,6 @@ data class ViewfinderUiState(
     val selfTimer: SelfTimerUiModel = SelfTimerUiModel(),
     val recording: RecordingUiModel = RecordingUiModel(),
     val qr: QrUiModel = QrUiModel(),
-    val exposure: ExposureUiModel = ExposureUiModel(),
     val captureResult: CaptureResultUiModel = CaptureResultUiModel(),
     val iconRotationDegrees: Float = 0f,
     val cancelButtonVisible: Boolean = true,

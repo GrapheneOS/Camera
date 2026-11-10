@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapperImpl
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapperImpl
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
@@ -338,8 +340,14 @@ private class CameraScreenSampleState {
     private var modeSettings by mutableStateOf(ModeSettings())
     private var shownLimit by mutableStateOf<OptionLimit?>(null)
 
-    private val quickSettingsMapper = QuickSettingsUiStateMapperImpl()
-    private val statusBarMapper = StatusBarUiStateMapperImpl()
+    private val quickSettingsMapper = QuickSettingsUiStateMapperImpl(
+        flashMapper = CameraFlashMapperImpl(),
+        videoQualityMapper = VideoQualityMapperImpl(),
+    )
+    private val statusBarMapper = StatusBarUiStateMapperImpl(
+        flashMapper = CameraFlashMapperImpl(),
+        videoQualityMapper = VideoQualityMapperImpl(),
+    )
 
     val quickSettings: QuickSettingsUiState
         get() {

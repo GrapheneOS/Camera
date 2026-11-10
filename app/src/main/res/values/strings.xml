@@ -31,6 +31,8 @@
     <string name="cancel_timer">Cancel Timer</string>
     <string name="capture">Capture</string>
     <string name="exposure_compensation">Exposure compensation</string>
+    <string name="exposure_reset">Reset exposure compensation</string>
+    <string name="exposure_value">%1$s EV</string>
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>
     <string name="mute_audio">Mute audio</string>

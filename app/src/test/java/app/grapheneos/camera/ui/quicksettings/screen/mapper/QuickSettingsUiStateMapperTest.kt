@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapperImpl
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapperImpl
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
@@ -31,7 +33,10 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class QuickSettingsUiStateMapperTest {
 
-    private val mapper: QuickSettingsUiStateMapper = QuickSettingsUiStateMapperImpl()
+    private val mapper: QuickSettingsUiStateMapper = QuickSettingsUiStateMapperImpl(
+        flashMapper = CameraFlashMapperImpl(),
+        videoQualityMapper = VideoQualityMapperImpl(),
+    )
 
     @Test
     fun beforeACameraIsBound_thereIsNothingToSet() {
@@ -69,6 +74,26 @@ class QuickSettingsUiStateMapperTest {
 
         assertEquals(VIDEO_CAMERA.flashModes(), flash?.options)
         assertEquals(FlashMode.OFF, flash?.selected)
+    }
+
+    @Test
+    fun compensatedExposure_limitsOnlyThePhotoFlashOptions() {
+        val camera = PHOTO_CAMERA.copy(isLowLightBoostSupported = true)
+        val modeSettings = ModeSettings(flashMode = FlashMode.ON)
+        val initial = map(
+            camera = camera,
+            modeSettings = modeSettings,
+        )
+        val limited = map(
+            camera = camera.copy(isExposureCompensated = true),
+            modeSettings = modeSettings,
+        )
+
+        val expectedFlash = requireNotNull(initial.flash).copy(
+            selected = FlashMode.OFF,
+            unavailable = persistentSetOf(FlashMode.AUTO, FlashMode.ON),
+        )
+        assertEquals(initial.copy(flash = expectedFlash), limited)
     }
 
     @Test

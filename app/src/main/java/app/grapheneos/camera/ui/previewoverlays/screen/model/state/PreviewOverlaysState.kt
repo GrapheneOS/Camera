@@ -14,18 +14,20 @@ internal data class PreviewOverlaysState(
     val displayRotation: DeviceOrientation = DeviceOrientation.DEGREES_0,
     val focus: FocusState = FocusState(),
     val level: LevelState = LevelState(),
+    val activeControl: PreviewControl = PreviewControl.Zoom,
     val zoom: ZoomState = ZoomState(),
+    val exposure: ExposureState = ExposureState(),
 ) {
-
-    fun isFocusAvailable(): Boolean {
-        return isPreviewInteractive() && !isPreviewFlashVisible
-    }
 
     fun isPreviewInteractive(): Boolean {
         val content = previewContent ?: return false
         return content.mode != CameraMode.QR_SCAN &&
             content.isPreviewStreaming &&
             !isPreviewReplaced(content)
+    }
+
+    fun isPreviewInputAvailable(): Boolean {
+        return isPreviewInteractive() && !isPreviewFlashVisible
     }
 
     fun isGridVisible(): Boolean {
@@ -69,12 +71,34 @@ internal data class PreviewOverlaysState(
             !isPreviewHidden(content)
     }
 
-    fun isZoomVisible(): Boolean {
+    fun isZoomAvailable(): Boolean {
         val content = previewContent ?: return false
         return content.mode != CameraMode.QR_SCAN &&
             !content.isCaptureResultVisible &&
             !isPreviewFlashVisible &&
             zoom.isAdjustable()
+    }
+
+    fun isZoomVisible(): Boolean {
+        return visibleControl() == PreviewControl.Zoom
+    }
+
+    fun isExposureVisible(): Boolean {
+        return visibleControl() == PreviewControl.Exposure
+    }
+
+    fun visibleControl(): PreviewControl? {
+        val defaultControl = PreviewControl.Zoom.takeIf { isZoomAvailable() }
+        return when (activeControl) {
+            PreviewControl.Zoom -> defaultControl
+            PreviewControl.Exposure -> PreviewControl.Exposure.takeIf {
+                isPreviewInputAvailable() && exposure.value?.isAdjustable() == true
+            } ?: defaultControl
+        }
+    }
+
+    fun withVisibleControlActive(): PreviewOverlaysState {
+        return copy(activeControl = visibleControl() ?: PreviewControl.Zoom)
     }
 
     private fun isPreviewHidden(content: PreviewContentState): Boolean {

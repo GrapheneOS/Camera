@@ -40,8 +40,10 @@ open class StateHolder<State>(
         val current = transform(previous)
         if (current != previous) {
             _state.value = current
+
+            // A collector can update the state again from inside this loop or the line above.
             derivations.forEach { derivation ->
-                derivation(previous, current)
+                derivation(previous, _state.value)
             }
         }
     }

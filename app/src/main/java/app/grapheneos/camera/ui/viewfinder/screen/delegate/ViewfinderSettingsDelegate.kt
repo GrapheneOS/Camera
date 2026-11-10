@@ -129,6 +129,8 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     override fun closeSettingsPanel() {
+        if (!stateHolder.state.value.isSettingsPanelOpen) return
+
         stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
     }
 

@@ -1,6 +1,9 @@
 package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapper
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapper
 import app.grapheneos.camera.data.camera.model.BoundCamera
+import app.grapheneos.camera.data.camera.model.CameraFlash
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -16,12 +19,16 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 
 internal interface QuickSettingsUiStateMapper {
     fun map(state: QuickSettingsState): QuickSettingsUiState
 }
 
-internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSettingsUiStateMapper {
+internal class QuickSettingsUiStateMapperImpl @Inject constructor(
+    private val flashMapper: CameraFlashMapper,
+    private val videoQualityMapper: VideoQualityMapper,
+) : QuickSettingsUiStateMapper {
 
     override fun map(state: QuickSettingsState): QuickSettingsUiState {
         val settingsButtonVisible = !state.isRecording
@@ -29,19 +36,19 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
             settingsButtonVisible = settingsButtonVisible,
         )
 
-        val flashMode = camera.appliedFlashMode(
-            stored = state.modeSettings.flashMode,
+        val flash = flashMapper.map(
+            camera = camera,
+            requestedMode = state.modeSettings.flashMode,
             frameRate = state.modeSettings.videoFrameRate,
         )
 
         return QuickSettingsUiState(
             settingsButtonVisible = settingsButtonVisible,
             isVideoMode = camera.isVideoMode,
-            isSelfIlluminating = flashMode == FlashMode.SELF_ILLUMINATION,
+            isSelfIlluminating = flash.isSelfIlluminating(),
             flash = flash(
-                state = state,
                 camera = camera,
-                flashMode = flashMode,
+                flash = flash,
             ),
             selfTimer = selfTimer(
                 state = state,
@@ -68,26 +75,20 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
     }
 
     private fun flash(
-        state: QuickSettingsState,
         camera: BoundCamera,
-        flashMode: FlashMode,
+        flash: CameraFlash,
     ): QuickChoiceUiModel<FlashMode>? {
         val options = camera.flashModes()
-        val isLowLightBoostLimited = camera.limitsLowLightBoost(state.modeSettings.videoFrameRate)
+        if (options.size <= 1) return null
 
-        return when {
-            options.size > 1 -> QuickChoiceUiModel(
-                selected = flashMode,
-                options = options.toImmutableList(),
-                unavailable = when {
-                    isLowLightBoostLimited -> persistentSetOf(FlashMode.LOW_LIGHT_BOOST)
-                    else -> persistentSetOf()
-                },
-                limit = OptionLimit.LowLightBoostAtHighFrameRate.takeIf { isLowLightBoostLimited },
-            )
-
-            else -> null
-        }
+        return QuickChoiceUiModel(
+            selected = flash.selectedMode,
+            options = options.toImmutableList(),
+            unavailable = flash.unavailableModes.toImmutableSet(),
+            limit = OptionLimit.LowLightBoostAtHighFrameRate.takeIf {
+                FlashMode.LOW_LIGHT_BOOST in flash.unavailableModes
+            },
+        )
     }
 
     private fun selfTimer(
@@ -124,7 +125,10 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
     ): QuickChoiceUiModel<VideoQuality>? {
         return when {
             !state.isRecording && camera.isVideoMode -> QuickChoiceUiModel(
-                selected = camera.recordedVideoQuality(stored = state.modeSettings.videoQuality),
+                selected = videoQualityMapper.map(
+                    camera = camera,
+                    requestedQuality = state.modeSettings.videoQuality,
+                ),
                 options = camera.videoQualities.reversed().toImmutableList(),
             )
 

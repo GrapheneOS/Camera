@@ -39,17 +39,40 @@ class CameraXStateMapperTest {
     }
 
     @Test
-    fun map_anExposureState_carriesTheIndexAndItsRange() {
+    fun map_anExposureState_carriesTheIndexRangeStepAndSupport() {
         val exposureState = mockk<ExposureState> {
             every { exposureCompensationIndex } returns -3
             every { exposureCompensationRange } returns Range(-12, 12)
             every { exposureCompensationStep } returns Rational(1, 6)
+            every { isExposureCompensationSupported } returns true
         }
 
         assertEquals(
             CameraExposure(
                 compensationIndex = -3,
                 compensationRange = -12..12,
+                compensationStep = 1f / 6f,
+                isCompensationSupported = true,
+            ),
+            mapper.map(exposureState),
+        )
+    }
+
+    @Test
+    fun map_anUnsupportedExposureState_preservesTheZeroStepAndRange() {
+        val exposureState = mockk<ExposureState> {
+            every { exposureCompensationIndex } returns 0
+            every { exposureCompensationRange } returns Range(0, 0)
+            every { exposureCompensationStep } returns Rational.ZERO
+            every { isExposureCompensationSupported } returns false
+        }
+
+        assertEquals(
+            CameraExposure(
+                compensationIndex = 0,
+                compensationRange = 0..0,
+                compensationStep = 0f,
+                isCompensationSupported = false,
             ),
             mapper.map(exposureState),
         )

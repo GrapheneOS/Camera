@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.previewoverlays
 
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ExposureDelegate
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ExposureDelegateImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegateImpl
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegate
@@ -33,4 +35,10 @@ internal abstract class PreviewOverlaysViewModelBindsModule {
     abstract fun bindZoomDelegate(
         impl: ZoomDelegateImpl,
     ): ZoomDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindExposureDelegate(
+        impl: ExposureDelegateImpl,
+    ): ExposureDelegate
 }

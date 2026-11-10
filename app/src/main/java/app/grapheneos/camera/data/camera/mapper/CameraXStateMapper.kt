@@ -30,6 +30,8 @@ internal class CameraXStateMapperImpl @Inject constructor() : CameraXStateMapper
         return CameraExposure(
             compensationIndex = exposureState.exposureCompensationIndex,
             compensationRange = range.lower..range.upper,
+            compensationStep = exposureState.exposureCompensationStep.toFloat(),
+            isCompensationSupported = exposureState.isExposureCompensationSupported,
         )
     }
 }

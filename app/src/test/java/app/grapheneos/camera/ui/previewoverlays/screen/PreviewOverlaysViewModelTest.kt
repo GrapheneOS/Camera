@@ -3,41 +3,41 @@ package app.grapheneos.camera.ui.previewoverlays.screen
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
-import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
 import app.grapheneos.camera.ui.core.screen.StateHolder
+import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ExposureDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.FocusDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.LevelDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.delegate.ZoomDelegate
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.PreviewOverlaysUiStateMapper
-import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction as Action
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ExposureAction
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.FocusAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.LifecycleAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.PreviewAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.ZoomAction
-import app.grapheneos.camera.ui.previewoverlays.screen.model.input.ZoomDirection
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ExposureState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusSelection
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusState
-import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewContentState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
+import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ZoomState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -75,6 +75,11 @@ class PreviewOverlaysViewModelTest {
     }
     private val zoomDelegate = mockk<ZoomDelegate>(relaxed = true) {
         every { zoomAfterChange(any(), any()) } answers { secondArg<PreviewOverlaysState>().zoom }
+    }
+    private val exposureDelegate = mockk<ExposureDelegate>(relaxed = true) {
+        every { exposureAfterChange(any(), any()) } answers {
+            secondArg<PreviewOverlaysState>().exposure
+        }
     }
     private val viewModels = mutableListOf<PreviewOverlaysViewModel>()
 
@@ -231,17 +236,28 @@ class PreviewOverlaysViewModelTest {
             assertFalse(mappedState.captured.isPreviewFlashVisible)
             verify { levelDelegate.onScreenPaused() }
             verify { focusDelegate.onScreenPaused() }
+            verify { zoomDelegate.onScreenPaused() }
+            verify { exposureDelegate.onScreenPaused() }
         }
     }
 
     @Test
-    fun previewAndFlashChanges_publishBothDelegatesTransitionsInOneUpdate() {
+    fun previewAndFlashChanges_publishTheDelegatesTransitionsInOneUpdate() {
         runTest {
             val viewModel = createViewModel()
             val level = LevelState(tiltDegrees = 3f)
             val focus = FocusState(
-                selection = FocusSelection(requestId = 1, x = 10f, y = 20f, visible = false),
+                selection = FocusSelection(
+                    requestId = 1,
+                    x = 10f,
+                    y = 20f,
+                    visible = false,
+                ),
             )
+            val zoom = ZoomState(interactionId = 1)
+            val exposure = ExposureState(interactionId = 2)
+            every { zoomDelegate.zoomAfterChange(any(), any()) } returns zoom
+            every { exposureDelegate.exposureAfterChange(any(), any()) } returns exposure
             every { levelDelegate.levelAfterChange(any(), any()) } returns level
             every { focusDelegate.focusAfterChange(any(), any()) } returns focus
             val published = mutableListOf<PreviewOverlaysState>()
@@ -261,6 +277,8 @@ class PreviewOverlaysViewModelTest {
                 val changed = published.single()
                 assertEquals(action.toString(), level, changed.level)
                 assertEquals(action.toString(), focus, changed.focus)
+                assertEquals(action.toString(), zoom, changed.zoom)
+                assertEquals(action.toString(), exposure, changed.exposure)
             }
             collection.cancel()
         }
@@ -269,29 +287,31 @@ class PreviewOverlaysViewModelTest {
     @Test
     fun repeatedResume_keepsOneSubscriptionAndPauseAllowsRestarting() {
         runTest {
-            var trackingStarts = 0
-            var focusTrackingStarts = 0
-            coEvery { levelDelegate.trackLevel() } coAnswers {
-                trackingStarts += 1
-                awaitCancellation()
-            }
-            coEvery { focusDelegate.trackFocus() } coAnswers {
-                focusTrackingStarts += 1
-                awaitCancellation()
-            }
+            coEvery { levelDelegate.trackLevel() } coAnswers { awaitCancellation() }
+            coEvery { focusDelegate.trackFocus() } coAnswers { awaitCancellation() }
+            coEvery { zoomDelegate.trackZoom() } coAnswers { awaitCancellation() }
+            coEvery { exposureDelegate.trackExposure() } coAnswers { awaitCancellation() }
             val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.ScreenResumed)
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            assertEquals(1, trackingStarts)
-            assertEquals(1, focusTrackingStarts)
+            coVerify(exactly = 1) {
+                levelDelegate.trackLevel()
+                focusDelegate.trackFocus()
+                zoomDelegate.trackZoom()
+                exposureDelegate.trackExposure()
+            }
 
             viewModel.onAction(LifecycleAction.ScreenPaused)
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            assertEquals(2, trackingStarts)
-            assertEquals(2, focusTrackingStarts)
+            coVerify(exactly = 2) {
+                levelDelegate.trackLevel()
+                focusDelegate.trackFocus()
+                zoomDelegate.trackZoom()
+                exposureDelegate.trackExposure()
+            }
         }
     }
 
@@ -312,34 +332,19 @@ class PreviewOverlaysViewModelTest {
     }
 
     @Test
-    fun zoomActions_reachTheZoomDelegate() {
+    fun controlActions_reachTheirDelegates() {
         runTest {
             val viewModel = createViewModel()
-            viewModel.onAction(ZoomAction.Expanded)
-            viewModel.onAction(ZoomAction.RatioChanged(ratio = 1.5f))
-            viewModel.onAction(ZoomAction.PresetSelected(ratio = 2f))
-            viewModel.onAction(ZoomAction.ControlPressChanged(isPressed = true))
-            viewModel.onAction(ZoomAction.PreviewPinchStarted)
-            viewModel.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 1.25f))
-            viewModel.onAction(ZoomAction.PreviewPinchFinished)
-            viewModel.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
-            viewModel.onAction(ZoomAction.VolumeKeyPressed(ZoomDirection.OUT))
-            viewModel.onAction(ZoomAction.VolumeKeyReleased)
-            viewModel.onAction(LifecycleAction.ScreenPaused)
+            val zoom = ZoomAction.PresetSelected(ratio = 2f)
+            val exposure = ExposureAction.ValueChanged(value = 0.5f)
 
-            verify {
-                zoomDelegate.onExpanded()
-                zoomDelegate.onRatioChanged(1.5f)
-                zoomDelegate.onPresetSelected(2f)
-                zoomDelegate.onControlPressChanged(true)
-                zoomDelegate.onPreviewPinchStarted()
-                zoomDelegate.onPreviewPinchScaleChanged(1.25f)
-                zoomDelegate.onPreviewPinchFinished()
-                zoomDelegate.onZoomKeyPressed(ZoomDirection.IN)
-                zoomDelegate.onVolumeKeyPressed(ZoomDirection.OUT)
-                zoomDelegate.onVolumeKeyReleased()
-                zoomDelegate.onScreenPaused()
-            }
+            viewModel.onAction(FocusAction.PreviewTapped)
+            viewModel.onAction(zoom)
+            viewModel.onAction(exposure)
+
+            verify(exactly = 1) { focusDelegate.onAction(FocusAction.PreviewTapped) }
+            verify(exactly = 1) { zoomDelegate.onAction(zoom) }
+            verify(exactly = 1) { exposureDelegate.onAction(exposure) }
         }
     }
 
@@ -352,6 +357,7 @@ class PreviewOverlaysViewModelTest {
             uiStateMapper = mapper,
             levelDelegate = levelDelegate,
             zoomDelegate = zoomDelegate,
+            exposureDelegate = exposureDelegate,
             focusDelegate = focusDelegate,
         )
 

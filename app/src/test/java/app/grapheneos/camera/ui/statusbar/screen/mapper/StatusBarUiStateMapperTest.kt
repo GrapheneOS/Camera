@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.statusbar.screen.mapper
 
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapperImpl
+import app.grapheneos.camera.data.camera.mapper.VideoQualityMapperImpl
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -20,7 +22,10 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class StatusBarUiStateMapperTest {
 
-    private val mapper: StatusBarUiStateMapper = StatusBarUiStateMapperImpl()
+    private val mapper: StatusBarUiStateMapper = StatusBarUiStateMapperImpl(
+        flashMapper = CameraFlashMapperImpl(),
+        videoQualityMapper = VideoQualityMapperImpl(),
+    )
 
     @Test
     fun beforeACameraIsBound_showsNothing() {

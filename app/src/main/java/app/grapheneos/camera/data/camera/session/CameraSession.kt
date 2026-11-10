@@ -19,6 +19,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.lifecycle.Lifecycle
+import app.grapheneos.camera.data.camera.mapper.CameraFlashMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.BoundCamera
@@ -43,6 +44,7 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.LensFacing
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.di.core.CameraSessionScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.di.core.QrAnalysisDispatcher
@@ -61,6 +63,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 internal const val CAMERA_EVENT_BUFFER_CAPACITY = 64
@@ -114,8 +119,10 @@ internal class CameraSessionImpl @Inject constructor(
     private val lowLightBoostSupport: LowLightBoostSupport,
     private val videoQualitySupport: VideoQualitySupport,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
+    private val flashMapper: CameraFlashMapper,
     private val zoomControl: ZoomControl,
     private val focusControl: FocusControl,
+    private val exposureControl: ExposureControl,
     private val sceneLightControl: SceneLightControl,
     @QrAnalysisDispatcher qrAnalysisDispatcher: CoroutineDispatcher,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
@@ -171,10 +178,22 @@ internal class CameraSessionImpl @Inject constructor(
     private var captureRotation: Int? = null
     private var previewRotation: Int? = null
 
+    private var requestedFlashMode: FlashMode = FlashMode.OFF
+    private var videoFrameRate: VideoFrameRate = VideoFrameRate.FPS_30
+
     private val mainExecutor: Executor = mainDispatcher.asExecutor()
     private val qrAnalysisExecutor: Executor = qrAnalysisDispatcher.asExecutor()
 
     private var qrAutofocusJob: Job? = null
+
+    init {
+        scope.launch(mainDispatcher) {
+            exposureControl.exposure
+                .map { exposure -> exposure?.isCompensated() == true }
+                .distinctUntilChanged()
+                .collect { applyExposureCompensation() }
+        }
+    }
 
     override fun setPreviewTarget(target: PreviewTarget?) {
         previewTarget = target
@@ -258,6 +277,8 @@ internal class CameraSessionImpl @Inject constructor(
 
         unbind()
 
+        videoFrameRate = settings.video?.frameRate ?: VideoFrameRate.FPS_30
+
         val appliedExtension = settings.mode.extensionMode?.let(::applyExtension)
 
         // Asked of the selector this bind uses, extensions included: an extension mode decides for
@@ -309,6 +330,7 @@ internal class CameraSessionImpl @Inject constructor(
                 appliedExtensionMode = appliedExtension?.extensionMode,
             )
             attachControls(remembersZoom = settings.qr == null)
+            applyExposureCompensation()
         }
 
         return outcome
@@ -345,9 +367,8 @@ internal class CameraSessionImpl @Inject constructor(
     }
 
     override fun setFlashMode(flashMode: FlashMode) {
-        imageCapture?.flashMode = cameraXConstantsMapper.map(flashMode)
-
-        sceneLightControl.setFlashMode(flashMode)
+        requestedFlashMode = flashMode
+        applyFlashMode()
     }
 
     override fun setBarcodeFormats(barcodeFormats: Set<BarcodeFormat>) {
@@ -745,6 +766,24 @@ internal class CameraSessionImpl @Inject constructor(
         iAnalyzer?.targetRotation = rotation
     }
 
+    private fun applyExposureCompensation() {
+        val isCompensated = exposureControl.exposure.value?.isCompensated() == true
+
+        _boundCamera.update { camera -> camera?.copy(isExposureCompensated = isCompensated) }
+        applyFlashMode()
+    }
+
+    private fun applyFlashMode() {
+        val boundCamera = _boundCamera.value ?: return
+        val flash = flashMapper.map(
+            camera = boundCamera,
+            requestedMode = requestedFlashMode,
+            frameRate = videoFrameRate,
+        )
+        imageCapture?.flashMode = cameraXConstantsMapper.map(flash.selectedMode)
+        sceneLightControl.setFlashMode(flash.selectedMode)
+    }
+
     private fun attachControls(remembersZoom: Boolean) {
         val attachedCamera = camera
         val target = previewTarget
@@ -760,6 +799,7 @@ internal class CameraSessionImpl @Inject constructor(
             lensFacing = lensFacing,
             remembersZoom = remembersZoom,
         )
+        exposureControl.attach(attachedCamera)
         sceneLightControl.attach(
             control = attachedCamera.cameraControl,
             boundCamera = boundCamera,
@@ -769,6 +809,7 @@ internal class CameraSessionImpl @Inject constructor(
     private fun detachControls() {
         focusControl.detach()
         zoomControl.detach()
+        exposureControl.detach()
         sceneLightControl.detach()
     }
 

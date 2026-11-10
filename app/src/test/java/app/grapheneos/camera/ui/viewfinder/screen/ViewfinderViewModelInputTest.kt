@@ -304,7 +304,6 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.Preview.Tapped)
 
             verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
-            verify(exactly = 0) { previewControlsDelegate.showExposurePanel() }
         }
     }
 

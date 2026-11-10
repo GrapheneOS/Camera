@@ -52,6 +52,24 @@ class ViewfinderSettingsDelegateTest {
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     @Test
+    fun settingsPanel_closeRequestIsSentOnlyWhileThePanelIsOpen() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+
+            delegate.closeSettingsPanel()
+            assertEquals(emptyList<ViewfinderNavEvent>(), events)
+
+            delegate.onSettingsPanelVisibilityChanged(visible = true)
+            delegate.closeSettingsPanel()
+            delegate.onSettingsPanelVisibilityChanged(visible = false)
+            delegate.closeSettingsPanel()
+
+            assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
+        }
+    }
+
+    @Test
     fun bind_startsFromWhatTheRepositoryHolds() {
         runTest {
             storedSettings.value = CameraSettings(gridType = GridType.FOUR_BY_FOUR)

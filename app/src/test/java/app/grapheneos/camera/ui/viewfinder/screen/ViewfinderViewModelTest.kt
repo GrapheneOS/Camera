@@ -106,7 +106,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 effects,
             )
             verifyOrder {
-                previewControlsDelegate.hideExposurePanel()
                 cameraDelegate.bindCamera(any())
                 cameraDelegate.announceBind()
             }
@@ -134,43 +133,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             verifyOrder {
                 cameraDelegate.dismissQrResult()
                 cameraDelegate.canBeginBind(forced = true)
-            }
-        }
-    }
-
-    @Test
-    fun previewPressed_showsTheFocusControls() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(CameraAction.Preview.Tapped)
-
-            verify(exactly = 1) { previewControlsDelegate.showExposurePanel() }
-        }
-    }
-
-    @Test
-    fun previewPressed_inQrMode_doesNotShowFocusControls() {
-        runTest {
-            val viewModel = createViewModel()
-            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
-
-            viewModel.onAction(CameraAction.Preview.Tapped)
-
-            verify(exactly = 0) { previewControlsDelegate.showExposurePanel() }
-        }
-    }
-
-    @Test
-    fun exposureSliderDragged_appliesItAndKeepsThePanelShown() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(CameraAction.ExposureSliderDragged(compensationIndex = 2))
-
-            verifyOrder {
-                cameraControlsDelegate.setExposureCompensation(2)
-                previewControlsDelegate.showExposurePanel()
             }
         }
     }

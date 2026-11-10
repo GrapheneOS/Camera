@@ -11,6 +11,7 @@ import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.previewoverlays.screen.mapper.PreviewOverlaysUiStateMapperImpl
+import app.grapheneos.camera.ui.previewoverlays.screen.model.PreviewOverlaysAction.FocusAction
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPhase
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPress
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusSelection
@@ -165,7 +166,7 @@ class FocusDelegateTest {
             trackFocus()
             startFocus()
 
-            delegate.cancelFocus()
+            delegate.onAction(FocusAction.FocusKeyPressed)
             events.emit(CameraFocusEvent.Focused(requestId = 1))
 
             verify(exactly = 1) { focusControl.cancel() }
@@ -180,10 +181,25 @@ class FocusDelegateTest {
             startFocus()
 
             press(x = 12f, y = 21f)
-            delegate.onPreviewTapped()
+            delegate.onAction(FocusAction.PreviewTapped)
 
             verify(exactly = 1) { focusControl.cancel() }
             verify(exactly = 1) { focusControl.focus(any()) }
+            assertFalse(selection().visible)
+        }
+    }
+
+    @Test
+    fun modeChange_cancelsActiveMeteringOnceAndIgnoresLateResults() {
+        runTest {
+            trackFocus()
+            startFocus()
+
+            changePreview { content -> content.copy(mode = CameraMode.VIDEO) }
+            events.emit(CameraFocusEvent.Cancelled(requestId = 1))
+            events.emit(CameraFocusEvent.Focused(requestId = 1))
+
+            verify(exactly = 1) { focusControl.cancel() }
             assertFalse(selection().visible)
         }
     }
@@ -211,7 +227,7 @@ class FocusDelegateTest {
             startFocus()
 
             press(x = 10f, y = 20f)
-            delegate.onPreviewLongPressed()
+            delegate.onAction(FocusAction.PreviewLongPressed)
             events.emit(CameraFocusEvent.Locked(requestId = 1))
             events.emit(CameraFocusEvent.Focused(requestId = 1))
 
@@ -231,7 +247,7 @@ class FocusDelegateTest {
 
             press(x = 10f, y = 20f)
             events.emit(CameraFocusEvent.Cancelled(requestId = 1))
-            delegate.onPreviewLongPressed()
+            delegate.onAction(FocusAction.PreviewLongPressed)
 
             verify(exactly = 0) { focusControl.lock() }
             verify(exactly = 1) { focusControl.focus(lockedRequest(id = 2)) }
@@ -245,7 +261,7 @@ class FocusDelegateTest {
 
             press(x = 10f, y = 20f)
             val provisional = requireNotNull(ring())
-            delegate.onPreviewLongPressed()
+            delegate.onAction(FocusAction.PreviewLongPressed)
 
             assertTrue(provisional.visible)
             verify(exactly = 1) {
@@ -263,7 +279,7 @@ class FocusDelegateTest {
 
             press(x = 10f, y = 20f)
             val provisional = requireNotNull(ring())
-            delegate.onPreviewTapped()
+            delegate.onAction(FocusAction.PreviewTapped)
 
             assertEquals(provisional, ring())
             assertEquals(provisional.requestId, selection().requestId)
@@ -276,8 +292,8 @@ class FocusDelegateTest {
             trackFocus()
 
             press(x = 10f, y = 20f)
-            delegate.onPreviewGestureStarted()
-            delegate.onPreviewTapped()
+            delegate.onAction(FocusAction.PreviewGestureStarted)
+            delegate.onAction(FocusAction.PreviewTapped)
 
             verify(exactly = 0) { focusControl.focus(any()) }
             coVerify(exactly = 0) { playCameraSound(any()) }
@@ -293,7 +309,7 @@ class FocusDelegateTest {
 
             press(x = 100f, y = 200f)
             events.emit(CameraFocusEvent.Focused(requestId = 1))
-            delegate.onPreviewGestureStarted()
+            delegate.onAction(FocusAction.PreviewGestureStarted)
 
             assertEquals(
                 FocusUiModel(
@@ -318,7 +334,7 @@ class FocusDelegateTest {
 
             press(x = 100f, y = 200f)
             events.emit(CameraFocusEvent.Cancelled(requestId = 1))
-            delegate.onPreviewGestureStarted()
+            delegate.onAction(FocusAction.PreviewGestureStarted)
 
             assertFalse(requireNotNull(ring()).visible)
             verify(exactly = 0) { focusControl.cancel() }
@@ -332,7 +348,7 @@ class FocusDelegateTest {
 
             press(x = 10f, y = 20f)
             changePreview { content -> content.copy(mode = CameraMode.VIDEO) }
-            delegate.onPreviewTapped()
+            delegate.onAction(FocusAction.PreviewTapped)
 
             verify(exactly = 0) { focusControl.focus(any()) }
         }
@@ -417,7 +433,7 @@ class FocusDelegateTest {
         y: Float = 20f,
     ) {
         press(x = x, y = y)
-        delegate.onPreviewTapped()
+        delegate.onAction(FocusAction.PreviewTapped)
         events.emit(CameraFocusEvent.Started(requestId = selection().requestId))
     }
 
@@ -425,7 +441,13 @@ class FocusDelegateTest {
         x: Float,
         y: Float,
     ) {
-        delegate.onPreviewPressed(x = x, y = y, hitRadius = HIT_RADIUS)
+        delegate.onAction(
+            FocusAction.PreviewPressed(
+                x = x,
+                y = y,
+                hitRadius = HIT_RADIUS,
+            ),
+        )
     }
 
     private fun lockedRequest(id: Long): CameraFocusRequest {

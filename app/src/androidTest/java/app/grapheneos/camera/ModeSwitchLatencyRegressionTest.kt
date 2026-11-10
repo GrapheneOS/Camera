@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.di.camera.SnapshotProbeCacheEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewControlUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import dagger.hilt.android.EntryPointAccessors
@@ -177,7 +178,9 @@ class ModeSwitchLatencyRegressionTest {
             waitUntil(scenario, "the zoom control caught up with the camera") {
                 val zoom = zoomControl(it).zoom
                 val isHalfway = zoom != null && abs(zoom.linearZoom - 0.5f) < 0.01f
-                isHalfway && it.previewOverlays.uiState.value.zoom?.ratio == zoom.zoomRatio
+                val control = it.previewOverlays.uiState.value.control
+                val shownZoom = control as? PreviewControlUiModel.Zoom
+                isHalfway && shownZoom?.ratio == zoom.zoomRatio
             }
             scenario.onActivity {
                 assertEquals(0.5f, zoomControl(it).zoom!!.linearZoom, 0.01f)
