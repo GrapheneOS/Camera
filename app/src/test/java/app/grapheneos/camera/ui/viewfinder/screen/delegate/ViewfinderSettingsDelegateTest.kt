@@ -169,26 +169,6 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun videoLightWrites_followWritesToTheCurrentSlotButNotSlotSwitches() {
-        runTest {
-            val stored = MutableStateFlow(SLOTTED)
-            every { settingsRepository.modeSettings(SLOT) } answers { stored.value }
-            every { settingsRepository.observeModeSettings(SLOT) } returns stored
-            val delegate = createDelegate()
-            val writes = mutableListOf<Boolean>()
-            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
-                delegate.videoLightWrites().collect { enabled -> writes += enabled }
-            }
-
-            delegate.selectModeSlot(SLOT)
-            stored.value = SLOTTED.copy(flashMode = FlashMode.ON)
-            delegate.selectModeSlot(OTHER_SLOT)
-
-            assertEquals(listOf(true), writes)
-        }
-    }
-
-    @Test
     fun settingsPanel_isNavigatedToOutsideQrModeAndRecordings() {
         runTest {
             val delegate = createDelegate()

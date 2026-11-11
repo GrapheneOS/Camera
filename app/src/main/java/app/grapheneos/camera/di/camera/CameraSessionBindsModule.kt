@@ -2,6 +2,8 @@ package app.grapheneos.camera.di.camera
 
 import app.grapheneos.camera.data.camera.session.ExtensionUsability
 import app.grapheneos.camera.data.camera.session.ExtensionUsabilityImpl
+import app.grapheneos.camera.data.camera.session.SceneLightControl
+import app.grapheneos.camera.data.camera.session.SceneLightControlImpl
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.camera.session.VideoRecordingSessionImpl
 import dagger.Binds
@@ -19,6 +21,12 @@ internal abstract class CameraSessionBindsModule {
     abstract fun bindExtensionUsability(
         impl: ExtensionUsabilityImpl,
     ): ExtensionUsability
+
+    @Binds
+    @ActivityRetainedScoped
+    abstract fun bindSceneLightControl(
+        impl: SceneLightControlImpl,
+    ): SceneLightControl
 
     @Binds
     @ActivityRetainedScoped

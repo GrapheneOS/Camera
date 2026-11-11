@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.quicksettings.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Block
@@ -156,7 +157,9 @@ private fun <T> AnimatedSettingRow(
         transitionSpec = { crossfadeResizing() },
         contentKey = { shownSetting -> shownSetting != null },
     ) { shownSetting ->
-        shownSetting?.let { row(it) }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            shownSetting?.let { row(it) }
+        }
     }
 }
 

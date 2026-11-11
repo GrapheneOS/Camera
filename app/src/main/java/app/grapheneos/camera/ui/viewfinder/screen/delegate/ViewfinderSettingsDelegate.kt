@@ -31,9 +31,6 @@ interface ViewfinderSettingsDelegate {
     /** Emits after each write of a setting the camera binds with, once the state holds it. */
     fun rebindRequests(): Flow<Unit>
 
-    /** Emits whether the video light is enabled after each write of it to the current mode. */
-    fun videoLightWrites(): Flow<Boolean>
-
     fun toggleScanAllCodes()
     fun setIncludeAudio(enabled: Boolean)
     fun selectModeSlot(slot: ModeSlot)
@@ -107,18 +104,6 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
             aspectRatioWrites,
             videoFormatWrites,
         ).map { reload() }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun videoLightWrites(): Flow<Boolean> {
-        return currentSlot
-            .filterNotNull()
-            .flatMapLatest { slot ->
-                settingsRepository.observeModeSettings(slot)
-                    .map { modeSettings -> modeSettings.isVideoLightOn() }
-                    .distinctUntilChanged()
-                    .drop(1)
-            }
     }
 
     override fun toggleScanAllCodes() {

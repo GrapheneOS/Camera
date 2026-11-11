@@ -472,32 +472,6 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun applyVideoLight_lightsTheSceneInVideoModeOnly() {
-        val delegate = createAttachedDelegate()
-
-        delegate.applyVideoLight(enabled = true)
-        stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-        delegate.applyVideoLight(enabled = false)
-        delegate.applyVideoLight(enabled = true)
-
-        verifyOrder {
-            torch.enable(false)
-            torch.enable(false)
-            torch.enable(true)
-        }
-    }
-
-    @Test
-    fun applyVideoLight_inQrMode_leavesTheTorchToItsToggle() {
-        stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
-        val delegate = createAttachedDelegate()
-
-        delegate.applyVideoLight(enabled = true)
-
-        verify(exactly = 0) { torch.enable(any()) }
-    }
-
-    @Test
     fun qrCodeScanned_showsTheResultOnceAndStopsTheCamera() {
         createAttachedDelegate()
 

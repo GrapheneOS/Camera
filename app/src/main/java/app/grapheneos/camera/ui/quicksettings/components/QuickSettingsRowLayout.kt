@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.quicksettings.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -99,26 +100,22 @@ private fun QuickSettingsRowLabel(
 ) {
     val clickModifier = when (onUnavailableClick) {
         null -> Modifier
-
-        // Cancels the padding, so only the ripple reaches past the text.
-        else -> {
-            Modifier
-                .offset(x = -LABEL_RIPPLE_HORIZONTAL_PADDING)
-                .clip(shape = MaterialTheme.shapes.small)
-                .clickable(
-                    onClickLabel = stringResource(R.string.quick_settings_why_unavailable),
-                    role = Role.Button,
-                    onClick = onUnavailableClick,
-                )
-                .padding(
-                    horizontal = LABEL_RIPPLE_HORIZONTAL_PADDING,
-                    vertical = LABEL_RIPPLE_VERTICAL_PADDING,
-                )
-        }
+        else -> Modifier.clickable(
+            onClickLabel = stringResource(R.string.quick_settings_why_unavailable),
+            role = Role.Button,
+            onClick = onUnavailableClick,
+        )
     }
 
     Column(
-        modifier = clickModifier,
+        modifier = Modifier
+            .offset(x = -LABEL_RIPPLE_HORIZONTAL_PADDING)
+            .clip(shape = MaterialTheme.shapes.small)
+            .then(clickModifier)
+            .padding(
+                horizontal = LABEL_RIPPLE_HORIZONTAL_PADDING,
+                vertical = LABEL_RIPPLE_VERTICAL_PADDING,
+            ),
     ) {
         Text(
             text = label,
@@ -134,13 +131,14 @@ private fun QuickSettingsRowLabel(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
-            if (onUnavailableClick != null) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                    contentDescription = null,
-                    modifier = Modifier.size(size = UNAVAILABLE_ICON_SIZE),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+            Box(modifier = Modifier.size(size = UNAVAILABLE_ICON_SIZE)) {
+                if (onUnavailableClick != null) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
