@@ -123,6 +123,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val videoQualitySupport: VideoQualitySupport,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
     private val cameraXStateMapper: CameraXStateMapper,
+    private val sceneLightControl: SceneLightControl,
     @MainImmediateDispatcher mainDispatcher: CoroutineDispatcher,
 ) : CameraSession {
 
@@ -315,8 +316,7 @@ internal class CameraSessionImpl @Inject constructor(
             "No screen to show the camera on"
         }
 
-        provider.unbindAll()
-        _boundCamera.value = null
+        unbind()
         handler.removeCallbacks(qrAutofocus)
 
         val appliedExtension = settings.mode.extensionMode?.let(::applyExtension)
@@ -365,12 +365,14 @@ internal class CameraSessionImpl @Inject constructor(
                 settings = settings,
                 highFrameRate = videoFeatureGroup.highFrameRate,
             )
+            attachControls()
         }
 
         return outcome
     }
 
     override fun unbind() {
+        sceneLightControl.detach()
         cameraProvider?.unbindAll()
         _boundCamera.value = null
     }
@@ -401,10 +403,7 @@ internal class CameraSessionImpl @Inject constructor(
     override fun setFlashMode(flashMode: FlashMode) {
         imageCapture?.flashMode = cameraXConstantsMapper.map(flashMode)
 
-        camera
-            ?.takeIf { camera -> camera.cameraInfo.isLowLightBoostSupported }
-            ?.cameraControl
-            ?.enableLowLightBoostAsync(flashMode == FlashMode.LOW_LIGHT_BOOST)
+        sceneLightControl.setFlashMode(flashMode)
     }
 
     override fun setZoomRatio(zoomRatio: Float) {
@@ -468,6 +467,7 @@ internal class CameraSessionImpl @Inject constructor(
     // CameraX unbinds every use case of a lifecycle that reaches ON_DESTROY, and this session
     // outlives the screen whose lifecycle that was.
     private fun forgetBoundCamera() {
+        sceneLightControl.detach()
         handler.removeCallbacks(attachZoomState)
         handler.removeCallbacks(qrAutofocus)
         zoomStateSource?.removeObserver(zoomStateObserver)
@@ -481,6 +481,16 @@ internal class CameraSessionImpl @Inject constructor(
         iAnalyzer = null
         qrAnalyzer = null
         _boundCamera.value = null
+    }
+
+    private fun attachControls() {
+        val attachedCamera = camera ?: return
+        val boundCamera = _boundCamera.value ?: return
+
+        sceneLightControl.attach(
+            control = attachedCamera.cameraControl,
+            boundCamera = boundCamera,
+        )
     }
 
     private fun onCameraProviderReady(

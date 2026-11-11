@@ -69,7 +69,6 @@ interface ViewfinderCameraDelegate {
     fun setPreviewRotation(rotation: Int)
 
     fun applyFlashMode(value: FlashMode)
-    fun applyVideoLight(enabled: Boolean)
     fun toggleTorch()
 
     fun stepZoom(step: Float)
@@ -275,13 +274,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         stateHolder.update {
             it.copy(flashMode = value)
         }
-    }
-
-    override fun applyVideoLight(enabled: Boolean) {
-        val state = stateHolder.state.value
-        if (state.isQrMode()) return
-
-        torch.enable(state.isVideoMode() && enabled)
     }
 
     override fun toggleTorch() {

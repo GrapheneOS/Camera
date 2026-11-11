@@ -611,7 +611,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             launch { locationDelegate.trackLocation() }
             launch { screenWakeDelegate.keepScreenAwake() }
             launch { settingsDelegate.rebindRequests().collect { startCamera(forced = true) } }
-            launch { settingsDelegate.videoLightWrites().collect(cameraDelegate::applyVideoLight) }
         }
     }
 
@@ -654,9 +653,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun applyModeSettings() {
         slotCurrentMode()
 
-        val modeSettings = state().modeSettings
-        cameraDelegate.applyFlashMode(modeSettings.flashMode)
-        cameraDelegate.applyVideoLight(modeSettings.isVideoLightOn())
+        cameraDelegate.applyFlashMode(state().modeSettings.flashMode)
     }
 
     private fun dismissQrResult() {

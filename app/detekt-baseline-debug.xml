@@ -20,6 +20,8 @@
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is IllegalArgumentException</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is UnsupportedOperationException</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception is IllegalArgumentException</ID>
+    <!-- Remove once zoom, focus and exposure move out of the session into their own controls (task 763). -->
+    <ID>LargeClass:CameraSession.kt:CameraSessionImpl : CameraSession</ID>
     <ID>LargeClass:MainActivity.kt:MainActivity : AppCompatActivity</ID>
     <ID>LongMethod:BlurBitmap.kt:BlurBitmap$operator fun get: Bitmap</ID>
     <ID>LongMethod:CameraSession.kt:CameraSessionImpl$@SuppressLint("RestrictedApi") override fun bind: BindOutcome</ID>
