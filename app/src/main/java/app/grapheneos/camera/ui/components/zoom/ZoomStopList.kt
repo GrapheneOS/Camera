@@ -5,7 +5,7 @@ import kotlin.math.max
 
 @Immutable
 internal class ZoomStopList(
-    val stops: List<Float>,
+    private val stops: List<Float>,
 ) {
 
     init {
@@ -19,5 +19,21 @@ internal class ZoomStopList(
 
     fun selectedIndex(value: Float): Int {
         return max(0, stops.indexOfLast { stop -> stop <= value })
+    }
+
+    fun keyOf(stop: Float): Key {
+        return when {
+            stop == stops.first() && stop < 1f -> Key.WideAngle
+            else -> Key.Ratio(value = stop)
+        }
+    }
+
+    sealed interface Key {
+
+        data object WideAngle : Key
+
+        data class Ratio(
+            val value: Float,
+        ) : Key
     }
 }

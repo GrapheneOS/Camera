@@ -23,6 +23,8 @@ internal interface PreviewOverlaysUiStateMapper {
     fun map(state: PreviewOverlaysState): PreviewOverlaysUiState
 
     fun mapLevel(state: PreviewOverlaysState): LevelUiState
+
+    fun mapZoomRatio(state: PreviewOverlaysState): Float
 }
 
 internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
@@ -53,6 +55,18 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
             pitchDegrees = 0f - level.horizonDegrees,
             rotationDegrees = levelRotationDegrees(state),
         )
+    }
+
+    override fun mapZoomRatio(state: PreviewOverlaysState): Float {
+        val zoom = state.zoom.value
+
+        return when {
+            zoom == null || !zoom.isAdjustable() -> DEFAULT_ZOOM_RATIO
+            else -> zoom.zoomRatio.coerceIn(
+                minimumValue = zoom.minZoomRatio,
+                maximumValue = zoom.maxZoomRatio,
+            )
+        }
     }
 
     private fun gridPattern(state: PreviewOverlaysState): CompositionGridPattern? {
@@ -119,10 +133,9 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
         )
 
         return PreviewControlUiModel.Zoom(
-            ratio = zoom.zoomRatio.coerceIn(range),
             range = range,
             presets = presets.toImmutableList(),
-            isCurrentValueShown = state.zoom.pendingPreset == null,
+            isCurrentValueVisible = state.zoom.pendingPreset == null,
             isExpanded = state.zoom.isExpanded,
             isPinching = state.zoom.isPreviewPinching,
         )
@@ -145,5 +158,6 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
 
     private companion object {
         private const val FULL_TURN_DEGREES = 360
+        private const val DEFAULT_ZOOM_RATIO = 1f
     }
 }

@@ -40,6 +40,7 @@ import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.model.VideoFeatureGroup
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
+import app.grapheneos.camera.data.camera.session.ZoomControl.Restoration
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -268,12 +269,8 @@ internal class CameraSessionImpl @Inject constructor(
     }
 
     override fun bind(settings: CameraBindSettings): BindOutcome {
-        val provider = requireNotNull(cameraProvider) {
-            "Camera provider is not ready yet"
-        }
-        val target = requireNotNull(previewTarget) {
-            "No screen to show the camera on"
-        }
+        val provider = requireNotNull(cameraProvider) { "Camera provider is not ready yet" }
+        val target = requireNotNull(previewTarget) { "No screen to show the camera on" }
 
         unbind()
 
@@ -283,9 +280,8 @@ internal class CameraSessionImpl @Inject constructor(
 
         // Asked of the selector this bind uses, extensions included: an extension mode decides for
         // itself whether it can produce Ultra HDR.
-        val features = currentCameraInfoOrNull()?.let {
-            cameraFeatureSupport.features(it)
-        } ?: LensFeatures()
+        val cameraInfo = currentCameraInfoOrNull()
+        val features = cameraInfo?.let(cameraFeatureSupport::features) ?: LensFeatures()
         val videoFeatureGroup = resolveFeatureGroup(
             provider = provider,
             settings = settings,
@@ -321,19 +317,34 @@ internal class CameraSessionImpl @Inject constructor(
             appliedExtension = appliedExtension,
         )
         if (outcome == BindOutcome.BOUND) {
-            val cameraInfo = requireNotNull(camera) { "A bound session has a camera" }.cameraInfo
-
-            _boundCamera.value = boundCameraOf(
-                cameraInfo = cameraInfo,
+            onBound(
                 settings = settings,
                 highFrameRate = videoFeatureGroup.highFrameRate,
-                appliedExtensionMode = appliedExtension?.extensionMode,
+                appliedExtension = appliedExtension,
             )
-            attachControls(remembersZoom = settings.qr == null)
-            applyExposureCompensation()
         }
 
         return outcome
+    }
+
+    private fun onBound(
+        settings: CameraBindSettings,
+        highFrameRate: HighFrameRateSupport?,
+        appliedExtension: ExtensionKey?,
+    ) {
+        _boundCamera.value = boundCameraOf(
+            cameraInfo = requireNotNull(camera) { "A bound session has a camera" }.cameraInfo,
+            settings = settings,
+            highFrameRate = highFrameRate,
+            appliedExtensionMode = appliedExtension?.extensionMode,
+        )
+        val zoomRestoration = when {
+            settings.qr != null -> Restoration.DISABLED
+            appliedExtension != null -> Restoration.WHEN_ZOOM_LOADS
+            else -> Restoration.BEFORE_PREVIEW
+        }
+        attachControls(zoomRestoration)
+        applyExposureCompensation()
     }
 
     override fun unbind() {
@@ -344,11 +355,14 @@ internal class CameraSessionImpl @Inject constructor(
     }
 
     override fun capabilities(): CameraCapabilities {
-        val cameraInfo = camera?.cameraInfo ?: return CameraCapabilities()
+        val cameraInfo = camera?.cameraInfo
+        val provider = cameraProvider
+
+        if (cameraInfo == null || provider == null) return CameraCapabilities()
 
         return CameraCapabilities(
             lensFacing = lensFacing,
-            lensFeatures = lensFeatures(),
+            lensFeatures = cameraFeatureSupport.featuresByLens(provider),
             photoMegapixels = photoResolutionSupport.standardMegapixels(cameraInfo),
             photoResolutions = photoResolutionSupport.resolutions(cameraInfo),
             videoBitrates = videoBitrateSupport.bitrates(cameraInfo),
@@ -728,21 +742,6 @@ internal class CameraSessionImpl @Inject constructor(
         )
     }
 
-    // Every camera rather than the one in use: a setting stays where the user left it whichever
-    // camera the settings were opened from, and is applied wherever the camera supports it.
-    private fun lensFeatures(): Map<LensFacing, LensFeatures> {
-        val provider = cameraProvider ?: return emptyMap()
-
-        return LensFacing.entries
-            .filter { lensFacing ->
-                provider.hasCamera(cameraSelectorFor(lensFacing))
-            }
-            .associateWith { lensFacing ->
-                val cameraInfo = provider.getCameraInfo(cameraSelectorFor(lensFacing))
-                cameraFeatureSupport.features(cameraInfo)
-            }
-    }
-
     private fun currentCameraInfoOrNull(): CameraInfo? {
         return try {
             cameraProvider?.getCameraInfo(cameraSelector)
@@ -784,7 +783,7 @@ internal class CameraSessionImpl @Inject constructor(
         sceneLightControl.setFlashMode(flash.selectedMode)
     }
 
-    private fun attachControls(remembersZoom: Boolean) {
+    private fun attachControls(zoomRestoration: Restoration) {
         val attachedCamera = camera
         val target = previewTarget
         val boundCamera = _boundCamera.value
@@ -797,7 +796,7 @@ internal class CameraSessionImpl @Inject constructor(
         zoomControl.attach(
             camera = attachedCamera,
             lensFacing = lensFacing,
-            remembersZoom = remembersZoom,
+            restoration = zoomRestoration,
         )
         exposureControl.attach(attachedCamera)
         sceneLightControl.attach(

@@ -116,7 +116,7 @@ class VideoPlayerViewModelTest {
 
             shownPosition.value = 7.seconds
 
-            assertEquals(7.seconds, viewModel.uiState.value.position)
+            assertEquals(7.seconds, viewModel.videoPosition.value)
         }
     }
 
@@ -128,7 +128,7 @@ class VideoPlayerViewModelTest {
 
             shownPosition.value = 7.seconds
 
-            assertEquals(Duration.ZERO, viewModel.uiState.value.position)
+            assertEquals(Duration.ZERO, viewModel.videoPosition.value)
         }
     }
 
@@ -140,7 +140,7 @@ class VideoPlayerViewModelTest {
             viewModel.onAction(Action.SeekDragged(9.seconds))
 
             verify { playback.seekTo(9.seconds) }
-            assertEquals(9.seconds, viewModel.uiState.value.position)
+            assertEquals(9.seconds, viewModel.videoPosition.value)
         }
     }
 

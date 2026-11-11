@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.previewoverlays.screen
 
 import androidx.lifecycle.viewModelScope
+import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -28,6 +29,7 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverla
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.ZoomState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.LevelUiState
 import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewOverlaysUiState
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -161,6 +163,45 @@ class PreviewOverlaysViewModelTest {
                 ),
                 mappedState.captured,
             )
+        }
+    }
+
+    @Test
+    fun uiState_isMappedAgainOnlyWhenMoreThanTheZoomRatioChanges() {
+        runTest {
+            val viewModel = createViewModel()
+            val zoom = ZoomState(
+                value = CameraZoom(
+                    zoomRatio = 1f,
+                    linearZoom = 0f,
+                    minZoomRatio = 0.5f,
+                    maxZoomRatio = 8f,
+                ),
+            )
+            every { mapper.mapZoomRatio(any()) } answers {
+                firstArg<PreviewOverlaysState>().zoom.value?.zoomRatio ?: 1f
+            }
+            boundStateHolder.captured.update { it.copy(zoom = zoom) }
+            clearMocks(
+                mapper,
+                answers = false,
+            )
+
+            boundStateHolder.captured.update {
+                it.copy(
+                    zoom = zoom.copy(
+                        value = zoom.value?.copy(zoomRatio = 2f),
+                        interactionId = 1,
+                    ),
+                )
+            }
+
+            verify(exactly = 0) { mapper.map(any()) }
+            assertEquals(2f, viewModel.zoomRatio.value)
+
+            boundStateHolder.captured.update { it.copy(zoom = it.zoom.copy(isExpanded = true)) }
+
+            verify(exactly = 1) { mapper.map(any()) }
         }
     }
 
@@ -352,6 +393,7 @@ class PreviewOverlaysViewModelTest {
         every { settingsRepository.settings } returns settings
         every { mapper.map(capture(mappedState)) } returns PreviewOverlaysUiState()
         every { mapper.mapLevel(any()) } returns LevelUiState()
+        every { mapper.mapZoomRatio(any()) } returns 1f
         val viewModel = PreviewOverlaysViewModel(
             settingsRepository = settingsRepository,
             uiStateMapper = mapper,

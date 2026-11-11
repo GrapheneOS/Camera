@@ -104,7 +104,12 @@ class ZoomDelegateTest {
 
             selectExposure()
 
-            verify(exactly = 1) { control.setZoomRatio(2f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 2f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
             assertNull(stateHolder.state.value.zoom.pendingPreset)
             assertFalse(stateHolder.state.value.zoom.isExpanded)
         }
@@ -126,7 +131,12 @@ class ZoomDelegateTest {
             trackZoom()
             delegate.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
             runCurrent()
-            verify(exactly = 1) { control.setZoomRatio(2f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 2f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
             assertTrue(stateHolder.state.value.zoom.isExpanded)
 
             advanceTimeBy(1999.milliseconds)
@@ -145,7 +155,12 @@ class ZoomDelegateTest {
             delegate.onAction(ZoomAction.RatioChanged(ratio = 0.6f))
             delegate.onAction(ZoomAction.ZoomKeyPressed(ZoomDirection.IN))
 
-            verify(exactly = 1) { control.setZoomRatio(1f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 1f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
         }
     }
 
@@ -157,7 +172,12 @@ class ZoomDelegateTest {
 
             delegate.onAction(ZoomAction.VolumeKeyPressed(ZoomDirection.IN))
             runCurrent()
-            verify(exactly = 1) { control.setZoomRatio(2f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 2f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
             advanceTimeBy(2.seconds)
             runCurrent()
             delegate.onAction(ZoomAction.VolumeKeyReleased)
@@ -166,11 +186,26 @@ class ZoomDelegateTest {
             runCurrent()
 
             verifyOrder {
-                control.setZoomRatio(2f)
-                control.setZoomRatio(8f)
-                control.setZoomRatio(2f)
-                control.setZoomRatio(1f)
-                control.setZoomRatio(0.5f)
+                control.setZoomRatio(
+                    zoomRatio = 2f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
+                    zoomRatio = 8f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
+                    zoomRatio = 2f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
+                    zoomRatio = 1f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
+                    zoomRatio = 0.5f,
+                    lensFacing = LensFacing.BACK,
+                )
             }
             assertTrue(stateHolder.state.value.zoom.isExpanded)
         }
@@ -188,7 +223,12 @@ class ZoomDelegateTest {
             advanceTimeBy(2.seconds)
             runCurrent()
 
-            verify(exactly = 1) { control.setZoomRatio(any()) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = any(),
+                    lensFacing = any(),
+                )
+            }
         }
     }
 
@@ -202,7 +242,12 @@ class ZoomDelegateTest {
             advanceTimeBy(2.seconds)
             runCurrent()
 
-            verify(exactly = 0) { control.setZoomRatio(any()) }
+            verify(exactly = 0) {
+                control.setZoomRatio(
+                    zoomRatio = any(),
+                    lensFacing = any(),
+                )
+            }
         }
     }
 
@@ -250,7 +295,12 @@ class ZoomDelegateTest {
 
             assertEquals(listOf(2f, 8f), cancelled)
             assertNull(stateHolder.state.value.zoom.pendingPreset)
-            verify(exactly = 1) { control.setZoomRatio(1.5f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 1.5f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
         }
     }
 
@@ -302,8 +352,14 @@ class ZoomDelegateTest {
             delegate.onAction(ZoomAction.RatioChanged(ratio = 0.1f))
 
             verifyOrder {
-                control.setZoomRatio(8f)
-                control.setZoomRatio(0.5f)
+                control.setZoomRatio(
+                    zoomRatio = 8f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
+                    zoomRatio = 0.5f,
+                    lensFacing = LensFacing.BACK,
+                )
             }
         }
     }
@@ -338,8 +394,14 @@ class ZoomDelegateTest {
             advanceTimeBy(10.seconds)
 
             verifyOrder {
-                control.setZoomRatio(2.25f)
-                control.setZoomRatio(0.5625f)
+                control.setZoomRatio(
+                    zoomRatio = 2.25f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
+                    zoomRatio = 0.5625f,
+                    lensFacing = LensFacing.BACK,
+                )
             }
             assertTrue(stateHolder.state.value.zoom.isExpanded)
 
@@ -418,7 +480,12 @@ class ZoomDelegateTest {
                 delegate.onAction(ZoomAction.RatioChanged(ratio = 2f))
             }
 
-            verify(exactly = 0) { control.setZoomRatio(any()) }
+            verify(exactly = 0) {
+                control.setZoomRatio(
+                    zoomRatio = any(),
+                    lensFacing = any(),
+                )
+            }
         }
     }
 
@@ -457,9 +524,12 @@ class ZoomDelegateTest {
             }
             delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 1.5f))
             delegate.onAction(ZoomAction.PreviewPinchScaleChanged(scaleFactor = 0.5f))
-            verify(exactly = 0) { control.setZoomRatio(any()) }
-            verify(exactly = 1) {
-                control.rememberZoomRatio(
+            verifyOrder {
+                control.setZoomRatio(
+                    zoomRatio = 2.25f,
+                    lensFacing = LensFacing.BACK,
+                )
+                control.setZoomRatio(
                     zoomRatio = 0.5625f,
                     lensFacing = LensFacing.BACK,
                 )
@@ -479,7 +549,12 @@ class ZoomDelegateTest {
             assertTrue(stateHolder.state.value.zoom.isExpanded)
             assertTrue(stateHolder.state.value.zoom.isPreviewPinching)
             delegate.onAction(ZoomAction.RatioChanged(ratio = 4f))
-            verify(exactly = 1) { control.setZoomRatio(4f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 4f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
         }
     }
 
@@ -500,11 +575,16 @@ class ZoomDelegateTest {
             delegate.onAction(ZoomAction.RatioChanged(ratio = 3f))
             events.emit(CameraZoomEvent.Changed)
             runCurrent()
-            verify(exactly = 0) { control.setZoomRatio(any()) }
+            verify(exactly = 0) {
+                control.setZoomRatio(
+                    zoomRatio = any(),
+                    lensFacing = LensFacing.BACK,
+                )
+            }
             coVerify(exactly = 0) { control.animateZoomRatio(any()) }
             assertEquals(3f, stateHolder.state.value.zoom.value?.zoomRatio)
             verify(exactly = 1) {
-                control.rememberZoomRatio(
+                control.setZoomRatio(
                     zoomRatio = 3f,
                     lensFacing = LensFacing.FRONT,
                 )
@@ -520,7 +600,12 @@ class ZoomDelegateTest {
             events.emit(CameraZoomEvent.Loaded)
             runCurrent()
 
-            verify(exactly = 0) { control.setZoomRatio(any()) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = any(),
+                    lensFacing = any(),
+                )
+            }
             assertEquals(3f, stateHolder.state.value.zoom.value?.zoomRatio)
         }
     }
@@ -544,7 +629,12 @@ class ZoomDelegateTest {
             delegate.onAction(ZoomAction.RatioChanged(ratio = 1f))
 
             assertFalse(stateHolder.state.value.zoom.isExpanded)
-            verify(exactly = 0) { control.setZoomRatio(any()) }
+            verify(exactly = 0) {
+                control.setZoomRatio(
+                    zoomRatio = any(),
+                    lensFacing = any(),
+                )
+            }
         }
     }
 
@@ -565,7 +655,12 @@ class ZoomDelegateTest {
 
             assertEquals(2f, stateHolder.state.value.zoom.value?.zoomRatio)
             assertFalse(stateHolder.state.value.zoom.isExpanded)
-            verify(exactly = 1) { control.setZoomRatio(2f) }
+            verify(exactly = 1) {
+                control.setZoomRatio(
+                    zoomRatio = 2f,
+                    lensFacing = LensFacing.BACK,
+                )
+            }
         }
     }
 

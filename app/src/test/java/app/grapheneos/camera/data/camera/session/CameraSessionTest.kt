@@ -25,6 +25,7 @@ import app.grapheneos.camera.data.camera.model.QrBindSettings
 import app.grapheneos.camera.data.camera.model.VideoBindSettings
 import app.grapheneos.camera.data.camera.model.VideoFeatureGroup
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
+import app.grapheneos.camera.data.camera.session.ZoomControl.Restoration
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -216,7 +217,7 @@ class CameraSessionTest {
                 zoomControl.attach(
                     camera = camera,
                     lensFacing = LensFacing.BACK,
-                    remembersZoom = true,
+                    restoration = Restoration.BEFORE_PREVIEW,
                 )
             }
         }

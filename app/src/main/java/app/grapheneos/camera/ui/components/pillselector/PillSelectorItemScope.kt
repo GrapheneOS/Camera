@@ -9,7 +9,7 @@ import kotlin.math.abs
 @Stable
 internal class PillSelectorItemScope(
     private val index: Int,
-    private val selection: PillSelectorSelection,
+    private val selection: PillSelectorSelection<*>,
     colors: State<PillSelectorColors>,
 ) {
 

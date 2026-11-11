@@ -28,16 +28,16 @@ class PreviewZoomTest {
     fun currentValue_isShownAfterThePresetTransitionEnds() {
         var zoom by mutableStateOf(
             PreviewControlUiModel.Zoom(
-                ratio = 1.8f,
                 range = 0.5f..8f,
                 presets = persistentListOf(0.5f, 1f, 2f),
-                isCurrentValueShown = false,
+                isCurrentValueVisible = false,
             ),
         )
         composeRule.setContent {
             CameraTheme {
                 PreviewZoom(
                     zoom = zoom,
+                    zoomRatio = { 1.8f },
                     onAction = {},
                 )
             }
@@ -45,7 +45,7 @@ class PreviewZoomTest {
         composeRule.onNodeWithContentDescription("1×").assertIsSelected()
         composeRule.onNodeWithContentDescription("1.8×").assertDoesNotExist()
 
-        composeRule.runOnIdle { zoom = zoom.copy(isCurrentValueShown = true) }
+        composeRule.runOnIdle { zoom = zoom.copy(isCurrentValueVisible = true) }
 
         composeRule.onNodeWithContentDescription("1.8×").assertIsSelected()
         composeRule.onNodeWithContentDescription(".5×").assertExists()
@@ -59,10 +59,10 @@ class PreviewZoomTest {
             CameraTheme {
                 PreviewZoom(
                     zoom = PreviewControlUiModel.Zoom(
-                        ratio = 1f,
                         range = 0.5f..8f,
                         presets = persistentListOf(0.5f, 1f, 2f),
                     ),
+                    zoomRatio = { 1f },
                     onAction = { action -> actions += action },
                 )
             }
@@ -94,10 +94,10 @@ class PreviewZoomTest {
                 if (visible) {
                     PreviewZoom(
                         zoom = PreviewControlUiModel.Zoom(
-                            ratio = 1f,
                             range = 0.5f..8f,
                             presets = persistentListOf(0.5f, 1f, 2f),
                         ),
+                        zoomRatio = { 1f },
                         onAction = { action ->
                             if (action is Action.ControlPressChanged) {
                                 presses += action.isPressed

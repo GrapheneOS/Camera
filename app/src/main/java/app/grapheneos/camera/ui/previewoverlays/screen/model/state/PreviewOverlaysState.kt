@@ -97,6 +97,13 @@ internal data class PreviewOverlaysState(
         }
     }
 
+    fun withPerFrameValuesOf(other: PreviewOverlaysState): PreviewOverlaysState {
+        return copy(
+            level = other.level,
+            zoom = zoom.withPerFrameValuesOf(other.zoom),
+        )
+    }
+
     fun withVisibleControlActive(): PreviewOverlaysState {
         return copy(activeControl = visibleControl() ?: PreviewControl.Zoom)
     }

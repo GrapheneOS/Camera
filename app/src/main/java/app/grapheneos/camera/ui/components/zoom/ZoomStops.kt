@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.components.zoom
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,9 +10,9 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
+import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 import app.grapheneos.camera.ui.components.pillselector.PillSelector
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorItemScope
@@ -47,7 +49,8 @@ private const val SELECTED_LABEL_SCALE = 1.15f
  * The selected stop is the last one at or below [value], or the first one below all of them. It
  * shows [value] followed by [valueSuffix], or its preset when [showCurrentValue] is false.
  * The others show only their number. [onStopClick] reports a tapped stop, and [value] changes
- * only when the caller sets it.
+ * only when the caller sets it. A first stop below 1× keeps its slot when its ratio changes, with
+ * its label crossfading; other stops that come or go grow in or shrink away.
  */
 @Composable
 internal fun ZoomStops(
@@ -70,37 +73,68 @@ internal fun ZoomStops(
         fontFeatureSettings = TABULAR_FIGURES,
     )
 
-    key(stops) {
-        PillSelector(
-            selectedIndex = selectedIndex,
-            itemCount = stops.size,
-            onItemSelected = { index -> onStopClick(stops[index]) },
-            modifier = modifier,
-            enabled = enabled,
-            colors = colors,
-        ) { index ->
-            val isSelected = index == selectedIndex
-            val number = format.format(
-                value = when {
-                    isSelected && showCurrentValue -> value
-                    else -> stops[index]
-                },
-            )
+    val selectedStop = stops[selectedIndex]
+    val currentValue = rememberUpdatedState(value)
 
-            ZoomStopLabel(
-                text = when {
-                    isSelected -> number + valueSuffix
-                    else -> number
-                },
-                description = number + valueSuffix,
-                customActions = customActions,
-                style = when {
-                    isSelected -> style.copy(fontWeight = FontWeight.Bold)
-                    else -> style
-                },
-                scope = this,
-            )
-        }
+    PillSelector(
+        items = stops,
+        key = stopList::keyOf,
+        selected = selectedStop,
+        onItemSelected = onStopClick,
+        modifier = modifier,
+        enabled = enabled,
+        colors = colors,
+    ) { stop ->
+        ZoomStopContent(
+            stop = stop,
+            isSelected = stop == selectedStop,
+            currentValue = { currentValue.value },
+            showCurrentValue = showCurrentValue,
+            valueSuffix = valueSuffix,
+            customActions = customActions,
+            format = format,
+            style = style,
+            scope = this,
+        )
+    }
+}
+
+@Composable
+private fun ZoomStopContent(
+    stop: Float,
+    isSelected: Boolean,
+    currentValue: () -> Float,
+    showCurrentValue: Boolean,
+    valueSuffix: String,
+    customActions: List<CustomAccessibilityAction>,
+    format: ZoomFormat,
+    style: TextStyle,
+    scope: PillSelectorItemScope,
+) {
+    Crossfade(
+        targetState = stop,
+        animationSpec = SETTLE_SPEC,
+    ) { shownStop ->
+        val number = format.format(
+            value = when {
+                isSelected && showCurrentValue -> currentValue()
+                else -> shownStop
+            },
+        )
+
+        ZoomStopLabel(
+            text = when {
+                isSelected -> number + valueSuffix
+                else -> number
+            },
+            description = number + valueSuffix,
+            customActions = customActions,
+            style = when {
+                isSelected -> style.copy(fontWeight = FontWeight.Bold)
+                else -> style
+            },
+            scope = scope,
+        )
     }
 }
 

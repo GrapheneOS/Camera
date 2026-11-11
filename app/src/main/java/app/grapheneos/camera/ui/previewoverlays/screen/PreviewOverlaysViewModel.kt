@@ -30,6 +30,8 @@ internal interface PreviewOverlaysScreenModel {
 
     val levelUiState: StateFlow<LevelUiState>
 
+    val zoomRatio: StateFlow<Float>
+
     fun onAction(action: Action)
 }
 
@@ -52,7 +54,7 @@ internal class PreviewOverlaysViewModel @Inject constructor(
 
     override val uiState: StateFlow<PreviewOverlaysUiState> = stateHolder.derive(
         isAffected = { previous, current ->
-            previous.copy(level = current.level) != current
+            previous.withPerFrameValuesOf(current) != current
         },
     ) { state ->
         uiStateMapper.map(state)
@@ -60,6 +62,10 @@ internal class PreviewOverlaysViewModel @Inject constructor(
 
     override val levelUiState: StateFlow<LevelUiState> = stateHolder.derive { state ->
         uiStateMapper.mapLevel(state)
+    }
+
+    override val zoomRatio: StateFlow<Float> = stateHolder.derive { state ->
+        uiStateMapper.mapZoomRatio(state)
     }
 
     private var resumedWork: Job? = null

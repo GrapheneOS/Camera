@@ -5,14 +5,22 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Recorder
 import app.grapheneos.camera.data.camera.model.LensFeatures
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import javax.inject.Inject
 
 interface CameraFeatureSupport {
 
     fun features(cameraInfo: CameraInfo): LensFeatures
+
+    /**
+     * Every camera rather than the one in use: a setting stays where the user left it whichever
+     * camera the settings were opened from, and is applied wherever the camera supports it.
+     */
+    fun featuresByLens(provider: ProcessCameraProvider): Map<LensFacing, LensFeatures>
 }
 
 internal class CameraFeatureSupportImpl @Inject constructor(
@@ -35,6 +43,16 @@ internal class CameraFeatureSupportImpl @Inject constructor(
             isHighFrameRateSupported = canUseFeatureGroup && canRunAtHighFrameRate(cameraInfo),
             isUltraHdrSupported = canCaptureUltraHdr(cameraInfo),
         )
+    }
+
+    override fun featuresByLens(provider: ProcessCameraProvider): Map<LensFacing, LensFeatures> {
+        return LensFacing.entries
+            .filter { lensFacing ->
+                provider.hasCamera(cameraSelectorFor(lensFacing))
+            }
+            .associateWith { lensFacing ->
+                features(provider.getCameraInfo(cameraSelectorFor(lensFacing)))
+            }
     }
 
     // The toggle asks for both kinds of stabilization (see the preferred feature group in

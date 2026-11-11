@@ -17,6 +17,21 @@ internal data class ZoomState(
         return value?.isAdjustable() == true
     }
 
+    fun withPerFrameValuesOf(other: ZoomState): ZoomState {
+        val otherValue = other.value
+
+        return copy(
+            value = when {
+                value == null || otherValue == null -> value
+                else -> value.copy(
+                    zoomRatio = otherValue.zoomRatio,
+                    linearZoom = otherValue.linearZoom,
+                )
+            },
+            interactionId = other.interactionId,
+        )
+    }
+
     fun idle(): ZoomState {
         return ZoomState(
             value = value,

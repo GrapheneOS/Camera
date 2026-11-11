@@ -1,12 +1,15 @@
 package app.grapheneos.camera.ui.components.pillselector
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,7 +20,9 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -28,12 +33,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.highlight.drawHighlight
 import app.grapheneos.camera.ui.components.highlight.highlightedContent
+import app.grapheneos.camera.ui.components.motion.EXPAND_HORIZONTALLY
+import app.grapheneos.camera.ui.components.motion.SHRINK_HORIZONTALLY
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.pillselector.gesture.PillSelectorSelection
 import app.grapheneos.camera.ui.components.pillselector.gesture.pillSelectorInput
@@ -50,32 +60,52 @@ private val CONTAINER_PADDING = 2.dp
  * announced as a radio button, with the semantics its content sets. [onItemSelected] reports a
  * tapped item and, when [draggable], the item a lifted horizontal drag leaves the highlight nearest
  * to; a canceled drag reports nothing. Otherwise drags pass to the parent.
+ *
+ * [items] are told apart by [key] when they change: an item with a new key grows in, one whose key
+ * is gone shrinks away, and an item that keeps its key stays in its slot and is drawn with its new
+ * value. The highlight stays on the item it is on while the others make room, and slides when
+ * [selected] changes.
  */
 @Composable
-internal fun PillSelector(
-    selectedIndex: Int,
-    itemCount: Int,
-    onItemSelected: (index: Int) -> Unit,
+internal fun <Item, Key> PillSelector(
+    items: List<Item>,
+    selected: Item,
+    key: (item: Item) -> Key,
+    onItemSelected: (item: Item) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     draggable: Boolean = false,
     spacing: PillSelectorSpacing = PillSelectorSpacing.Spaced,
     colors: PillSelectorColors = PillSelectorColors.fromTheme(),
-    item: @Composable PillSelectorItemScope.(index: Int) -> Unit,
+    item: @Composable PillSelectorItemScope.(item: Item) -> Unit,
 ) {
-    require(selectedIndex in 0 until itemCount) {
-        "selectedIndex must be in 0 until $itemCount, was $selectedIndex"
+    val entries = rememberPillSelectorEntries(
+        items = items,
+        key = key,
+    )
+    val selectedIndex = entries.keys.indexOf(key(selected))
+    require(selectedIndex >= 0 && selected in items) {
+        "selected must be one of items, was $selected"
     }
 
     val selection = rememberPillSelectorSelection(
         selectedIndex = selectedIndex,
-        itemCount = itemCount,
+        keys = entries.keys,
     )
+    val currentOnItemSelected = rememberUpdatedState(onItemSelected)
+    val onIndexSelected: (index: Int) -> Unit = remember(entries) {
+        { index ->
+            val entry = entries.renderedEntries.getOrNull(index)
+            if (entry != null && entry.isShown) {
+                currentOnItemSelected.value(entry.item)
+            }
+        }
+    }
 
     PillSelectorLayers(
+        entries = entries.renderedEntries,
         selectedIndex = selectedIndex,
-        itemCount = itemCount,
-        onItemSelected = onItemSelected,
+        onIndexSelected = onIndexSelected,
         selection = selection,
         enabled = enabled,
         spacing = spacing,
@@ -83,26 +113,37 @@ internal fun PillSelector(
         item = item,
         modifier = modifier.pillSelectorInput(
             selection = selection,
-            enabled = enabled && draggable && itemCount > 1,
-            onItemSelected = onItemSelected,
+            enabled = enabled && draggable && entries.renderedEntries.size > 1,
+            onItemSelected = onIndexSelected,
         ),
     )
 }
 
 @Composable
-private fun PillSelectorLayers(
+private fun <Item> PillSelectorLayers(
+    entries: List<PillSelectorEntry<Item, *>>,
     selectedIndex: Int,
-    itemCount: Int,
-    onItemSelected: (index: Int) -> Unit,
-    selection: PillSelectorSelection,
+    onIndexSelected: (index: Int) -> Unit,
+    selection: PillSelectorSelection<*>,
     enabled: Boolean,
     spacing: PillSelectorSpacing,
     colors: PillSelectorColors,
-    item: @Composable PillSelectorItemScope.(index: Int) -> Unit,
+    item: @Composable PillSelectorItemScope.(item: Item) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val currentColors = rememberUpdatedState(colors)
     val alpha by animateEnabledAlpha(enabled = enabled)
+
+    val halfGap = spacing.gap / 2
+    // Two separately rounded half gaps can differ from Row's full gap by a pixel.
+    val remainingGap = with(LocalDensity.current) {
+        (spacing.gap.roundToPx() - halfGap.roundToPx()).toDp()
+    }
+    val edgePadding = PaddingValues(horizontal = halfGap)
+    val itemPadding = PaddingValues(
+        start = halfGap,
+        end = remainingGap,
+    )
 
     Row(
         modifier = modifier
@@ -111,7 +152,10 @@ private fun PillSelectorLayers(
                 color = colors.containerColor,
                 shape = CircleShape,
             )
-            .padding(all = CONTAINER_PADDING)
+            .padding(
+                horizontal = CONTAINER_PADDING - halfGap,
+                vertical = CONTAINER_PADDING,
+            )
             .selectableGroup()
             .drawBehind {
                 drawHighlight(
@@ -120,28 +164,89 @@ private fun PillSelectorLayers(
                     color = currentColors.value.selectedContainerColor,
                 )
             },
-        horizontalArrangement = Arrangement.spacedBy(space = spacing.gap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        repeat(itemCount) { index ->
-            val scope = remember(index, selection) {
-                PillSelectorItemScope(
+        entries.forEachIndexed { index, entry ->
+            key(entry.key) {
+                PillSelectorEntryItem(
+                    entry = entry,
                     index = index,
+                    selected = index == selectedIndex,
+                    onIndexSelected = onIndexSelected,
                     selection = selection,
-                    colors = currentColors,
+                    enabled = enabled,
+                    padding = when (index) {
+                        entries.lastIndex -> edgePadding
+                        else -> itemPadding
+                    },
+                    colors = colors,
+                    currentColors = currentColors,
+                    item = item,
                 )
             }
+        }
+    }
+}
 
-            PillSelectorItem(
-                selected = index == selectedIndex,
-                enabled = enabled,
-                onClick = { onItemSelected(index) },
-                selection = selection,
+@Composable
+private fun <Item> RowScope.PillSelectorEntryItem(
+    entry: PillSelectorEntry<Item, *>,
+    index: Int,
+    selected: Boolean,
+    onIndexSelected: (index: Int) -> Unit,
+    selection: PillSelectorSelection<*>,
+    enabled: Boolean,
+    padding: PaddingValues,
+    colors: PillSelectorColors,
+    currentColors: State<PillSelectorColors>,
+    item: @Composable PillSelectorItemScope.(item: Item) -> Unit,
+) {
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val leftPadding = with(density) { padding.calculateLeftPadding(layoutDirection).roundToPx() }
+    val rightPadding = with(density) { padding.calculateRightPadding(layoutDirection).roundToPx() }
+    var contentWidth by remember { mutableIntStateOf(0) }
+    val scope = remember(index, selection) {
+        PillSelectorItemScope(
+            index = index,
+            selection = selection,
+            colors = currentColors,
+        )
+    }
+
+    AnimatedVisibility(
+        visibleState = entry.visibility,
+        modifier = Modifier.onPlaced { coordinates ->
+            val start = coordinates.positionInParent().x
+            val width = coordinates.size.width
+            val contentOffset = Alignment.CenterHorizontally.align(
+                size = contentWidth,
+                space = width,
+                layoutDirection = layoutDirection,
+            )
+
+            selection.geometry.place(
                 index = index,
-                colors = colors,
-            ) {
-                scope.item(index)
-            }
+                start = start + leftPadding,
+                width = (width - leftPadding - rightPadding).coerceAtLeast(0).toFloat(),
+                contentStart = start + contentOffset + leftPadding,
+            )
+        },
+        enter = EXPAND_HORIZONTALLY,
+        exit = SHRINK_HORIZONTALLY,
+    ) {
+        PillSelectorItem(
+            selected = selected,
+            enabled = enabled && entry.isShown,
+            onClick = { onIndexSelected(index) },
+            selection = selection,
+            index = index,
+            colors = colors,
+            modifier = Modifier
+                .onSizeChanged { size -> contentWidth = size.width }
+                .padding(padding),
+        ) {
+            scope.item(entry.item)
         }
     }
 }
@@ -151,30 +256,23 @@ private fun PillSelectorItem(
     selected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
-    selection: PillSelectorSelection,
+    selection: PillSelectorSelection<*>,
     index: Int,
     colors: PillSelectorColors,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
     Box(
-        modifier = Modifier
-            .onPlaced { coordinates ->
-                selection.geometry.place(
-                    index = index,
-                    start = coordinates.positionInParent().x,
-                    width = coordinates.size.width.toFloat(),
-                )
-            }
-            .selectable(
-                selected = selected,
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.RadioButton,
-                onClick = onClick,
-            ),
+        modifier = modifier.selectable(
+            selected = selected,
+            interactionSource = interactionSource,
+            indication = null,
+            enabled = enabled,
+            role = Role.RadioButton,
+            onClick = onClick,
+        ),
         contentAlignment = Alignment.Center,
     ) {
         Spacer(
@@ -192,7 +290,7 @@ private fun PillSelectorItem(
                 highlightContentColor = colors.selectedContentColor,
                 highlightStart = {
                     selection.geometry.start(selection = selection.value) -
-                        selection.geometry.itemStart(index = index)
+                        selection.geometry.contentStart(index = index)
                 },
                 highlightWidth = { selection.geometry.width(selection = selection.value) },
             ),
@@ -226,12 +324,13 @@ private fun PreviewTextSelector() {
     var currentIndex by remember { mutableIntStateOf(1) }
 
     PillSelector(
-        selectedIndex = currentIndex,
-        itemCount = labels.size,
-        onItemSelected = { index -> currentIndex = index },
-    ) { index ->
+        items = labels,
+        key = { it },
+        selected = labels[currentIndex],
+        onItemSelected = { label -> currentIndex = labels.indexOf(label) },
+    ) { label ->
         BasicText(
-            text = labels[index],
+            text = label,
             modifier = Modifier.padding(
                 horizontal = 16.dp,
                 vertical = 8.dp,
@@ -251,17 +350,18 @@ private fun PreviewCircleSelector(
     var currentIndex by remember { mutableIntStateOf(selectedIndex) }
 
     PillSelector(
-        selectedIndex = currentIndex,
-        itemCount = labels.size,
-        onItemSelected = { index -> currentIndex = index },
+        items = labels,
+        key = { it },
+        selected = labels[currentIndex],
+        onItemSelected = { label -> currentIndex = labels.indexOf(label) },
         enabled = enabled,
-    ) { index ->
+    ) { label ->
         Box(
             modifier = Modifier.size(size = 48.dp),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(
-                text = labels[index],
+                text = label,
                 style = MaterialTheme.typography.labelLarge,
                 color = contentColor,
             )

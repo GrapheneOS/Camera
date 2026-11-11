@@ -16,18 +16,19 @@ import app.grapheneos.camera.ui.previewoverlays.screen.model.ui.PreviewControlUi
 @Composable
 internal fun PreviewZoom(
     zoom: PreviewControlUiModel.Zoom,
+    zoomRatio: () -> Float,
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
     showContainer: Boolean = true,
 ) {
     ZoomControl(
-        value = zoom.ratio,
+        value = zoomRatio().coerceIn(zoom.range),
         onValueChange = { ratio -> onAction(Action.RatioChanged(ratio)) },
         valueRange = zoom.range,
         stops = zoom.presets,
         valueSuffix = stringResource(R.string.zoom_value_suffix),
         expanded = zoom.isExpanded,
-        showCurrentValue = zoom.isCurrentValueShown,
+        showCurrentValue = zoom.isCurrentValueVisible,
         showContainer = showContainer,
         animateValueChanges = !zoom.isPinching,
         expandLabel = stringResource(R.string.zoom_expand),
@@ -43,10 +44,11 @@ internal fun PreviewZoom(
 @Composable
 internal fun PreviewZoomValue(
     zoom: PreviewControlUiModel.Zoom,
+    zoomRatio: () -> Float,
     modifier: Modifier = Modifier,
 ) {
     val suffix = stringResource(R.string.zoom_value_suffix)
-    val text = rememberZoomFormat().format(value = zoom.ratio) + suffix
+    val format = rememberZoomFormat()
 
     AnimatedVisibility(
         visible = zoom.isExpanded,
@@ -54,6 +56,6 @@ internal fun PreviewZoomValue(
         enter = POP_IN,
         exit = POP_OUT,
     ) {
-        ValueChip(text = text)
+        ValueChip(text = format.format(value = zoomRatio().coerceIn(zoom.range)) + suffix)
     }
 }

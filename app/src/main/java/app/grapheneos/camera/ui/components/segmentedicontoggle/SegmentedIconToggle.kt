@@ -49,17 +49,18 @@ internal fun SegmentedIconToggle(
     colors: PillSelectorColors = PillSelectorColors.fromSurfaceTheme(),
 ) {
     PillSelector(
-        selectedIndex = selectedIndex,
-        itemCount = options.size,
-        onItemSelected = onOptionSelected,
+        items = options,
+        key = { it },
+        selected = options[selectedIndex],
+        onItemSelected = { option -> onOptionSelected(options.indexOf(option)) },
         modifier = modifier,
         enabled = enabled,
         draggable = true,
         spacing = PillSelectorSpacing.Joined,
         colors = colors,
-    ) { index ->
+    ) { option ->
         SegmentedIconToggleIcon(
-            option = options[index],
+            option = option,
             color = contentColor,
         )
     }
