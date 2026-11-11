@@ -34,6 +34,7 @@ import app.grapheneos.camera.ui.mediaviewer.components.video.VideoSurface
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerAction as Action
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerUiState as UiState
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -43,6 +44,7 @@ internal fun VideoPlayerScreen(
     screenModel: VideoPlayerScreenModel = hiltViewModel<VideoPlayerViewModel>(),
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
+    val videoPosition = screenModel.videoPosition.collectAsStateWithLifecycle()
     val effectHandler = rememberVideoPlayerEffectHandler(onNavigateBack)
 
     ViewerLeftEffect(
@@ -58,6 +60,7 @@ internal fun VideoPlayerScreen(
 
     VideoPlayerContent(
         uiState = uiState,
+        videoPosition = { videoPosition.value },
         onAction = screenModel::onAction,
         onNavigateBack = onNavigateBack,
         modifier = modifier,
@@ -67,6 +70,7 @@ internal fun VideoPlayerScreen(
 @Composable
 private fun VideoPlayerContent(
     uiState: UiState,
+    videoPosition: () -> Duration,
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -112,20 +116,35 @@ private fun VideoPlayerContent(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 if (video != null) {
-                    VideoControls(
-                        isPlaying = video.isPlaying,
+                    VideoPlayerControls(
+                        video = video,
                         isMuted = uiState.isMuted,
-                        position = uiState.position,
-                        duration = video.duration,
-                        onPlayPauseClick = { onAction(Action.PlayPauseClicked) },
-                        onMuteClick = { onAction(Action.MuteClicked) },
-                        onSeek = { position -> onAction(Action.SeekDragged(position)) },
-                        onSeekFinished = { onAction(Action.SeekReleased) },
+                        position = videoPosition,
+                        onAction = onAction,
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun VideoPlayerControls(
+    video: VideoPlaybackUiModel.Active,
+    isMuted: Boolean,
+    position: () -> Duration,
+    onAction: (Action) -> Unit,
+) {
+    VideoControls(
+        isPlaying = video.isPlaying,
+        isMuted = isMuted,
+        position = position(),
+        duration = video.duration,
+        onPlayPauseClick = { onAction(Action.PlayPauseClicked) },
+        onMuteClick = { onAction(Action.MuteClicked) },
+        onSeek = { seekPosition -> onAction(Action.SeekDragged(seekPosition)) },
+        onSeekFinished = { onAction(Action.SeekReleased) },
+    )
 }
 
 @PreviewScreenLightDark
@@ -139,8 +158,8 @@ private fun VideoPlayerContentPreview() {
                     duration = 12.seconds,
                     aspectRatio = 16f / 9f,
                 ),
-                position = 5.seconds,
             ),
+            videoPosition = { 5.seconds },
             onAction = {},
             onNavigateBack = {},
         )

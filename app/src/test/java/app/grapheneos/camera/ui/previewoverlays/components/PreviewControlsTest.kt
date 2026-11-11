@@ -49,6 +49,7 @@ class PreviewControlsTest {
                         majorTickInterval = 6,
                         isResetVisible = true,
                     ),
+                    zoomRatio = { 1f },
                     onAction = onAction,
                 )
             }
@@ -88,6 +89,7 @@ class PreviewControlsTest {
                         majorTickInterval = 1,
                         isResetVisible = isAdjusted,
                     ),
+                    zoomRatio = { 1f },
                     onAction = {},
                     modifier = Modifier.testTag("controls"),
                 )

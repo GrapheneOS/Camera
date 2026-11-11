@@ -7,6 +7,7 @@ import androidx.lifecycle.asFlow
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
+import app.grapheneos.camera.data.camera.session.ZoomControl.Restoration
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.di.core.CameraSessionScope
 import app.grapheneos.camera.di.core.MainLooperDispatcher
@@ -37,20 +38,27 @@ interface ZoomControl {
 
     /**
      * The ratio last requested for a lens is applied again to the next camera attached for it,
-     * within that camera's range. A camera attached with [remembersZoom] off neither gets that
-     * ratio nor replaces it.
+     * within that camera's range. [restoration] controls when to apply it. [Restoration.DISABLED]
+     * keeps the saved ratio untouched for a later binding.
      */
     fun attach(
         camera: Camera,
         lensFacing: LensFacing,
-        remembersZoom: Boolean,
+        restoration: Restoration,
     )
 
     fun detach()
 
-    fun setZoomRatio(zoomRatio: Float)
+    /**
+     * Applied within the camera's range once [zoom] has been read, when the camera attached is the
+     * one for [lensFacing]. Otherwise it waits for that camera; see [attach].
+     */
+    fun setZoomRatio(
+        zoomRatio: Float,
+        lensFacing: LensFacing,
+    )
 
-    /** For a lens whose camera is not attached yet; see [attach]. */
+    /** For a ratio that [animateZoomRatio] is about to bring the camera to. */
     fun rememberZoomRatio(
         zoomRatio: Float,
         lensFacing: LensFacing,
@@ -59,6 +67,12 @@ interface ZoomControl {
     suspend fun animateZoomRatio(zoomRatio: Float)
 
     fun stopZoomAnimation()
+
+    enum class Restoration {
+        BEFORE_PREVIEW,
+        WHEN_ZOOM_LOADS,
+        DISABLED,
+    }
 }
 
 internal class ZoomControlImpl @Inject constructor(
@@ -80,21 +94,28 @@ internal class ZoomControlImpl @Inject constructor(
 
     private val rememberedRatios = mutableMapOf<LensFacing, Float>()
     private var remembersZoom = false
+    private var pendingRatio: Float? = null
     private var control: CameraControl? = null
     private var trackJob: Job? = null
     private var zoomAnimation: Job? = null
 
-    // Reading the zoom state costs ~100 ms behind an extension, so it waits for the next main
-    // thread message instead of running inside the bind; zoom stays null until then.
     override fun attach(
         camera: Camera,
         lensFacing: LensFacing,
-        remembersZoom: Boolean,
+        restoration: Restoration,
     ) {
         detach()
         this.lensFacing = lensFacing
-        this.remembersZoom = remembersZoom
+        remembersZoom = restoration != Restoration.DISABLED
         control = camera.cameraControl
+
+        if (restoration == Restoration.BEFORE_PREVIEW) {
+            restoreBeforePreview(
+                camera = camera,
+                lensFacing = lensFacing,
+            )
+        }
+
         trackJob = scope.launch(mainLooperDispatcher) {
             camera.cameraInfo.zoomState.asFlow().collect { state ->
                 onZoomState(state)
@@ -106,16 +127,33 @@ internal class ZoomControlImpl @Inject constructor(
         stopZoomAnimation()
         trackJob?.cancel()
         trackJob = null
+        pendingRatio = null
         control = null
         zoom = null
         lensFacing = null
         remembersZoom = false
     }
 
-    override fun setZoomRatio(zoomRatio: Float) {
+    override fun setZoomRatio(
+        zoomRatio: Float,
+        lensFacing: LensFacing,
+    ) {
+        if (!zoomRatio.isFinite() || zoomRatio <= 0f) return
+
+        val isAttached = lensFacing == this.lensFacing
+
+        if (!isAttached || remembersZoom) {
+            rememberedRatios[lensFacing] = zoomRatio
+        }
+
+        if (!isAttached) return
+
         stopZoomAnimation()
-        rememberForAttachedLens(zoomRatio)
-        control?.setZoomRatio(zoomRatio)
+        val current = zoom
+        when {
+            current == null && !remembersZoom -> pendingRatio = zoomRatio
+            current?.isAdjustable() == true -> control?.setZoomRatio(current.clampRatio(zoomRatio))
+        }
     }
 
     override fun rememberZoomRatio(
@@ -128,6 +166,8 @@ internal class ZoomControlImpl @Inject constructor(
     }
 
     override suspend fun animateZoomRatio(zoomRatio: Float) {
+        if (!zoomRatio.isFinite() || zoomRatio <= 0f) return
+
         stopZoomAnimation()
 
         val animation = scope.launch(mainLooperDispatcher) { animateTo(zoomRatio) }
@@ -147,10 +187,7 @@ internal class ZoomControlImpl @Inject constructor(
     private suspend fun animateTo(zoomRatio: Float) {
         val state = zoom ?: return
         val cameraControl = control ?: return
-        val target = zoomRatio.coerceIn(
-            minimumValue = state.minZoomRatio,
-            maximumValue = state.maxZoomRatio,
-        )
+        val target = state.clampRatio(zoomRatio)
 
         rememberForAttachedLens(target)
         interpolateZoom(
@@ -191,15 +228,21 @@ internal class ZoomControlImpl @Inject constructor(
         val previous = zoom
         val reported = cameraXStateMapper.map(state)
         val current = when (previous) {
-            null -> restoreRememberedRatio(reported)
+            null -> applyInitialRatio(
+                zoom = reported,
+                targetRatio = when {
+                    remembersZoom -> rememberedRatios[lensFacing]
+                    else -> pendingRatio
+                },
+            )
             else -> reported
         }
+        pendingRatio = null
         zoom = current
 
         val event = when {
             previous == null -> CameraZoomEvent.Loaded
-            current.zoomRatio != previous.zoomRatio ||
-                current.linearZoom != previous.linearZoom -> CameraZoomEvent.Changed
+            current != previous -> CameraZoomEvent.Changed
             else -> null
         }
         event?.let(_events::tryEmit)
@@ -216,19 +259,38 @@ internal class ZoomControlImpl @Inject constructor(
         }
     }
 
-    private fun restoreRememberedRatio(zoom: CameraZoom): CameraZoom {
-        val remembered = rememberedRatios[lensFacing]
-        if (remembered == null || !remembersZoom || !zoom.isAdjustable()) return zoom
+    private fun restoreBeforePreview(
+        camera: Camera,
+        lensFacing: LensFacing,
+    ) {
+        val ratio = rememberedRatios[lensFacing] ?: return
+        val state = camera.cameraInfo.zoomState.value ?: return
 
-        val ratio = remembered.coerceIn(
-            minimumValue = zoom.minZoomRatio,
-            maximumValue = zoom.maxZoomRatio,
+        applyInitialRatio(
+            zoom = cameraXStateMapper.map(state),
+            targetRatio = ratio,
         )
-        if (ratio != zoom.zoomRatio) {
-            control?.setZoomRatio(ratio)
+    }
+
+    private fun applyInitialRatio(
+        zoom: CameraZoom,
+        targetRatio: Float?,
+    ): CameraZoom {
+        if (targetRatio == null || !zoom.isAdjustable()) return zoom
+
+        val target = zoom.clampRatio(targetRatio)
+        if (target != zoom.zoomRatio) {
+            control?.setZoomRatio(target)
         }
 
-        return zoom.copy(zoomRatio = ratio)
+        return zoom.copy(zoomRatio = target)
+    }
+
+    private fun CameraZoom.clampRatio(zoomRatio: Float): Float {
+        return zoomRatio.coerceIn(
+            minimumValue = minZoomRatio,
+            maximumValue = maxZoomRatio,
+        )
     }
 
     private companion object {

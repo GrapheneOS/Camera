@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -22,13 +23,13 @@ import app.grapheneos.camera.ui.components.pillselector.PillSelectorGeometry
 import kotlin.math.roundToInt
 
 @Stable
-internal class PillSelectorSelection(
+internal class PillSelectorSelection<Key>(
     initialIndex: Int,
-    itemCount: Int,
+    keys: List<Key>,
     private val hapticFeedback: State<HapticFeedback>,
 ) {
 
-    val geometry = PillSelectorGeometry(itemCount = itemCount)
+    val geometry = PillSelectorGeometry(itemCount = keys.size)
     val dragState = DraggableState { pixels -> dragBy(pixels = pixels) }
     val dragInteractions: MutableInteractionSource = DragEndInteractions(
         onStop = { isDragCanceled = false },
@@ -48,9 +49,33 @@ internal class PillSelectorSelection(
     var revision by mutableIntStateOf(0)
         private set
 
-    private val animatable = Animatable(initialValue = initialIndex.toFloat())
+    private var animatable by mutableStateOf(Animatable(initialValue = initialIndex.toFloat()))
+    private var keys by mutableStateOf(keys)
     private var dragValue by mutableStateOf<Float?>(null)
     private var isDragCanceled = false
+
+    fun rebase(
+        index: Int,
+        keys: List<Key>,
+    ) {
+        Snapshot.withoutReadObservation {
+            if (keys == this.keys) return@withoutReadObservation
+
+            val position = positionIn(
+                newKeys = keys,
+                selectedIndex = index,
+            )
+            this.keys = keys
+            geometry.resize(itemCount = keys.size)
+            animatable = Animatable(initialValue = position)
+
+            if (isDragging) {
+                dragValue = position
+            }
+
+            revision++
+        }
+    }
 
     fun startDrag() {
         dragValue = animatable.value
@@ -74,9 +99,28 @@ internal class PillSelectorSelection(
         )
     }
 
+    private fun positionIn(
+        newKeys: List<Key>,
+        selectedIndex: Int,
+    ): Float {
+        val position = value
+        val anchorIndex = position.roundToInt().coerceIn(keys.indices)
+        val newAnchorIndex = newKeys.indexOf(keys[anchorIndex])
+        if (newAnchorIndex < 0) {
+            return selectedIndex.toFloat()
+        }
+
+        val offsetFromAnchor = position - anchorIndex
+        return (newAnchorIndex + offsetFromAnchor)
+            .coerceIn(0f, newKeys.lastIndex.toFloat())
+    }
+
     private fun dragBy(pixels: Float) {
         val previous = dragValue ?: return
-        val items = pixels / geometry.pitch(selection = previous)
+        val pitch = geometry.pitch(selection = previous)
+        if (pitch == 0f) return
+
+        val items = pixels / pitch
         val next = (previous + items).coerceIn(0f, geometry.lastIndex.toFloat())
 
         dragValue = next
@@ -87,35 +131,29 @@ internal class PillSelectorSelection(
 }
 
 @Composable
-internal fun rememberPillSelectorSelection(
+internal fun <Key> rememberPillSelectorSelection(
     selectedIndex: Int,
-    itemCount: Int,
-): PillSelectorSelection {
+    keys: List<Key>,
+): PillSelectorSelection<Key> {
     val currentHapticFeedback = rememberUpdatedState(LocalHapticFeedback.current)
-    val selection = remember(itemCount) {
+    val selection = remember {
         PillSelectorSelection(
             initialIndex = selectedIndex,
-            itemCount = itemCount,
+            keys = keys,
             hapticFeedback = currentHapticFeedback,
         )
     }
 
-    PillSelectorSyncEffect(
-        selection = selection,
-        selectedIndex = selectedIndex,
+    selection.rebase(
+        index = selectedIndex,
+        keys = keys,
     )
 
-    return selection
-}
-
-@Composable
-private fun PillSelectorSyncEffect(
-    selection: PillSelectorSelection,
-    selectedIndex: Int,
-) {
     if (!selection.isDragging) {
         LaunchedEffect(selection, selectedIndex, selection.revision) {
             selection.animateTo(index = selectedIndex)
         }
     }
+
+    return selection
 }

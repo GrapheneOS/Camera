@@ -8,10 +8,9 @@ internal sealed interface PreviewControlUiModel {
 
     @Immutable
     data class Zoom(
-        val ratio: Float,
         val range: ClosedFloatingPointRange<Float>,
         val presets: ImmutableList<Float>,
-        val isCurrentValueShown: Boolean = true,
+        val isCurrentValueVisible: Boolean = true,
         val isExpanded: Boolean = false,
         val isPinching: Boolean = false,
     ) : PreviewControlUiModel

@@ -30,6 +30,7 @@ private val RESET_BUTTON_GAP = 8.dp
 @Composable
 internal fun PreviewControls(
     control: PreviewControlUiModel?,
+    zoomRatio: () -> Float,
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -42,11 +43,15 @@ internal fun PreviewControls(
         verticalArrangement = Arrangement.spacedBy(space = VALUE_SPACING),
     ) {
         zoom?.let { visibleZoom ->
-            PreviewZoomValue(zoom = visibleZoom)
+            PreviewZoomValue(
+                zoom = visibleZoom,
+                zoomRatio = zoomRatio,
+            )
         }
         Box(modifier = Modifier.fillMaxWidth()) {
             PreviewControlContainer(
                 control = control,
+                zoomRatio = zoomRatio,
                 onAction = onAction,
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -68,6 +73,7 @@ internal fun PreviewControls(
 @Composable
 private fun PreviewControlContainer(
     control: PreviewControlUiModel?,
+    zoomRatio: () -> Float,
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -94,6 +100,7 @@ private fun PreviewControlContainer(
                 )
                 is PreviewControlUiModel.Zoom -> PreviewZoom(
                     zoom = visibleControl,
+                    zoomRatio = zoomRatio,
                     onAction = onAction,
                     showContainer = false,
                 )
@@ -113,11 +120,11 @@ private fun PreviewControlsPreview() {
         ) {
             PreviewControls(
                 control = PreviewControlUiModel.Zoom(
-                    ratio = 1.5f,
                     range = 0.5f..8f,
                     presets = persistentListOf(0.5f, 1f, 2f),
                     isExpanded = true,
                 ),
+                zoomRatio = { 1.5f },
                 onAction = {},
             )
             PreviewControls(
@@ -128,6 +135,7 @@ private fun PreviewControlsPreview() {
                     majorTickInterval = 6,
                     isResetVisible = true,
                 ),
+                zoomRatio = { 1f },
                 onAction = {},
             )
         }

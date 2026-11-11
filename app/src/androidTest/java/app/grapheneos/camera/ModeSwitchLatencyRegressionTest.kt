@@ -179,8 +179,8 @@ class ModeSwitchLatencyRegressionTest {
                 val zoom = zoomControl(it).zoom
                 val isHalfway = zoom != null && abs(zoom.linearZoom - 0.5f) < 0.01f
                 val control = it.previewOverlays.uiState.value.control
-                val shownZoom = control as? PreviewControlUiModel.Zoom
-                isHalfway && shownZoom?.ratio == zoom.zoomRatio
+                val isZoomShown = control is PreviewControlUiModel.Zoom
+                isHalfway && isZoomShown && it.previewOverlays.zoomRatio.value == zoom.zoomRatio
             }
             scenario.onActivity {
                 assertEquals(0.5f, zoomControl(it).zoom!!.linearZoom, 0.01f)

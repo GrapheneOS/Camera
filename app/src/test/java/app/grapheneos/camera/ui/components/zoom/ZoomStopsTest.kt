@@ -25,6 +25,7 @@ class ZoomStopsTest {
     val composeRule = createComposeRule()
 
     private var value by mutableFloatStateOf(1f)
+    private var stops by mutableStateOf(listOf(0.5f, 1f, 2f))
     private var enabled by mutableStateOf(true)
     private var showCurrentValue by mutableStateOf(true)
     private val clicks = mutableListOf<Float>()
@@ -111,12 +112,25 @@ class ZoomStopsTest {
         assertEquals(emptyList<Float>(), clicks)
     }
 
+    @Test
+    fun zoomStops_ratioOfTheStopBelowOneChanged_replacesItsLabelInTheSameSlot() {
+        setContent()
+        val slot = stop(description = ".5×").fetchSemanticsNode().boundsInRoot
+
+        composeRule.runOnIdle { stops = listOf(0.6f, 1f, 2f) }
+
+        stop(description = ".5×").assertDoesNotExist()
+        assertEquals(slot, stop(description = ".6×").fetchSemanticsNode().boundsInRoot)
+        stop(description = "1×").assertIsSelected()
+    }
+
     private fun setContent(stops: List<Float> = listOf(0.5f, 1f, 2f)) {
+        this.stops = stops
         composeRule.setContent {
             CameraTheme {
                 ZoomStops(
                     value = value,
-                    stops = stops,
+                    stops = this.stops,
                     valueSuffix = "×",
                     onStopClick = { stop -> clicks += stop },
                     enabled = enabled,

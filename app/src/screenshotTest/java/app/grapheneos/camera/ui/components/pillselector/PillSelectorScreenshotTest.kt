@@ -67,12 +67,13 @@ private fun PillSelectorStates() {
 @Composable
 private fun TextPillSelector(selectedIndex: Int) {
     PillSelector(
-        selectedIndex = selectedIndex,
-        itemCount = TEXT_LABELS.size,
+        items = TEXT_LABELS,
+        key = { it },
+        selected = TEXT_LABELS[selectedIndex],
         onItemSelected = {},
-    ) { index ->
+    ) { label ->
         BasicText(
-            text = TEXT_LABELS[index],
+            text = label,
             modifier = Modifier.padding(
                 horizontal = 16.dp,
                 vertical = 8.dp,
@@ -90,19 +91,20 @@ private fun LetterPillSelector(
     colors: PillSelectorColors = PillSelectorColors.fromTheme(),
 ) {
     PillSelector(
-        selectedIndex = 1,
-        itemCount = LETTER_LABELS.size,
+        items = LETTER_LABELS,
+        key = { it },
+        selected = LETTER_LABELS[1],
         onItemSelected = {},
         enabled = enabled,
         spacing = spacing,
         colors = colors,
-    ) { index ->
+    ) { label ->
         Box(
             modifier = Modifier.size(size = 48.dp),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(
-                text = LETTER_LABELS[index],
+                text = label,
                 style = MaterialTheme.typography.labelLarge,
                 color = contentColor,
             )

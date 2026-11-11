@@ -47,12 +47,12 @@ class PreviewOverlaysScreenTest {
     private val model = mockk<PreviewOverlaysScreenModel>(relaxUnitFun = true) {
         every { uiState } returns this@PreviewOverlaysScreenTest.uiState
         every { levelUiState } returns MutableStateFlow(LevelUiState())
+        every { zoomRatio } returns MutableStateFlow(1f)
     }
 
     @Test
     fun exposureAndZoom_useTheSameSlotAndNeverOverlap() {
         val zoom = PreviewControlUiModel.Zoom(
-            ratio = 1f,
             range = 0.5f..8f,
             presets = persistentListOf(0.5f, 1f, 2f),
             isExpanded = true,
@@ -88,7 +88,6 @@ class PreviewOverlaysScreenTest {
     fun changingTheZoomRange_doesNotReleaseTheFingerHoldingTheControl() {
         uiState.value = PreviewOverlaysUiState(
             control = PreviewControlUiModel.Zoom(
-                ratio = 1f,
                 range = 0.5f..8f,
                 presets = persistentListOf(0.5f, 1f, 2f),
             ),
@@ -101,7 +100,6 @@ class PreviewOverlaysScreenTest {
         composeRule.runOnIdle {
             uiState.value = uiState.value.copy(
                 control = PreviewControlUiModel.Zoom(
-                    ratio = 1f,
                     range = 1f..4f,
                     presets = persistentListOf(1f, 2f),
                 ),

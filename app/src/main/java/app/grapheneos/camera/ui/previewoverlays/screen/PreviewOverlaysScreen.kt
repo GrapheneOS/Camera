@@ -46,6 +46,7 @@ internal fun PreviewOverlaysScreen(
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
     val level = screenModel.levelUiState.collectAsStateWithLifecycle()
+    val zoomRatio = screenModel.zoomRatio.collectAsStateWithLifecycle()
 
     LifecycleResumeEffect(screenModel) {
         screenModel.onAction(LifecycleAction.ScreenResumed)
@@ -55,6 +56,7 @@ internal fun PreviewOverlaysScreen(
     PreviewOverlaysContent(
         uiState = uiState,
         level = level,
+        zoomRatio = { zoomRatio.value },
         previewBounds = previewBounds,
         shutterRowInset = shutterRowInset,
         modifier = modifier,
@@ -66,6 +68,7 @@ internal fun PreviewOverlaysScreen(
 private fun PreviewOverlaysContent(
     uiState: PreviewOverlaysUiState,
     level: State<LevelUiState>,
+    zoomRatio: () -> Float,
     previewBounds: DpRect,
     shutterRowInset: Dp,
     modifier: Modifier = Modifier,
@@ -81,6 +84,7 @@ private fun PreviewOverlaysContent(
         )
         PreviewControls(
             control = uiState.control,
+            zoomRatio = zoomRatio,
             onAction = onAction,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -136,6 +140,7 @@ private fun PreviewOverlaysPreview() {
                     selfTimerRemaining = 3.seconds,
                 ),
                 level = rememberUpdatedState(LevelUiState()),
+                zoomRatio = { 1f },
                 previewBounds = DpRect(
                     left = 0.dp,
                     top = 0.dp,

@@ -4,17 +4,29 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.ui.Alignment
 
 private const val POP_SCALE = 0.8f
 
 internal val FADE_IN = fadeIn(animationSpec = SETTLE_SPEC)
 internal val FADE_OUT = fadeOut(animationSpec = SETTLE_SPEC)
 private val HIDE_AT_ONCE = fadeOut(animationSpec = snap())
+
+internal val EXPAND_HORIZONTALLY = expandHorizontally(
+    animationSpec = SETTLE_SIZE_SPEC,
+    expandFrom = Alignment.CenterHorizontally,
+) + FADE_IN
+internal val SHRINK_HORIZONTALLY = shrinkHorizontally(
+    animationSpec = SETTLE_SIZE_SPEC,
+    shrinkTowards = Alignment.CenterHorizontally,
+) + FADE_OUT
 
 internal val POP_IN = FADE_IN + scaleIn(
     animationSpec = MORPH_SPEC,

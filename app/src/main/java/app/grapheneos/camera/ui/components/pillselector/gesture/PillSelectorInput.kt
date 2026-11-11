@@ -5,7 +5,7 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.ui.Modifier
 
 internal fun Modifier.pillSelectorInput(
-    selection: PillSelectorSelection,
+    selection: PillSelectorSelection<*>,
     enabled: Boolean,
     onItemSelected: (index: Int) -> Unit,
 ): Modifier {

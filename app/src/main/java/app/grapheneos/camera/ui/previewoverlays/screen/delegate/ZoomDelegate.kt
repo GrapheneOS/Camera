@@ -228,10 +228,14 @@ internal class ZoomDelegateImpl @Inject constructor(
     }
 
     private fun finishPendingPreset() {
-        val preset = state.zoom.pendingPreset ?: return
+        val preset = state.zoom.pendingPreset
+        val selectedLens = state.previewContent?.lensFacing
 
-        if (isSelectedCameraAttached()) {
-            zoomControl.setZoomRatio(preset.ratio)
+        if (preset != null && selectedLens != null) {
+            zoomControl.setZoomRatio(
+                zoomRatio = preset.ratio,
+                lensFacing = selectedLens,
+            )
         }
     }
 
@@ -347,9 +351,11 @@ internal class ZoomDelegateImpl @Inject constructor(
             )
         }
 
-        when {
-            isSelectedCameraAttached() -> zoomControl.setZoomRatio(requested)
-            else -> rememberForSelectedLens(requested)
+        state.previewContent?.lensFacing?.let { selectedLens ->
+            zoomControl.setZoomRatio(
+                zoomRatio = requested,
+                lensFacing = selectedLens,
+            )
         }
     }
 

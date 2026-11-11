@@ -35,6 +35,7 @@ import app.grapheneos.camera.ui.components.pillselector.model.PillSelectorSpacin
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import kotlin.math.sign
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +47,9 @@ class PillSelectorTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private var labels by mutableStateOf(LABELS)
     private var selectedIndex by mutableIntStateOf(0)
+    private var selectedLabel by mutableStateOf<String?>(null)
     private var enabled by mutableStateOf(true)
     private var draggable = false
     private var layoutDirection = LayoutDirection.Ltr
@@ -149,6 +152,19 @@ class PillSelectorTest {
     }
 
     @Test
+    fun pillSelector_itemsReorderedMidDrag_releasesTheSameItem() {
+        draggable = true
+        setContent()
+
+        val selector = composeRule.onNodeWithTag(TAG)
+        selector.performTouchInput { pressAndMove(items = 1f) }
+        composeRule.runOnIdle { labels = listOf("A", "C", "B") }
+        selector.performTouchInput { up() }
+
+        composeRule.runOnIdle { assertEquals(listOf(labels.indexOf("B")), selections) }
+    }
+
+    @Test
     fun pillSelector_disabledMidDrag_reportsNothing() {
         draggable = true
         setContent()
@@ -184,9 +200,38 @@ class PillSelectorTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun pillSelector_selectedIndexOutOfRange_isRejected() {
-        selectedIndex = LABELS.size
+    fun pillSelector_selectedItemNotAmongTheItems_isRejected() {
+        selectedLabel = "D"
         setContent()
+    }
+
+    @Test
+    fun pillSelector_itemRemoved_shrinksAwayAndKeepsTheSelection() {
+        selectedIndex = 1
+        setContent()
+
+        val node = composeRule.onNodeWithTag(TAG)
+        val initialWidth = node.fetchSemanticsNode().boundsInRoot.width
+        composeRule.mainClock.autoAdvance = false
+        composeRule.runOnIdle {
+            labels = listOf("B", "C")
+            selectedIndex = 0
+        }
+        composeRule.mainClock.advanceTimeByFrame()
+        composeRule.waitForIdle()
+        composeRule.mainClock.advanceTimeBy(64)
+
+        val intermediateWidth = node.fetchSemanticsNode().boundsInRoot.width
+        item(label = "B").assertIsSelected()
+        composeRule.mainClock.advanceTimeBy(1000)
+
+        val finalWidth = node.fetchSemanticsNode().boundsInRoot.width
+        assertTrue(
+            "Width must keep shrinking: $initialWidth > $intermediateWidth > $finalWidth",
+            finalWidth < intermediateWidth && intermediateWidth < initialWidth,
+        )
+        item(label = "A").assertDoesNotExist()
+        item(label = "B").assertIsSelected()
     }
 
     private fun drag(items: Float) {
@@ -213,16 +258,17 @@ class PillSelectorTest {
                     LocalLayoutDirection provides layoutDirection,
                 ) {
                     PillSelector(
-                        selectedIndex = selectedIndex,
-                        itemCount = LABELS.size,
-                        onItemSelected = { index -> selections += index },
+                        items = labels,
+                        key = { it },
+                        selected = selectedLabel ?: labels[selectedIndex],
+                        onItemSelected = { label -> selections += labels.indexOf(label) },
                         modifier = Modifier.testTag(TAG),
                         enabled = enabled,
                         draggable = draggable,
                         spacing = PillSelectorSpacing.Joined,
-                    ) { index ->
+                    ) { label ->
                         BasicText(
-                            text = LABELS[index],
+                            text = label,
                             modifier = Modifier.size(ITEM_SIZE),
                             color = contentColor,
                         )

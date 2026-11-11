@@ -124,8 +124,8 @@ class PreviewOverlaysUiStateMapperTest {
             ),
         )
 
-        assertTrue(requireNotNull(mapper.map(state).zoom).isCurrentValueShown)
-        assertFalse(requireNotNull(mapper.map(selecting).zoom).isCurrentValueShown)
+        assertTrue(requireNotNull(mapper.map(state).zoom).isCurrentValueVisible)
+        assertFalse(requireNotNull(mapper.map(selecting).zoom).isCurrentValueVisible)
     }
 
     @Test
@@ -142,7 +142,7 @@ class PreviewOverlaysUiStateMapperTest {
         val state = zoomState()
         val zoom = requireNotNull(mapper.map(state).zoom)
 
-        assertEquals(1f, zoom.ratio)
+        assertEquals(1f, mapper.mapZoomRatio(state))
         assertEquals(0.5f..8f, zoom.range)
         assertEquals(listOf(0.5f, 1f, 2f), zoom.presets)
         assertFalse(zoom.isExpanded)

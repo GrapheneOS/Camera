@@ -11,6 +11,7 @@ import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerScreenEffect
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,8 @@ import kotlinx.coroutines.launch
 internal interface VideoPlayerScreenModel {
 
     val uiState: StateFlow<VideoPlayerUiState>
+
+    val videoPosition: StateFlow<Duration>
 
     val effects: Flow<Effect>
 
@@ -47,6 +50,8 @@ internal class VideoPlayerViewModel @Inject constructor(
     private val playback = videoPlaybackFactory.create()
     private val controller = VideoPlaybackController(playback)
 
+    override val videoPosition: StateFlow<Duration> = controller.position
+
     init {
         playback.load(
             uri = videoUriOf(arguments),
@@ -57,12 +62,6 @@ internal class VideoPlayerViewModel @Inject constructor(
         viewModelScope.launch {
             controller.state.collect { video ->
                 _uiState.update { it.copy(video = video) }
-            }
-        }
-
-        viewModelScope.launch {
-            controller.position.collect { position ->
-                _uiState.update { it.copy(position = position) }
             }
         }
 

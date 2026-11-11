@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +29,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
-import app.grapheneos.camera.ui.components.motion.crossfadeResizing
 import app.grapheneos.camera.ui.components.motion.revealResizing
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
@@ -220,28 +220,26 @@ private fun ZoomControlStops(
     showCurrentValue: Boolean,
     colors: PillSelectorColors,
 ) {
-    AnimatedContent(
-        targetState = stops,
-        transitionSpec = { crossfadeResizing() },
-        contentKey = { it.size },
-        contentAlignment = Alignment.Center,
-    ) { visibleStops ->
-        ZoomStops(
-            value = value,
-            stops = visibleStops,
-            valueSuffix = valueSuffix,
-            onStopClick = onStopClick,
-            enabled = enabled,
-            showCurrentValue = showCurrentValue,
-            customActions = listOf(
-                CustomAccessibilityAction(label = expandLabel) {
-                    onExpand()
-                    true
-                },
-            ),
-            colors = colors.copy(containerColor = Color.Transparent),
+    val currentOnExpand = rememberUpdatedState(onExpand)
+    val customActions = remember(expandLabel) {
+        listOf(
+            CustomAccessibilityAction(label = expandLabel) {
+                currentOnExpand.value()
+                true
+            },
         )
     }
+
+    ZoomStops(
+        value = value,
+        stops = stops,
+        valueSuffix = valueSuffix,
+        onStopClick = onStopClick,
+        enabled = enabled,
+        showCurrentValue = showCurrentValue,
+        customActions = customActions,
+        colors = colors.copy(containerColor = Color.Transparent),
+    )
 }
 
 @Composable
