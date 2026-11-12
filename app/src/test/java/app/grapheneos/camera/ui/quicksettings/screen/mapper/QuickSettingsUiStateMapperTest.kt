@@ -194,6 +194,26 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
+    fun whileRecording_offersOnlyTheLights() {
+        val state = map(
+            camera = BOOSTED_VIDEO_CAMERA.copy(
+                lensFacing = LensFacing.FRONT,
+                highFrameRate = HighFrameRateSupport.Supported,
+            ),
+            isRecording = true,
+        )
+
+        assertNotNull(state.flash)
+        assertNotNull(state.selfIllumination)
+        assertNull(state.videoQuality)
+        assertNull(state.videoFrameRate)
+        assertNull(state.audio)
+        assertFalse(map(camera = null, isRecording = true).moreButtonVisible)
+        assertFalse(state.moreButtonVisible)
+        assertTrue(map(camera = VIDEO_CAMERA).moreButtonVisible)
+    }
+
+    @Test
     fun audio_followsTheStoredSetting() {
         val state = map(
             settings = CameraSettings(includeAudio = false),
@@ -207,12 +227,14 @@ class QuickSettingsUiStateMapperTest {
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         camera: BoundCamera? = PHOTO_CAMERA,
+        isRecording: Boolean = false,
     ): QuickSettingsUiState {
         return mapper.map(
             QuickSettingsState(
                 settings = settings,
                 modeSettings = modeSettings,
                 boundCamera = camera,
+                isRecording = isRecording,
             ),
         )
     }

@@ -72,6 +72,10 @@ data class ViewfinderState(
         return settings.geoTagging && AppPermission.LOCATION !in missingPermissions
     }
 
+    fun lacksMicrophone(): Boolean {
+        return settings.includeAudio && AppPermission.MICROPHONE in missingPermissions
+    }
+
     fun showsLevel(): Boolean {
         return settings.gyroscopeSuggestions && isInPhotoMode()
     }
@@ -82,6 +86,6 @@ data class ViewfinderState(
     }
 
     fun isSettingsPanelAvailable(): Boolean {
-        return !(recording.isActive() || capture.isSelfTimerRunning || isQrMode())
+        return !(capture.isSelfTimerRunning || isQrMode())
     }
 }

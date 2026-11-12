@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.statusbar.screen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
@@ -36,6 +37,7 @@ internal class StatusBarViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val session: CameraSession,
+    private val recordingSession: VideoRecordingSession,
 ) : ViewModel(),
     StatusBarScreenModel {
 
@@ -87,6 +89,8 @@ internal class StatusBarViewModel @Inject constructor(
     }
 
     private fun openCameraSettings() {
+        if (recordingSession.isRecording.value) return
+
         stateHolder.send(
             Effect.OpenCameraSettings(
                 entryPoint = entryPoint,

@@ -99,11 +99,11 @@ class ViewfinderStateTest {
     }
 
     @Test
-    fun isSettingsPanelAvailable_outsideRecordingsTheSelfTimerAndQrMode() {
+    fun isSettingsPanelAvailable_outsideTheSelfTimerAndQrMode() {
         val photo = state()
 
         assertTrue(photo.isSettingsPanelAvailable())
-        assertFalse(
+        assertTrue(
             photo
                 .copy(recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING))
                 .isSettingsPanelAvailable(),

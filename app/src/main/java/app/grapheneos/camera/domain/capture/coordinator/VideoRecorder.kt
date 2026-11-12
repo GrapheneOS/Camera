@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -40,9 +41,19 @@ interface VideoRecorder {
         isStillWanted: () -> Boolean,
     )
 
-    fun start(muted: Boolean, paused: Boolean)
+    /** Returns the recording ID to pass to [onStartSoundPlayed], or null if it did not start. */
+    fun startPaused(includeAudio: Boolean): Int?
+
+    fun onStartSoundPlayed(
+        recordingId: Int,
+        paused: Boolean,
+        muted: Boolean,
+    )
+
     fun setPaused(paused: Boolean)
+
     fun setMuted(muted: Boolean)
+
     fun stop()
 }
 
@@ -60,8 +71,8 @@ internal class VideoRecorderImpl @Inject constructor(
 
     private var pendingRecording: PendingRecording? = null
 
-    private var preparation = 0
-    private var isPreparing = false
+    private var lastRecordingId = 0
+    private var preparingRecordingId: Int? = null
 
     private val _events = Channel<RecordedVideoEvent>(capacity = Channel.BUFFERED)
     override val events: Flow<RecordedVideoEvent> = _events.receiveAsFlow()
@@ -70,18 +81,21 @@ internal class VideoRecorderImpl @Inject constructor(
         request: RecordVideoRequest,
         isStillWanted: () -> Boolean,
     ) {
-        val thisPreparation = ++preparation
-        isPreparing = true
+        val recordingId = ++lastRecordingId
+        preparingRecordingId = recordingId
+
+        val storageLocation = capturedItemRepository.storageLocation.first()
+        if (recordingId != preparingRecordingId) return
 
         val output = createRecordingOutput(
-            storageLocation = request.storageLocation,
+            storageLocation = storageLocation,
             foreignUri = request.foreignUri,
         )
-        val location = output?.let { location(request.includeLocation) }
+        val location = output?.let { resolveCaptureLocation(request.includeLocation) }
+        val isCurrent = recordingId == preparingRecordingId
 
-        val isCurrent = thisPreparation == preparation
         if (isCurrent) {
-            isPreparing = false
+            preparingRecordingId = null
         }
 
         when {
@@ -90,34 +104,27 @@ internal class VideoRecorderImpl @Inject constructor(
             output == null -> _events.trySend(RecordedVideoEvent.OutputUnavailable)
 
             else -> {
+                if (location == CaptureLocation.Unavailable) {
+                    _events.trySend(RecordedVideoEvent.LocationUnavailable)
+                }
                 pendingRecording = PendingRecording(
+                    id = recordingId,
                     output = output,
-                    location = location,
-                    includeAudio = request.includeAudio,
+                    location = (location as? CaptureLocation.Found)?.location,
                 )
                 _events.trySend(RecordedVideoEvent.ReadyToStart)
             }
         }
     }
 
-    override fun start(
-        muted: Boolean,
-        paused: Boolean,
-    ) {
-        val pending = pendingRecording ?: return
-
-        // The sound callback may fire more than once; a second start() throws.
-        if (pending.isStarted) {
-            return
-        }
-
-        pending.isStarted = true
+    override fun startPaused(includeAudio: Boolean): Int? {
+        val pending = pendingRecording?.takeIf { it.phase == Phase.PREPARED } ?: return null
 
         val isSessionStarted = recordingSession.start(
             request = RecordingRequest(
                 fileDescriptor = pending.output.fileDescriptor,
                 location = pending.location,
-                includeAudio = pending.includeAudio,
+                includeAudio = includeAudio,
             ),
             onEvent = { event ->
                 onRecordingEvent(
@@ -127,24 +134,48 @@ internal class VideoRecorderImpl @Inject constructor(
             },
         )
 
-        when {
-            isSessionStarted -> onSessionStarted(
-                output = pending.output,
-                muted = muted,
-                paused = paused,
-            )
+        return when {
+            isSessionStarted -> {
+                pending.phase = Phase.WAITING_FOR_SOUND
+                recordingSession.setPaused(true)
+                // CameraX duplicates the output descriptor when the recording starts.
+                closeOutput(pending.output)
+                pending.id
+            }
 
-            // No camera is bound once the screen went away while the start sound played.
-            else -> abandon(pending)
+            else -> {
+                abandon(pending)
+                null
+            }
+        }
+    }
+
+    override fun onStartSoundPlayed(
+        recordingId: Int,
+        paused: Boolean,
+        muted: Boolean,
+    ) {
+        val pending = pendingRecording ?: return
+        if (pending.id != recordingId || pending.phase != Phase.WAITING_FOR_SOUND) return
+
+        pending.phase = Phase.STARTED
+        recordingSession.setMuted(muted)
+
+        if (!paused) {
+            recordingSession.setPaused(false)
         }
     }
 
     override fun setPaused(paused: Boolean) {
-        recordingSession.setPaused(paused)
+        if (pendingRecording?.phase == Phase.STARTED) {
+            recordingSession.setPaused(paused)
+        }
     }
 
     override fun setMuted(muted: Boolean) {
-        recordingSession.setMuted(muted)
+        if (pendingRecording?.phase == Phase.STARTED) {
+            recordingSession.setMuted(muted)
+        }
     }
 
     override fun stop() {
@@ -152,49 +183,23 @@ internal class VideoRecorderImpl @Inject constructor(
 
         when {
             pending == null -> abandonPreparation()
-
-            // The start is still queued behind the sound that announces it.
-            !pending.isStarted -> abandon(pending)
-
+            pending.phase == Phase.PREPARED -> abandon(pending)
+            pending.phase == Phase.WAITING_FOR_SOUND -> cancelBeforeStartSoundEnds(pending)
             else -> recordingSession.stop()
         }
     }
 
-    private fun onSessionStarted(
-        output: RecordingOutput,
-        muted: Boolean,
-        paused: Boolean,
-    ) {
-        // The Recording didn't exist yet when the mute/pause setters ran.
-        if (muted) {
-            recordingSession.setMuted(true)
-        }
-
-        if (paused) {
-            recordingSession.setPaused(true)
-        }
-
-        // FileDescriptorOutputOptions doc says that the file descriptor should be closed by
-        // the caller, and that it's safe to do so as soon as the recording has started
-        closeOutput(output)
+    private fun cancelBeforeStartSoundEnds(pending: PendingRecording) {
+        pending.phase = Phase.CANCELLED
+        pendingRecording = null
+        recordingSession.stop()
+        _events.trySend(RecordedVideoEvent.Abandoned)
     }
 
     private fun abandon(pending: PendingRecording) {
         pendingRecording = null
         discard(pending.output)
         _events.trySend(RecordedVideoEvent.Abandoned)
-    }
-
-    private suspend fun location(includeLocation: Boolean): Location? {
-        return when (val result = resolveCaptureLocation(includeLocation)) {
-            is CaptureLocation.Found -> result.location
-            is CaptureLocation.NotRequested -> null
-
-            is CaptureLocation.Unavailable -> {
-                _events.trySend(RecordedVideoEvent.LocationUnavailable)
-                null
-            }
-        }
     }
 
     private fun onRecordingEvent(
@@ -215,9 +220,7 @@ internal class VideoRecorderImpl @Inject constructor(
 
     private fun recordedVideoEvent(event: RecordingEvent): RecordedVideoEvent {
         return when (event) {
-            is RecordingEvent.Started -> {
-                RecordedVideoEvent.Started
-            }
+            is RecordingEvent.Started -> RecordedVideoEvent.Started
 
             is RecordingEvent.Progressed -> {
                 RecordedVideoEvent.Progressed(duration = event.recordedDurationNanos.nanoseconds)
@@ -237,23 +240,26 @@ internal class VideoRecorderImpl @Inject constructor(
             pendingRecording = null
         }
 
+        if (recording.phase == Phase.CANCELLED) {
+            discardOutput(recording.output)
+            return
+        }
+
         applicationScope.launch(mainDispatcher) {
             playCameraSound(CameraSound.RECORDING_STOP)
         }
 
-        when {
-            outcome.keepsContent() -> save(recording.output)
-            else -> discardOutput(recording.output)
+        if (outcome.keepsContent()) {
+            save(recording.output)
+        } else {
+            discardOutput(recording.output)
         }
     }
 
     private fun abandonPreparation() {
-        if (!isPreparing) {
-            return
-        }
+        if (preparingRecordingId == null) return
 
-        preparation++
-        isPreparing = false
+        preparingRecordingId = null
         _events.trySend(RecordedVideoEvent.Abandoned)
     }
 
@@ -286,17 +292,13 @@ internal class VideoRecorderImpl @Inject constructor(
     }
 
     private fun capturedItem(output: RecordingOutput): CapturedItem? {
-        return when {
-            output.isOwnFile -> {
-                CapturedItem(
-                    type = CapturedItemType.VIDEO,
-                    dateString = output.dateString,
-                    uri = output.uri
-                )
-            }
+        if (!output.isOwnFile) return null
 
-            else -> null
-        }
+        return CapturedItem(
+            type = CapturedItemType.VIDEO,
+            dateString = output.dateString,
+            uri = output.uri,
+        )
     }
 
     private fun discardOutput(output: RecordingOutput) {
@@ -318,12 +320,19 @@ internal class VideoRecorderImpl @Inject constructor(
         }
     }
 
+    private enum class Phase {
+        PREPARED,
+        WAITING_FOR_SOUND,
+        STARTED,
+        CANCELLED,
+    }
+
     private class PendingRecording(
+        val id: Int,
         val output: RecordingOutput,
         val location: Location?,
-        val includeAudio: Boolean,
     ) {
-        var isStarted = false
+        var phase = Phase.PREPARED
     }
 
     private companion object {

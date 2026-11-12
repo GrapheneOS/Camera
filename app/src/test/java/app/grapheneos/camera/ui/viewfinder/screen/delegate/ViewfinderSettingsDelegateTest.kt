@@ -21,6 +21,7 @@ import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -169,22 +170,39 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun settingsPanel_isNavigatedToOutsideQrModeAndRecordings() {
+    fun settingsPanel_isNavigatedToOutsideQrModeAndTheSelfTimer() {
         runTest {
             val delegate = createDelegate()
             val events = collectNavEvents(stateHolder)
 
             delegate.openSettingsPanel()
-            stateHolder.update {
-                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
-            }
+            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
             delegate.openSettingsPanel()
             stateHolder.update {
-                it.copy(mode = CameraMode.QR_SCAN, recording = ViewfinderRecordingState())
+                it.copy(mode = CameraMode.QR_SCAN, capture = ViewfinderCaptureState())
             }
             delegate.openSettingsPanel()
 
             assertEquals(listOf(ViewfinderNavEvent.OpenSettingsPanel()), events)
+        }
+    }
+
+    @Test
+    fun settingsPanel_staysOpenThroughARecording() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
+            }
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
+            }
+            stateHolder.update { it.copy(recording = ViewfinderRecordingState()) }
+
+            assertEquals(emptyList<ViewfinderNavEvent>(), events)
         }
     }
 
@@ -217,25 +235,15 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun settingsPanel_closesOnceARecordingOrTheSelfTimerStarts() {
+    fun settingsPanel_closesOnceTheSelfTimerStarts() {
         runTest {
             createDelegate()
             val events = collectNavEvents(stateHolder)
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 
-            stateHolder.update {
-                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
-            }
-            stateHolder.update { it.copy(recording = ViewfinderRecordingState()) }
             stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
 
-            assertEquals(
-                listOf(
-                    ViewfinderNavEvent.CloseSettingsPanel,
-                    ViewfinderNavEvent.CloseSettingsPanel,
-                ),
-                events,
-            )
+            assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
         }
     }
 
@@ -244,9 +252,7 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             createDelegate()
             val events = collectNavEvents(stateHolder)
-            stateHolder.update {
-                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
-            }
+            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
 
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 

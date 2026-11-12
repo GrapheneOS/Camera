@@ -235,9 +235,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is RecordingAction.RecordingRequested -> startRecording()
             is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
-            is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
             is RecordingAction.MuteToggleClicked -> recordingDelegate.toggleMute()
             is RecordingAction.RecordingPauseToggled -> setRecordingPaused(action.paused)
+
+            is RecordingAction.StartSoundPlayed -> {
+                recordingDelegate.onStartSoundPlayed(action.recordingId)
+            }
         }
     }
 
@@ -369,6 +372,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onRecordingEvent(event: ViewfinderRecordingEvent) {
         when (event) {
             is ViewfinderRecordingEvent.OutputUnavailable -> onRecordingOutputUnavailable()
+            is ViewfinderRecordingEvent.ReadyToStart -> startPreparedRecording()
 
             is ViewfinderRecordingEvent.Saved -> {
                 galleryDelegate.recordCapturedItem(event.item)
@@ -519,19 +523,34 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         recordingDelegate.requestRecording()
 
-        if (state.settings.includeAudio && AppPermission.MICROPHONE in state.missingPermissions) {
-            permissionDelegate.request(
-                permission = AppPermission.MICROPHONE,
-                explainsFirst = false,
-            )
+        if (state.lacksMicrophone()) {
+            requestMicrophone()
             recordingDelegate.markStopped()
             return
         }
 
         recordingDelegate.prepareRecording(
             includeLocation = state.includesLocation(),
-            includeAudio = state.settings.includeAudio,
             outputUri = outputUri,
+        )
+    }
+
+    // Audio can still be switched on while the output is being created.
+    private fun startPreparedRecording() {
+        when {
+            state().lacksMicrophone() -> {
+                requestMicrophone()
+                recordingDelegate.requestStop()
+            }
+
+            else -> recordingDelegate.startPreparedRecording()
+        }
+    }
+
+    private fun requestMicrophone() {
+        permissionDelegate.request(
+            permission = AppPermission.MICROPHONE,
+            explainsFirst = false,
         )
     }
 

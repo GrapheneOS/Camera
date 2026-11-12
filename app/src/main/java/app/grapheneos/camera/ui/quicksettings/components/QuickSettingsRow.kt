@@ -25,6 +25,7 @@ internal fun <T> QuickSettingsRow(
     onLimitClick: (OptionLimit) -> Unit,
     valueLabel: @Composable (T) -> String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     optionLabel: @Composable (T) -> String = valueLabel,
     icon: ((T) -> ImageVector)? = null,
     highlight: () -> Float = { 0f },
@@ -35,6 +36,7 @@ internal fun <T> QuickSettingsRow(
         modifier = modifier,
         highlight = highlight,
         onUnavailableClick = setting.limit?.let { limit -> { onLimitClick(limit) } },
+        enabled = enabled,
     ) {
         setting.options.forEach { option ->
             QuickSettingsOption(
@@ -43,7 +45,7 @@ internal fun <T> QuickSettingsRow(
                 icon = icon?.invoke(option),
                 selected = option == setting.selected,
                 onClick = { onSelect(option) },
-                enabled = option !in setting.unavailable,
+                enabled = enabled && option !in setting.unavailable,
             )
         }
     }
@@ -55,6 +57,7 @@ internal fun QuickSettingsRow(
     checked: Boolean,
     onToggle: (enabled: Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     offIcon: ImageVector? = null,
     onIcon: ImageVector? = null,
     highlight: () -> Float = { 0f },
@@ -77,6 +80,7 @@ internal fun QuickSettingsRow(
             icon = offIcon,
             selected = !checked,
             onClick = { onToggle(false) },
+            enabled = enabled,
         )
         QuickSettingsOption(
             rowLabel = label,
@@ -84,6 +88,7 @@ internal fun QuickSettingsRow(
             icon = onIcon,
             selected = checked,
             onClick = { onToggle(true) },
+            enabled = enabled,
         )
     }
 }

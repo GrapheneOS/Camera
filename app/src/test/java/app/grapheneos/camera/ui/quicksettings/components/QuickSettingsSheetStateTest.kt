@@ -12,10 +12,10 @@ class QuickSettingsSheetStateTest {
 
     @Test
     fun initialState_followsWhetherTheSheetIsShown() {
-        assertFalse(closedSheet.isShown())
+        assertFalse(closedSheet.isShown)
         assertTrue(closedSheet.isHidden)
         assertEquals(HEIGHT, closedSheet.offset())
-        assertTrue(openSheet.isShown())
+        assertTrue(openSheet.isShown)
         assertFalse(openSheet.isHidden)
         assertEquals(0f, openSheet.offset())
     }
@@ -73,12 +73,12 @@ class QuickSettingsSheetStateTest {
         closedSheet.startDrag()
         closedSheet.show(true)
 
-        assertFalse(closedSheet.isShown())
+        assertFalse(closedSheet.isShown)
         assertFalse(closedSheet.release(velocity = 0f))
 
         closedSheet.show(true)
 
-        assertTrue(closedSheet.isShown())
+        assertTrue(closedSheet.isShown)
         assertEquals(1f, closedSheet.targetPosition())
     }
 

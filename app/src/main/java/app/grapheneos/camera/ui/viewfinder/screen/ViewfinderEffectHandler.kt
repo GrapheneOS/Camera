@@ -324,7 +324,7 @@ internal class ViewfinderEffectHandlerImpl(
 
             is Effect.Recording.PlayStartSound -> {
                 activity.tunePlayer.playVRStartSound {
-                    onAction(RecordingAction.StartSoundPlayed)
+                    onAction(RecordingAction.StartSoundPlayed(recordingId = effect.recordingId))
                 }
             }
 

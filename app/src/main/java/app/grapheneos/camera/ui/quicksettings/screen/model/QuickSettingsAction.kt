@@ -8,10 +8,6 @@ import kotlin.time.Duration
 
 internal sealed interface QuickSettingsAction {
 
-    data object CameraSettingsClicked : QuickSettingsAction
-
-    data object CameraSettingsLongClicked : QuickSettingsAction
-
     data object LimitDismissed : QuickSettingsAction
 
     data class LimitClicked(
@@ -26,23 +22,30 @@ internal sealed interface QuickSettingsAction {
         val enabled: Boolean,
     ) : QuickSettingsAction
 
-    data class SelfTimerSelected(
-        val duration: Duration,
-    ) : QuickSettingsAction
+    sealed interface RequiresIdleRecorder : QuickSettingsAction {
 
-    data class AspectRatioSelected(
-        val ratio: AspectRatio,
-    ) : QuickSettingsAction
+        data object CameraSettingsClicked : RequiresIdleRecorder
 
-    data class VideoQualitySelected(
-        val quality: VideoQuality,
-    ) : QuickSettingsAction
+        data object CameraSettingsLongClicked : RequiresIdleRecorder
 
-    data class VideoFrameRateSelected(
-        val frameRate: VideoFrameRate,
-    ) : QuickSettingsAction
+        data class SelfTimerSelected(
+            val duration: Duration,
+        ) : RequiresIdleRecorder
 
-    data class AudioToggled(
-        val enabled: Boolean,
-    ) : QuickSettingsAction
+        data class AspectRatioSelected(
+            val ratio: AspectRatio,
+        ) : RequiresIdleRecorder
+
+        data class VideoQualitySelected(
+            val quality: VideoQuality,
+        ) : RequiresIdleRecorder
+
+        data class VideoFrameRateSelected(
+            val frameRate: VideoFrameRate,
+        ) : RequiresIdleRecorder
+
+        data class AudioToggled(
+            val enabled: Boolean,
+        ) : RequiresIdleRecorder
+    }
 }

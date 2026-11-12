@@ -127,7 +127,9 @@ sealed interface ViewfinderScreenEffect {
 
     sealed interface Recording : ViewfinderScreenEffect {
 
-        data object PlayStartSound : Recording
+        data class PlayStartSound(
+            val recordingId: Int,
+        ) : Recording
 
         data class ShowForReview(
             val uri: Uri,

@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.camerascreen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,13 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import app.grapheneos.camera.ui.components.motion.FADE_IN
+import app.grapheneos.camera.ui.components.motion.FADE_OUT
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
@@ -40,25 +40,28 @@ internal fun CameraOverlay(
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
 ) {
-    val isSheetHidden by remember(sheetState) {
-        derivedStateOf { sheetState.visibleFraction() == 0f }
-    }
-
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
         val controlsShown = uiState.isSettingsPanelAvailable && !uiState.capturedPreviewVisible
-        val controlsEnabled = isSheetHidden && !isTransitionShown
+        val statusBarVisible = controlsShown && !uiState.isRecordingActive
+        val controlsEnabled = sheetState.isHidden && !isTransitionShown
 
         Box(modifier = Modifier.fillMaxSize()) {
-            if (controlsShown) {
+            AnimatedVisibility(
+                visible = statusBarVisible,
+                enter = FADE_IN,
+                exit = FADE_OUT,
+            ) {
                 StatusBarLayer(
                     statusBar = statusBar,
                     sheetState = sheetState,
-                    enabled = controlsEnabled,
+                    enabled = controlsEnabled && statusBarVisible,
                     height = insets.previewTop,
                     onItemClick = { setting ->
                         viewfinder.onAction(SettingsAction.StatusBarClicked(setting))
                     },
                 )
+            }
+            if (controlsShown) {
                 BottomRowLayer(
                     uiState = uiState,
                     insets = insets,
