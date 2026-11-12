@@ -3,8 +3,14 @@ package app.grapheneos.camera.testutil
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingRequest
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 internal class FakeVideoRecordingSession : VideoRecordingSession {
+
+    private val _isRecording = MutableStateFlow(false)
+    override val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
     var startCount = 0
         private set
@@ -26,6 +32,7 @@ internal class FakeVideoRecordingSession : VideoRecordingSession {
     ): Boolean {
         startCount++
         this.onEvent = onEvent
+        _isRecording.value = true
         return true
     }
 
@@ -46,6 +53,9 @@ internal class FakeVideoRecordingSession : VideoRecordingSession {
     }
 
     fun emit(event: RecordingEvent) {
+        if (event is RecordingEvent.Finalized) {
+            _isRecording.value = false
+        }
         requireNotNull(onEvent) { "no recording was started" }.invoke(event)
     }
 }

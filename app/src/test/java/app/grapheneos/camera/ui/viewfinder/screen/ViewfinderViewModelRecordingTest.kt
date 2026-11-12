@@ -24,7 +24,7 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
     @Test
-    fun recordingRequested_withTheCameraReady_prepticksTheRecording() {
+    fun recordingRequested_withTheCameraReady_preparesTheRecording() {
         runTest {
             every { cameraDelegate.canRecord } returns true
 
@@ -36,7 +36,6 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 recordingDelegate.requestRecording()
                 recordingDelegate.prepareRecording(
                     includeLocation = false,
-                    includeAudio = true,
                     outputUri = null,
                 )
             }
@@ -56,7 +55,6 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             verify(exactly = 0) {
                 recordingDelegate.prepareRecording(
                     includeLocation = any(),
-                    includeAudio = any(),
                     outputUri = any(),
                 )
             }
@@ -67,6 +65,36 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                     explainsFirst = false,
                 )
             }
+        }
+    }
+
+    @Test
+    fun readyToStart_withoutTheMicrophone_asksForItAndDropsTheRecording() {
+        runTest {
+            createViewModel()
+            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
+
+            recordingEvents.emit(ViewfinderRecordingEvent.ReadyToStart)
+
+            verify(exactly = 0) { recordingDelegate.startPreparedRecording() }
+            verify(exactly = 1) { recordingDelegate.requestStop() }
+            verify(exactly = 1) {
+                permissionDelegate.request(
+                    permission = AppPermission.MICROPHONE,
+                    explainsFirst = false,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun readyToStart_startsThePreparedRecording() {
+        runTest {
+            createViewModel()
+
+            recordingEvents.emit(ViewfinderRecordingEvent.ReadyToStart)
+
+            verify(exactly = 1) { recordingDelegate.startPreparedRecording() }
         }
     }
 
@@ -122,13 +150,13 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
             viewModel.onAction(RecordingAction.MuteToggleClicked)
-            viewModel.onAction(RecordingAction.StartSoundPlayed)
+            viewModel.onAction(RecordingAction.StartSoundPlayed(recordingId = 12))
             viewModel.onAction(RecordingAction.RecordingStopRequested)
 
             verifyOrder {
                 recordingDelegate.setPaused(paused = true)
                 recordingDelegate.toggleMute()
-                recordingDelegate.startPreparedRecording()
+                recordingDelegate.onStartSoundPlayed(recordingId = 12)
                 recordingDelegate.requestStop()
             }
         }

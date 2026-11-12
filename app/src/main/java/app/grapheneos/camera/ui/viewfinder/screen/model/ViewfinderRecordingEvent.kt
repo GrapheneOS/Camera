@@ -6,6 +6,8 @@ sealed interface ViewfinderRecordingEvent {
 
     data object OutputUnavailable : ViewfinderRecordingEvent
 
+    data object ReadyToStart : ViewfinderRecordingEvent
+
     data class Saved(
         val item: CapturedItem,
     ) : ViewfinderRecordingEvent

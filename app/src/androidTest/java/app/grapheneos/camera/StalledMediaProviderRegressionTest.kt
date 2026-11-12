@@ -15,7 +15,7 @@ import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository.Companion.MEDIA_STORE_LOCATION
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorderImpl
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -167,7 +168,9 @@ class StalledMediaProviderRegressionTest {
             discardRecording = DiscardRecordingImpl(repository),
             resolveCaptureLocation = resolveCaptureLocation,
             playCameraSound = mockk(relaxed = true),
-            capturedItemRepository = mockk<CapturedItemRepository>(relaxed = true),
+            capturedItemRepository = mockk(relaxed = true) {
+                every { storageLocation } returns flowOf(MEDIA_STORE_LOCATION)
+            },
             applicationScope = scope,
             mainDispatcher = Dispatchers.Main.immediate,
         )
@@ -298,7 +301,12 @@ class StalledMediaProviderRegressionTest {
         awaitEvent("the recording is ready to start") { it == RecordedVideoEvent.ReadyToStart }
 
         onMainThread {
-            recorder.start(muted = false, paused = false)
+            val recordingId = requireNotNull(recorder.startPaused(includeAudio = false))
+            recorder.onStartSoundPlayed(
+                recordingId = recordingId,
+                paused = false,
+                muted = false,
+            )
             onRecordingEvent.captured(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
         }
     }
@@ -336,10 +344,8 @@ class StalledMediaProviderRegressionTest {
         const val INPUT_DISPATCH_TIMEOUT_S = 5L
 
         val REQUEST = RecordVideoRequest(
-            storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
             foreignUri = null,
             includeLocation = false,
-            includeAudio = false,
         )
     }
 }

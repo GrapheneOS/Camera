@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import android.net.Uri
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
@@ -14,12 +13,12 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -36,10 +35,10 @@ interface ViewfinderRecordingDelegate {
     fun requestRecording()
     fun prepareRecording(
         includeLocation: Boolean,
-        includeAudio: Boolean,
         outputUri: Uri?,
     )
     fun startPreparedRecording()
+    fun onStartSoundPlayed(recordingId: Int)
 
     fun setPaused(paused: Boolean)
     fun toggleMute()
@@ -53,12 +52,14 @@ interface ViewfinderRecordingDelegate {
 
 internal class ViewfinderRecordingDelegateImpl @Inject constructor(
     private val videoRecorder: VideoRecorder,
-    private val capturedItemRepository: CapturedItemRepository,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderRecordingDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
+
+    private val state: ViewfinderState
+        get() = stateHolder.state.value
 
     private val _recordingEvents = Channel<ViewfinderRecordingEvent>(capacity = Channel.BUFFERED)
     override val recordingEvents: Flow<ViewfinderRecordingEvent> = _recordingEvents.receiveAsFlow()
@@ -82,35 +83,40 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
             ViewfinderRecordingState(
                 phase = RecordingPhase.STARTING,
                 isSaving = recording.isSaving,
-                orientationAtStart = stateHolder.state.value.deviceOrientation,
+                orientationAtStart = state.deviceOrientation,
             )
         }
     }
 
     override fun prepareRecording(
         includeLocation: Boolean,
-        includeAudio: Boolean,
         outputUri: Uri?,
     ) {
         applicationScope.launch(mainDispatcher) {
             videoRecorder.prepare(
                 request = RecordVideoRequest(
-                    storageLocation = capturedItemRepository.storageLocation.first(),
                     foreignUri = outputUri,
                     includeLocation = includeLocation,
-                    includeAudio = includeAudio,
                 ),
-                isStillWanted = { stateHolder.state.value.recording.isActive() },
+                isStillWanted = { state.recording.isActive() },
             )
         }
     }
 
     override fun startPreparedRecording() {
-        val recording = stateHolder.state.value.recording
+        val recordingId = videoRecorder.startPaused(
+            includeAudio = state.settings.includeAudio,
+        ) ?: return
 
-        videoRecorder.start(
-            muted = recording.isMuted,
+        postEffect(Effect.Recording.PlayStartSound(recordingId = recordingId))
+    }
+
+    override fun onStartSoundPlayed(recordingId: Int) {
+        val recording = state.recording
+        videoRecorder.onStartSoundPlayed(
+            recordingId = recordingId,
             paused = recording.isPaused,
+            muted = recording.isMuted,
         )
     }
 
@@ -122,7 +128,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
     }
 
     override fun toggleMute() {
-        val recording = stateHolder.state.value.recording
+        val recording = state.recording
         if (!recording.isActive()) return
 
         val muted = !recording.isMuted
@@ -152,7 +158,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
     }
 
     override fun takeRetry(): Boolean {
-        val retries = stateHolder.state.value.recording.retriesOnceStreaming
+        val retries = state.recording.retriesOnceStreaming
 
         update { it.copy(retriesOnceStreaming = false) }
 
@@ -165,9 +171,12 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
             is RecordedVideoEvent.Abandoned -> markStopped()
             is RecordedVideoEvent.Started -> update { it.copy(phase = RecordingPhase.RECORDING) }
             is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
-            is RecordedVideoEvent.ReadyToStart -> postEffect(Effect.Recording.PlayStartSound)
             is RecordedVideoEvent.Progressed -> update { it.copy(duration = event.duration) }
             is RecordedVideoEvent.Saved -> onRecordingSaved(event)
+
+            is RecordedVideoEvent.ReadyToStart -> {
+                _recordingEvents.trySend(ViewfinderRecordingEvent.ReadyToStart)
+            }
 
             is RecordedVideoEvent.LocationUnavailable -> {
                 postEffect(Effect.ShowMessage(R.string.location_unavailable))
@@ -218,7 +227,6 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
             _recordingEvents.trySend(ViewfinderRecordingEvent.Saved(item))
         }
 
-        val state = stateHolder.state.value
         if (state.isCaptureSession && !state.recording.isActive()) {
             postEffect(Effect.Recording.ShowForReview(uri = event.uri))
         }

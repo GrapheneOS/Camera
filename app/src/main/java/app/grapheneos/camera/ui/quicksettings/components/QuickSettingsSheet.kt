@@ -6,7 +6,6 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,7 +53,7 @@ internal fun QuickSettingsSheet(
     tailHeight: Dp,
     onSettle: (isShown: Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
+    content: @Composable (enabled: Boolean) -> Unit,
 ) {
     val color = MaterialTheme.colorScheme.surfaceContainer
     val shape = MaterialTheme.shapes.extraLarge.copy(
@@ -106,8 +105,9 @@ private fun SheetBody(
     state: QuickSettingsSheetState,
     onSettle: (isShown: Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
+    content: @Composable (enabled: Boolean) -> Unit,
 ) {
+    val enabled = state.isShown || state.isDragging
     val nestedScrollConnection = rememberSheetNestedScrollConnection(
         state = state,
         onSettle = onSettle,
@@ -120,19 +120,18 @@ private fun SheetBody(
             .draggable(
                 state = rememberDraggableState { delta -> state.drag(delta) },
                 orientation = Orientation.Vertical,
+                enabled = enabled,
                 onDragStarted = { state.startDrag() },
                 onDragStopped = { velocity -> onSettle(state.release(velocity)) },
             ),
         color = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        Column(
-            modifier = Modifier.fadeAboveTail(state = state),
-        ) {
+        Column(modifier = Modifier.fadeAboveTail(state = state)) {
             SheetHandle(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
-            content()
+            content(enabled)
         }
     }
 }

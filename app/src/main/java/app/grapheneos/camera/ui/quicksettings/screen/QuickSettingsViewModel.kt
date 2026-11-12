@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoFrameRate
@@ -16,6 +17,7 @@ import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapper
 import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
@@ -45,6 +47,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val session: CameraSession,
+    private val recordingSession: VideoRecordingSession,
     private val copyText: CopyText,
     private val appLabel: AppLabel,
 ) : ViewModel(),
@@ -80,22 +83,38 @@ internal class QuickSettingsViewModel @Inject constructor(
             }
         }
 
+        viewModelScope.launch {
+            recordingSession.isRecording.collect { isRecording ->
+                stateHolder.update {
+                    it.copy(isRecording = isRecording)
+                }
+            }
+        }
+
         viewModelScope.launch { trackModeSettings() }
     }
 
     override fun onAction(action: Action) {
         when (action) {
-            is Action.CameraSettingsClicked -> openCameraSettings()
-            is Action.CameraSettingsLongClicked -> copyVersion()
+            is RequiresIdleRecorder -> onIdleRecorderAction(action)
             is Action.FlashModeSelected -> setFlashMode(action.mode)
             is Action.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
-            is Action.SelfTimerSelected -> setSelfTimerDuration(action.duration)
-            is Action.AspectRatioSelected -> setAspectRatio(action.ratio)
-            is Action.VideoQualitySelected -> setVideoQuality(action.quality)
-            is Action.VideoFrameRateSelected -> setVideoFrameRate(action.frameRate)
             is Action.LimitClicked -> showLimit(action.limit)
             is Action.LimitDismissed -> hideLimit()
-            is Action.AudioToggled -> setIncludeAudio(action.enabled)
+        }
+    }
+
+    private fun onIdleRecorderAction(action: RequiresIdleRecorder) {
+        if (recordingSession.isRecording.value) return
+
+        when (action) {
+            is RequiresIdleRecorder.CameraSettingsClicked -> openCameraSettings()
+            is RequiresIdleRecorder.CameraSettingsLongClicked -> copyVersion()
+            is RequiresIdleRecorder.SelfTimerSelected -> setSelfTimerDuration(action.duration)
+            is RequiresIdleRecorder.AspectRatioSelected -> setAspectRatio(action.ratio)
+            is RequiresIdleRecorder.VideoQualitySelected -> setVideoQuality(action.quality)
+            is RequiresIdleRecorder.VideoFrameRateSelected -> setVideoFrameRate(action.frameRate)
+            is RequiresIdleRecorder.AudioToggled -> setIncludeAudio(action.enabled)
         }
     }
 

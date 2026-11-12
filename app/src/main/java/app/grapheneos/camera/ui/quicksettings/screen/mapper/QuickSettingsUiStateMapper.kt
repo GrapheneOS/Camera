@@ -25,9 +25,13 @@ internal interface QuickSettingsUiStateMapper {
 internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSettingsUiStateMapper {
 
     override fun map(state: QuickSettingsState): QuickSettingsUiState {
-        val camera = state.boundCamera ?: return QuickSettingsUiState()
+        val moreButtonVisible = !state.isRecording
+        val camera = state.boundCamera ?: return QuickSettingsUiState(
+            moreButtonVisible = moreButtonVisible,
+        )
 
         return QuickSettingsUiState(
+            moreButtonVisible = moreButtonVisible,
             isVideoMode = camera.isVideoMode,
             isSelfIlluminating = camera.lensFacing == LensFacing.FRONT &&
                 state.modeSettings.selfIllumination,
@@ -103,7 +107,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         camera: BoundCamera,
     ): QuickChoiceUiModel<Duration>? {
         return when {
-            !camera.isVideoMode -> QuickChoiceUiModel(
+            !state.isRecording && !camera.isVideoMode -> QuickChoiceUiModel(
                 selected = state.settings.selfTimerDuration,
                 options = SELF_TIMER_OPTIONS.toImmutableList(),
             )
@@ -117,7 +121,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         camera: BoundCamera,
     ): QuickChoiceUiModel<AspectRatio>? {
         return when {
-            !camera.isVideoMode -> QuickChoiceUiModel(
+            !state.isRecording && !camera.isVideoMode -> QuickChoiceUiModel(
                 selected = state.settings.aspectRatio,
                 options = AspectRatio.entries.toImmutableList(),
             )
@@ -131,7 +135,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         camera: BoundCamera,
     ): QuickChoiceUiModel<VideoQuality>? {
         return when {
-            camera.isVideoMode -> QuickChoiceUiModel(
+            !state.isRecording && camera.isVideoMode -> QuickChoiceUiModel(
                 selected = camera.recordedVideoQuality(stored = state.modeSettings.videoQuality),
                 options = camera.videoQualities.reversed().toImmutableList(),
             )
@@ -145,9 +149,10 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         state: QuickSettingsState,
         camera: BoundCamera,
     ): QuickChoiceUiModel<VideoFrameRate>? {
-        val highFrameRate = camera.highFrameRate ?: return null
+        if (state.isRecording) return null
 
-        return when (highFrameRate) {
+        return when (val highFrameRate = camera.highFrameRate) {
+            null -> null
             HighFrameRateSupport.Supported -> QuickChoiceUiModel(
                 selected = state.modeSettings.videoFrameRate,
                 options = VideoFrameRate.entries.toImmutableList(),
@@ -167,7 +172,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         camera: BoundCamera,
     ): Boolean? {
         return when {
-            camera.isVideoMode -> state.settings.includeAudio
+            !state.isRecording && camera.isVideoMode -> state.settings.includeAudio
             else -> null
         }
     }

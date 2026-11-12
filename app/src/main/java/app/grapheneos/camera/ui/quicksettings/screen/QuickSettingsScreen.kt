@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.quicksettings.components.RowHighlightState
 import app.grapheneos.camera.ui.quicksettings.components.quickSettingsTitle
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 
@@ -107,22 +108,28 @@ internal fun QuickSettingsContent(
             tailHeight = insets.shutterRow,
             onSettle = onSettle,
             modifier = modifier,
-        ) {
+        ) { enabled ->
             val title = quickSettingsTitle(isVideoMode = uiState.isVideoMode)
 
             Column(
                 modifier = Modifier
-                    .verticalScroll(state = rememberScrollState())
+                    .verticalScroll(
+                        state = rememberScrollState(),
+                        enabled = enabled,
+                    )
                     .semantics { paneTitle = title },
             ) {
                 QuickSettingsHeader(
                     isVideoMode = uiState.isVideoMode,
-                    onMoreClick = { onAction(Action.CameraSettingsClicked) },
-                    onMoreLongClick = { onAction(Action.CameraSettingsLongClicked) },
+                    moreButtonVisible = uiState.moreButtonVisible,
+                    enabled = enabled,
+                    onMoreClick = { onAction(RequiresIdleRecorder.CameraSettingsClicked) },
+                    onMoreLongClick = { onAction(RequiresIdleRecorder.CameraSettingsLongClicked) },
                 )
                 QuickSettingsRows(
                     uiState = uiState,
                     rowHighlight = rowHighlight,
+                    enabled = enabled,
                     onAction = onAction,
                 )
             }

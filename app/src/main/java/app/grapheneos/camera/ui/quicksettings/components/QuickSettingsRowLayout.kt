@@ -52,6 +52,7 @@ internal fun QuickSettingsRowLayout(
     modifier: Modifier = Modifier,
     highlight: () -> Float = { 0f },
     onUnavailableClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
     options: @Composable RowScope.() -> Unit,
 ) {
     val highlightColor = MaterialTheme.colorScheme.secondaryContainer
@@ -63,6 +64,7 @@ internal fun QuickSettingsRowLayout(
                     label = label,
                     value = value,
                     onUnavailableClick = onUnavailableClick,
+                    enabled = enabled,
                 )
             },
             {
@@ -97,10 +99,12 @@ private fun QuickSettingsRowLabel(
     label: String,
     value: String,
     onUnavailableClick: (() -> Unit)?,
+    enabled: Boolean,
 ) {
     val clickModifier = when (onUnavailableClick) {
         null -> Modifier
         else -> Modifier.clickable(
+            enabled = enabled,
             onClickLabel = stringResource(R.string.quick_settings_why_unavailable),
             role = Role.Button,
             onClick = onUnavailableClick,

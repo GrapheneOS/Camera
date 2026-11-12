@@ -64,6 +64,7 @@ import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsDialogs
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapperImpl
 import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
@@ -420,10 +421,11 @@ private class CameraScreenSampleState {
 
     fun onQuickSettingsAction(action: QuickSettingsAction) {
         when (action) {
-            is QuickSettingsAction.CameraSettingsClicked -> Unit
-            is QuickSettingsAction.CameraSettingsLongClicked -> Unit
+            is RequiresIdleRecorder.CameraSettingsClicked -> Unit
+            is RequiresIdleRecorder.CameraSettingsLongClicked -> Unit
             is QuickSettingsAction.LimitClicked -> shownLimit = action.limit
             is QuickSettingsAction.LimitDismissed -> shownLimit = null
+
             is QuickSettingsAction.FlashModeSelected -> {
                 updateMode { it.copy(flashMode = action.mode) }
             }
@@ -432,23 +434,23 @@ private class CameraScreenSampleState {
                 updateMode { it.copy(selfIllumination = action.enabled) }
             }
 
-            is QuickSettingsAction.SelfTimerSelected -> {
+            is RequiresIdleRecorder.SelfTimerSelected -> {
                 settings = settings.copy(selfTimerDuration = action.duration)
             }
 
-            is QuickSettingsAction.AspectRatioSelected -> {
+            is RequiresIdleRecorder.AspectRatioSelected -> {
                 settings = settings.copy(aspectRatio = action.ratio)
             }
 
-            is QuickSettingsAction.VideoQualitySelected -> {
+            is RequiresIdleRecorder.VideoQualitySelected -> {
                 updateMode { it.copy(videoQuality = action.quality) }
             }
 
-            is QuickSettingsAction.VideoFrameRateSelected -> {
+            is RequiresIdleRecorder.VideoFrameRateSelected -> {
                 updateMode { it.copy(videoFrameRate = action.frameRate) }
             }
 
-            is QuickSettingsAction.AudioToggled -> {
+            is RequiresIdleRecorder.AudioToggled -> {
                 settings = settings.copy(includeAudio = action.enabled)
             }
         }

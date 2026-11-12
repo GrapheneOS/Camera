@@ -20,6 +20,7 @@ import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.ui.core.animation.crossfadeResizing
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import app.grapheneos.camera.ui.settingvalues.flashIcon
 import app.grapheneos.camera.ui.settingvalues.flashLabel
@@ -30,21 +31,25 @@ import app.grapheneos.camera.ui.settingvalues.videoQualityTitleId
 @Composable
 internal fun QuickSettingsRows(
     uiState: QuickSettingsUiState,
+    enabled: Boolean,
     rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
     LightRows(
         uiState = uiState,
+        enabled = enabled,
         rowHighlight = rowHighlight,
         onAction = onAction,
     )
     PhotoRows(
         uiState = uiState,
+        enabled = enabled,
         rowHighlight = rowHighlight,
         onAction = onAction,
     )
     VideoRows(
         uiState = uiState,
+        enabled = enabled,
         rowHighlight = rowHighlight,
         onAction = onAction,
     )
@@ -53,11 +58,16 @@ internal fun QuickSettingsRows(
 @Composable
 private fun LightRows(
     uiState: QuickSettingsUiState,
+    enabled: Boolean,
     rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
-    AnimatedSettingRow(setting = uiState.flash) { flash ->
+    AnimatedSettingRow(
+        setting = uiState.flash,
+        enabled = enabled,
+    ) { flash, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.flash_mode),
             setting = flash,
             onSelect = { mode -> onAction(Action.FlashModeSelected(mode)) },
@@ -67,11 +77,15 @@ private fun LightRows(
             highlight = { rowHighlight.alphaOf(QuickSetting.FLASH) },
         )
     }
-    AnimatedSettingRow(setting = uiState.selfIllumination) { selfIllumination ->
+    AnimatedSettingRow(
+        setting = uiState.selfIllumination,
+        enabled = enabled,
+    ) { selfIllumination, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.self_illumination),
             checked = selfIllumination,
-            onToggle = { enabled -> onAction(Action.SelfIlluminationToggled(enabled)) },
+            onToggle = { onAction(Action.SelfIlluminationToggled(enabled = it)) },
             offIcon = Icons.Outlined.Block,
             onIcon = Icons.Outlined.Lightbulb,
             highlight = { rowHighlight.alphaOf(QuickSetting.SELF_ILLUMINATION) },
@@ -82,24 +96,33 @@ private fun LightRows(
 @Composable
 private fun PhotoRows(
     uiState: QuickSettingsUiState,
+    enabled: Boolean,
     rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
-    AnimatedSettingRow(setting = uiState.selfTimer) { selfTimer ->
+    AnimatedSettingRow(
+        setting = uiState.selfTimer,
+        enabled = enabled,
+    ) { selfTimer, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.timer),
             setting = selfTimer,
-            onSelect = { duration -> onAction(Action.SelfTimerSelected(duration)) },
+            onSelect = { duration -> onAction(RequiresIdleRecorder.SelfTimerSelected(duration)) },
             onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { duration -> selfTimerLabel(duration) },
             highlight = { rowHighlight.alphaOf(QuickSetting.SELF_TIMER) },
         )
     }
-    AnimatedSettingRow(setting = uiState.aspectRatio) { aspectRatio ->
+    AnimatedSettingRow(
+        setting = uiState.aspectRatio,
+        enabled = enabled,
+    ) { aspectRatio, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.aspect_ratio),
             setting = aspectRatio,
-            onSelect = { ratio -> onAction(Action.AspectRatioSelected(ratio)) },
+            onSelect = { ratio -> onAction(RequiresIdleRecorder.AspectRatioSelected(ratio)) },
             onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { ratio -> aspectRatioLabel(ratio) },
         )
@@ -109,25 +132,36 @@ private fun PhotoRows(
 @Composable
 private fun VideoRows(
     uiState: QuickSettingsUiState,
+    enabled: Boolean,
     rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
-    AnimatedSettingRow(setting = uiState.videoQuality) { videoQuality ->
+    AnimatedSettingRow(
+        setting = uiState.videoQuality,
+        enabled = enabled,
+    ) { videoQuality, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.quick_settings_resolution),
             setting = videoQuality,
-            onSelect = { quality -> onAction(Action.VideoQualitySelected(quality)) },
+            onSelect = { quality -> onAction(RequiresIdleRecorder.VideoQualitySelected(quality)) },
             onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { quality -> stringResource(videoQualityTitleId(quality)) },
             optionLabel = { quality -> videoQualityLabel(quality) },
             highlight = { rowHighlight.alphaOf(QuickSetting.VIDEO_QUALITY) },
         )
     }
-    AnimatedSettingRow(setting = uiState.videoFrameRate) { videoFrameRate ->
+    AnimatedSettingRow(
+        setting = uiState.videoFrameRate,
+        enabled = enabled,
+    ) { videoFrameRate, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.quick_settings_frame_rate),
             setting = videoFrameRate,
-            onSelect = { frameRate -> onAction(Action.VideoFrameRateSelected(frameRate)) },
+            onSelect = { frameRate ->
+                onAction(RequiresIdleRecorder.VideoFrameRateSelected(frameRate))
+            },
             onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { frameRate ->
                 stringResource(R.string.quick_settings_fps, frameRate.framesPerSecond)
@@ -135,11 +169,15 @@ private fun VideoRows(
             icon = { frameRate -> frameRateIcon(frameRate) },
         )
     }
-    AnimatedSettingRow(setting = uiState.audio) { audio ->
+    AnimatedSettingRow(
+        setting = uiState.audio,
+        enabled = enabled,
+    ) { audio, rowEnabled ->
         QuickSettingsRow(
+            enabled = rowEnabled,
             label = stringResource(R.string.include_audio),
             checked = audio,
-            onToggle = { enabled -> onAction(Action.AudioToggled(enabled)) },
+            onToggle = { onAction(RequiresIdleRecorder.AudioToggled(enabled = it)) },
             offIcon = Icons.Outlined.MicOff,
             onIcon = Icons.Outlined.Mic,
         )
@@ -149,7 +187,8 @@ private fun VideoRows(
 @Composable
 private fun <T> AnimatedSettingRow(
     setting: T?,
-    row: @Composable (T) -> Unit,
+    enabled: Boolean,
+    row: @Composable (setting: T, enabled: Boolean) -> Unit,
 ) {
     AnimatedContent(
         targetState = setting,
@@ -158,7 +197,9 @@ private fun <T> AnimatedSettingRow(
         contentKey = { shownSetting -> shownSetting != null },
     ) { shownSetting ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            shownSetting?.let { row(it) }
+            if (shownSetting != null) {
+                row(shownSetting, enabled && setting != null)
+            }
         }
     }
 }

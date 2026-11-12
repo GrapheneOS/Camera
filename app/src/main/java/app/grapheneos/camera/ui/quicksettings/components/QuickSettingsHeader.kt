@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,6 +37,8 @@ private val MORE_ICON_SIZE = 20.dp
 @Composable
 internal fun QuickSettingsHeader(
     isVideoMode: Boolean,
+    moreButtonVisible: Boolean,
+    enabled: Boolean,
     onMoreClick: () -> Unit,
     onMoreLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -61,10 +64,22 @@ internal fun QuickSettingsHeader(
                 style = MaterialTheme.typography.headlineSmall,
             )
         }
-        MoreButton(
-            onClick = onMoreClick,
-            onLongClick = onMoreLongClick,
-        )
+        Box(
+            modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .size(
+                    width = MORE_BUTTON_WIDTH,
+                    height = MORE_BUTTON_HEIGHT,
+                ),
+        ) {
+            if (moreButtonVisible) {
+                MoreButton(
+                    enabled = enabled,
+                    onClick = onMoreClick,
+                    onLongClick = onMoreLongClick,
+                )
+            }
+        }
     }
 }
 
@@ -78,6 +93,7 @@ internal fun quickSettingsTitle(isVideoMode: Boolean): String {
 
 @Composable
 private fun MoreButton(
+    enabled: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -85,11 +101,7 @@ private fun MoreButton(
 
     Box(
         modifier = Modifier
-            .minimumInteractiveComponentSize()
-            .size(
-                width = MORE_BUTTON_WIDTH,
-                height = MORE_BUTTON_HEIGHT,
-            )
+            .fillMaxSize()
             .clip(shape = shape)
             .border(
                 border = IconButtonDefaults.outlinedIconButtonBorder(enabled = true),
@@ -97,6 +109,7 @@ private fun MoreButton(
             )
             .combinedClickable(
                 role = Role.Button,
+                enabled = enabled,
                 onLongClickLabel = stringResource(R.string.quick_settings_copy_version),
                 onLongClick = onLongClick,
                 onClick = onClick,

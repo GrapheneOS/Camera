@@ -102,13 +102,15 @@ sealed interface ViewfinderAction {
 
     sealed interface RecordingAction : ViewfinderAction {
 
-        data object RecordingStopRequested : RecordingAction
+        data object MuteToggleClicked : RecordingAction
 
-        data object StartSoundPlayed : RecordingAction
+        data object RecordingStopRequested : RecordingAction
 
         data object RecordingRequested : RecordingAction
 
-        data object MuteToggleClicked : RecordingAction
+        data class StartSoundPlayed(
+            val recordingId: Int,
+        ) : RecordingAction
 
         data class RecordingPauseToggled(
             val paused: Boolean,

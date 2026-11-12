@@ -25,7 +25,6 @@ import io.mockk.verifyOrder
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -132,17 +131,14 @@ class ViewfinderRecordingDelegateTest {
             delegate.requestRecording()
             delegate.prepareRecording(
                 includeLocation = true,
-                includeAudio = false,
                 outputUri = FOREIGN_URI,
             )
 
             coVerify(exactly = 1) {
                 videoRecorder.prepare(
                     request = RecordVideoRequest(
-                        storageLocation = STORAGE_LOCATION,
                         foreignUri = FOREIGN_URI,
                         includeLocation = true,
-                        includeAudio = false,
                     ),
                     isStillWanted = capture(isStillWanted),
                 )
@@ -167,16 +163,39 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
-    fun startPreparedRecording_passesOnThePauseAndMuteSetBeforeTheStart() {
+    fun startPreparedRecording_requestsTheStartSoundForTheRecording() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.requestRecording()
+            stateHolder.update { it.copy(settings = it.settings.copy(includeAudio = false)) }
+            delegate.toggleMute()
+            every { videoRecorder.startPaused(includeAudio = false) } returns 12
+            delegate.startPreparedRecording()
+
+            verify(exactly = 1) { videoRecorder.startPaused(includeAudio = false) }
+            assertEquals(Effect.Recording.PlayStartSound(recordingId = 12), effects.last())
+        }
+    }
+
+    @Test
+    fun startSoundPlayed_appliesThePauseAndMuteForThatRecording() {
         runTest {
             val delegate = createDelegate()
 
             delegate.requestRecording()
             delegate.setPaused(paused = true)
             delegate.toggleMute()
-            delegate.startPreparedRecording()
+            delegate.onStartSoundPlayed(recordingId = 12)
 
-            verify(exactly = 1) { videoRecorder.start(muted = true, paused = true) }
+            verify(exactly = 1) {
+                videoRecorder.onStartSoundPlayed(
+                    recordingId = 12,
+                    paused = true,
+                    muted = true,
+                )
+            }
         }
     }
 
@@ -232,10 +251,9 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
-    fun recorderEvents_soundTheStartAndTrackTheDuration() {
+    fun recorderEvents_reportTheReadyRecordingAndTrackTheDuration() {
         runTest {
-            createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectEvents(createDelegate())
 
             recorderEvents.emit(RecordedVideoEvent.ReadyToStart)
             recorderEvents.emit(RecordedVideoEvent.Started)
@@ -243,7 +261,7 @@ class ViewfinderRecordingDelegateTest {
 
             assertEquals(RecordingPhase.RECORDING, recording().phase)
             assertEquals(5.seconds, recording().duration)
-            assertEquals(listOf(Effect.Recording.PlayStartSound), effects)
+            assertEquals(listOf(ViewfinderRecordingEvent.ReadyToStart), events)
         }
     }
 
@@ -435,9 +453,6 @@ class ViewfinderRecordingDelegateTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderRecordingDelegateImpl(
             videoRecorder = videoRecorder,
-            capturedItemRepository = mockk {
-                every { storageLocation } returns flowOf(STORAGE_LOCATION)
-            },
             applicationScope = backgroundScope,
             mainDispatcher = dispatcher,
         )
@@ -451,8 +466,6 @@ class ViewfinderRecordingDelegateTest {
     }
 
     private companion object {
-        const val STORAGE_LOCATION = "MediaStore"
-
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/videos/1")
         val ITEM = CapturedItem(CapturedItemType.VIDEO, "20260920_120000_000", Uri.EMPTY)
     }

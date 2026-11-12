@@ -10,7 +10,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.di.camera.SnapshotProbeCacheEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import dagger.hilt.android.EntryPointAccessors
 import org.junit.Assert.assertEquals
@@ -185,7 +185,7 @@ class ModeSwitchLatencyRegressionTest {
     private fun selectVideoQuality(activity: MainActivity, position: Int) {
         val quality = videoQualityOptions(activity)[position]
 
-        activity.quickSettings.onAction(QuickSettingsAction.VideoQualitySelected(quality))
+        activity.quickSettings.onAction(RequiresIdleRecorder.VideoQualitySelected(quality))
     }
 
     private fun selectedVideoQualityPosition(activity: MainActivity): Int {

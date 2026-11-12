@@ -18,5 +18,6 @@ internal data class QuickSettingsUiState(
     val videoQuality: QuickChoiceUiModel<VideoQuality>? = null,
     val videoFrameRate: QuickChoiceUiModel<VideoFrameRate>? = null,
     val audio: Boolean? = null,
+    val moreButtonVisible: Boolean = true,
     val dialog: QuickSettingsDialog? = null,
 )

@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -24,6 +25,7 @@ import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapperImpl
 import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog as Dialog
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
@@ -37,6 +39,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,6 +65,12 @@ class QuickSettingsViewModelTest {
     private val session = mockk<CameraSession>(relaxed = true) {
         every { boundCamera } returns this@QuickSettingsViewModelTest.boundCamera
         every { capabilities() } returns CAPABILITIES
+    }
+
+    private val isRecording = MutableStateFlow(false)
+
+    private val recordingSession = mockk<VideoRecordingSession> {
+        every { isRecording } returns this@QuickSettingsViewModelTest.isRecording
     }
 
     private val copyText = mockk<CopyText>()
@@ -113,7 +122,7 @@ class QuickSettingsViewModelTest {
             storedModeSettings[FRONT_VIDEO_SLOT] = STORED_FRONT_VIDEO
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.VideoFrameRateSelected(VideoFrameRate.FPS_60))
+            viewModel.onAction(RequiresIdleRecorder.VideoFrameRateSelected(VideoFrameRate.FPS_60))
 
             assertEquals(
                 VideoFrameRate.FPS_60,
@@ -145,7 +154,7 @@ class QuickSettingsViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.AspectRatioSelected(AspectRatio.RATIO_16_9))
+            viewModel.onAction(RequiresIdleRecorder.AspectRatioSelected(AspectRatio.RATIO_16_9))
 
             assertEquals(AspectRatio.RATIO_16_9, storedSettings.value.aspectRatio)
         }
@@ -156,7 +165,7 @@ class QuickSettingsViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.SelfTimerSelected(SELF_TIMER))
+            viewModel.onAction(RequiresIdleRecorder.SelfTimerSelected(SELF_TIMER))
 
             assertEquals(SELF_TIMER, storedSettings.value.selfTimerDuration)
         }
@@ -168,12 +177,46 @@ class QuickSettingsViewModelTest {
             boundCamera.value = FRONT_VIDEO_CAMERA
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.VideoQualitySelected(VideoQuality.UHD))
+            viewModel.onAction(RequiresIdleRecorder.VideoQualitySelected(VideoQuality.UHD))
 
             assertEquals(
                 VideoQuality.UHD,
                 storedModeSettings.getValue(FRONT_VIDEO_SLOT).videoQuality,
             )
+        }
+    }
+
+    @Test
+    fun recording_hidesVideoQualityUntilFinalization() {
+        runTest {
+            boundCamera.value = FRONT_VIDEO_CAMERA
+            val viewModel = viewModel()
+
+            isRecording.value = true
+            assertNull(viewModel.uiState.value.videoQuality)
+            isRecording.value = false
+
+            assertEquals(VideoQuality.FHD, viewModel.uiState.value.videoQuality?.selected)
+        }
+    }
+
+    @Test
+    fun whileRecording_blocksCameraSettingsAndAudioButAllowsSelfIllumination() {
+        runTest {
+            boundCamera.value = FRONT_VIDEO_CAMERA
+            val viewModel = viewModel()
+            isRecording.value = true
+
+            val effects = collectEffects(viewModel)
+            viewModel.onAction(RequiresIdleRecorder.CameraSettingsClicked)
+            viewModel.onAction(RequiresIdleRecorder.CameraSettingsLongClicked)
+            viewModel.onAction(RequiresIdleRecorder.AudioToggled(enabled = false))
+            viewModel.onAction(Action.SelfIlluminationToggled(enabled = true))
+
+            assertTrue(effects.isEmpty())
+            verify(exactly = 0) { copyText(any()) }
+            assertTrue(storedSettings.value.includeAudio)
+            assertTrue(storedModeSettings.getValue(FRONT_VIDEO_SLOT).selfIllumination)
         }
     }
 
@@ -196,7 +239,7 @@ class QuickSettingsViewModelTest {
             val viewModel = viewModel(entryPoint = entryPoint)
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(Action.CameraSettingsClicked)
+            viewModel.onAction(RequiresIdleRecorder.CameraSettingsClicked)
 
             assertEquals(
                 listOf(
@@ -217,7 +260,7 @@ class QuickSettingsViewModelTest {
             val viewModel = viewModel()
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(Action.CameraSettingsLongClicked)
+            viewModel.onAction(RequiresIdleRecorder.CameraSettingsLongClicked)
 
             verify { copyText(COPIED_VERSION) }
             assertEquals(listOf(Effect.TextCopied), effects)
@@ -231,9 +274,9 @@ class QuickSettingsViewModelTest {
             val viewModel = viewModel()
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(Action.CameraSettingsLongClicked)
+            viewModel.onAction(RequiresIdleRecorder.CameraSettingsLongClicked)
 
-            assertEquals(emptyList<Effect>(), effects)
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -244,6 +287,7 @@ class QuickSettingsViewModelTest {
             entryPoint = entryPoint,
             settingsRepository = settingsRepository,
             session = session,
+            recordingSession = recordingSession,
             copyText = copyText,
             appLabel = { APP_LABEL },
             uiStateMapper = QuickSettingsUiStateMapperImpl(),
