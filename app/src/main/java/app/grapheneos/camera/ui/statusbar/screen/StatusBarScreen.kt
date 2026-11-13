@@ -10,12 +10,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.statusbar.components.StatusBar
-import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarAction as Action
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusItemUiModel
 import kotlin.time.Duration.Companion.seconds
@@ -45,18 +43,11 @@ internal fun StatusBarScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
-    val effectHandler = rememberStatusBarEffectHandler()
-
-    CollectEvents(
-        events = screenModel.effects,
-        onEvent = effectHandler::handle,
-    )
 
     StatusBarContent(
         uiState = uiState,
         enabled = enabled,
         onItemClick = onItemClick,
-        onAction = screenModel::onAction,
         modifier = modifier,
     )
 }
@@ -66,7 +57,6 @@ internal fun StatusBarContent(
     uiState: StatusBarUiState,
     enabled: Boolean,
     onItemClick: (QuickSetting) -> Unit,
-    onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // TODO: follow the system theme once the viewfinder's black background does.
@@ -78,7 +68,6 @@ internal fun StatusBarContent(
             items = uiState.items,
             enabled = enabled,
             onItemClick = onItemClick,
-            onSettingsClick = { onAction(Action.CameraSettingsClicked) },
             modifier = modifier,
         )
     }
@@ -92,7 +81,6 @@ private fun StatusBarPhotoPreview() {
             uiState = PREVIEW_PHOTO_UI_STATE,
             enabled = true,
             onItemClick = {},
-            onAction = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .height(PREVIEW_HEIGHT),
@@ -108,7 +96,6 @@ private fun StatusBarVideoPreview() {
             uiState = PREVIEW_VIDEO_UI_STATE,
             enabled = true,
             onItemClick = {},
-            onAction = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .height(PREVIEW_HEIGHT),

@@ -78,19 +78,15 @@ internal fun QuickSettingsSheet(
             .fillMaxWidth()
             .sheetOffset(state = state),
     ) {
-        Column(
+        SheetBody(
+            state = state,
+            onSettle = onSettle,
             modifier = Modifier
                 .weight(weight = 1f, fill = false)
                 .clip(shape = shape)
                 .background(brush = brush),
-        ) {
-            SheetBody(
-                state = state,
-                onSettle = onSettle,
-                modifier = Modifier.weight(weight = 1f, fill = false),
-                content = content,
-            )
-        }
+            content = content,
+        )
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()

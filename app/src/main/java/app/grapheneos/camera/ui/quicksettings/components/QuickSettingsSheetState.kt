@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import app.grapheneos.camera.ui.core.animation.SETTLE_SPEC
+import kotlin.math.abs
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 
@@ -19,6 +20,7 @@ private const val HALFWAY_POSITION = 0.5f
 @Stable
 internal class QuickSettingsSheetState(
     private val settleVelocity: Float,
+    private val minFlingDistance: Float,
     isShown: Boolean = false,
 ) {
 
@@ -32,6 +34,7 @@ internal class QuickSettingsSheetState(
 
     private var height = 0f
     private var releaseVelocity = 0f
+    private var dragStartPosition = HIDDEN_POSITION
     private var dragPosition by mutableFloatStateOf(HIDDEN_POSITION)
     private val position = Animatable(initialValue = positionOf(isShown)).apply {
         updateBounds(
@@ -50,6 +53,7 @@ internal class QuickSettingsSheetState(
     }
 
     fun startDrag() {
+        dragStartPosition = position.value
         dragPosition = position.value
         releaseVelocity = 0f
         isDragging = true
@@ -68,9 +72,11 @@ internal class QuickSettingsSheetState(
     }
 
     fun release(velocity: Float): Boolean {
+        val canFling = abs(dragPosition - dragStartPosition) * height >= minFlingDistance
+
         isShown = when {
-            velocity <= -settleVelocity -> true
-            velocity >= settleVelocity -> false
+            canFling && velocity <= -settleVelocity -> true
+            canFling && velocity >= settleVelocity -> false
             else -> dragPosition >= HALFWAY_POSITION
         }
         releaseVelocity = when (height) {

@@ -33,7 +33,10 @@ class QuickSettingsSheetStateTest {
 
     @Test
     fun drag_beforeLayout_movesNothing() {
-        val unlaid = QuickSettingsSheetState(settleVelocity = SETTLE_VELOCITY)
+        val unlaid = QuickSettingsSheetState(
+            settleVelocity = SETTLE_VELOCITY,
+            minFlingDistance = MIN_FLING_DISTANCE,
+        )
 
         unlaid.startDrag()
 
@@ -56,16 +59,29 @@ class QuickSettingsSheetStateTest {
     }
 
     @Test
-    fun fling_settlesInItsDirectionWhateverTheDistance() {
+    fun fling_settlesInItsDirectionPastTheMinimumFlingDistance() {
         closedSheet.startDrag()
-        closedSheet.drag(-10f)
+        closedSheet.drag(-MIN_FLING_DISTANCE)
 
         assertTrue(closedSheet.release(velocity = -SETTLE_VELOCITY))
 
         openSheet.startDrag()
-        openSheet.drag(10f)
+        openSheet.drag(MIN_FLING_DISTANCE)
 
         assertFalse(openSheet.release(velocity = SETTLE_VELOCITY))
+    }
+
+    @Test
+    fun fling_shorterThanTheMinimumFlingDistance_settlesOnTheNearerSide() {
+        closedSheet.startDrag()
+        closedSheet.drag(-10f)
+
+        assertFalse(closedSheet.release(velocity = -SETTLE_VELOCITY))
+
+        openSheet.startDrag()
+        openSheet.drag(10f)
+
+        assertTrue(openSheet.release(velocity = SETTLE_VELOCITY))
     }
 
     @Test
@@ -85,6 +101,7 @@ class QuickSettingsSheetStateTest {
     private fun sheetState(isShown: Boolean): QuickSettingsSheetState {
         return QuickSettingsSheetState(
             settleVelocity = SETTLE_VELOCITY,
+            minFlingDistance = MIN_FLING_DISTANCE,
             isShown = isShown,
         ).also { it.updateHeight(height = HEIGHT) }
     }
@@ -92,5 +109,6 @@ class QuickSettingsSheetStateTest {
     private companion object {
         private const val HEIGHT = 400f
         private const val SETTLE_VELOCITY = 125f
+        private const val MIN_FLING_DISTANCE = 25f
     }
 }

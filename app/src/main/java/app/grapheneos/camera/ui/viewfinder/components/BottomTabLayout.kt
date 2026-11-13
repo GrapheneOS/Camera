@@ -109,6 +109,12 @@ class BottomTabLayout @JvmOverloads constructor(
         }
     }
 
+    fun isSettledOn(tab: Tab): Boolean {
+        val center = tabCenters.getOrNull(tab.position) ?: return true
+
+        return scrollX == center
+    }
+
     fun goToTab(tab: Tab, onSettled: Runnable? = null) {
         selectTab(tab)
 

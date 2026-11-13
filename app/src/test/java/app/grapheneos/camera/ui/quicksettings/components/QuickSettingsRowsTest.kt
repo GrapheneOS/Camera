@@ -69,7 +69,11 @@ class QuickSettingsRowsTest {
 
     @Test
     fun closingSheet_disablesTheControlsWhileTheyAreStillVisible() {
-        val state = QuickSettingsSheetState(settleVelocity = 125f, isShown = true)
+        val state = QuickSettingsSheetState(
+            settleVelocity = 125f,
+            minFlingDistance = 25f,
+            isShown = true,
+        )
         composeRule.setContent {
             CameraTheme {
                 Box(modifier = Modifier.width(400.dp)) {
