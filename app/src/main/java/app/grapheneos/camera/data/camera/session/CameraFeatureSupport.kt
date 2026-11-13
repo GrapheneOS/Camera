@@ -7,6 +7,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.video.Recorder
 import app.grapheneos.camera.data.camera.model.LensFeatures
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import javax.inject.Inject
 
 interface CameraFeatureSupport {
@@ -18,7 +19,7 @@ internal class CameraFeatureSupportImpl @Inject constructor(
     private val featureCombinationSupport: FeatureCombinationSupport,
 ) : CameraFeatureSupport {
 
-    // Stabilization and HDR video are only ever requested through the feature group (see bind),
+    // Stabilization, HDR video and 60 fps are only ever requested through the feature group (see bind),
     // which in turn needs the platform to be able to verify feature combinations, so a camera
     // that can stabilize or record HLG is not on its own enough: where the group cannot be used
     // nothing applies them, and offering the toggle there is offering a control that does
@@ -31,6 +32,7 @@ internal class CameraFeatureSupportImpl @Inject constructor(
             isZslSupported = cameraInfo.isZslSupported,
             isVideoStabilizationSupported = canUseFeatureGroup && canStabilize(cameraInfo),
             isHdrVideoSupported = canUseFeatureGroup && canRecordHlg(cameraInfo),
+            isHighFrameRateSupported = canUseFeatureGroup && canRunAtHighFrameRate(cameraInfo),
             isUltraHdrSupported = canCaptureUltraHdr(cameraInfo),
         )
     }
@@ -51,6 +53,14 @@ internal class CameraFeatureSupportImpl @Inject constructor(
         val dynamicRanges = Recorder.getVideoCapabilities(cameraInfo).supportedDynamicRanges
 
         return DynamicRange.HLG_10_BIT in dynamicRanges
+    }
+
+    private fun canRunAtHighFrameRate(cameraInfo: CameraInfo): Boolean {
+        val framesPerSecond = VideoFrameRate.FPS_60.framesPerSecond
+
+        return cameraInfo.supportedFrameRateRanges.any { range ->
+            range.lower == framesPerSecond && range.upper == framesPerSecond
+        }
     }
 
     private fun canCaptureUltraHdr(cameraInfo: CameraInfo): Boolean {

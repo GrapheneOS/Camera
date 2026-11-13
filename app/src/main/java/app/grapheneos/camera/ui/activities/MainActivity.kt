@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.res.Configuration
-import android.graphics.Point
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
@@ -17,7 +16,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
@@ -25,7 +23,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -35,11 +32,15 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.unit.Density
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import androidx.lifecycle.DEFAULT_ARGS_KEY
@@ -57,10 +58,21 @@ import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
+import app.grapheneos.camera.ui.camerascreen.CameraOverlay
+import app.grapheneos.camera.ui.camerascreen.CameraOverlayInsets
+import app.grapheneos.camera.ui.camerascreen.HiddenStatusBar
 import app.grapheneos.camera.ui.common.TunePlayer
-import app.grapheneos.camera.ui.common.dialog.SettingsDialog
+import app.grapheneos.camera.ui.core.gesture.MIN_FLING_DISTANCE
+import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.navigation.Navigator
+import app.grapheneos.camera.ui.navigation.NavigatorImpl
+import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigatorImpl
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
+import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -72,11 +84,12 @@ import app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
+import app.grapheneos.camera.ui.viewfinder.screen.SettingsPanelDragCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderOverlay
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderNavigationCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
 import app.grapheneos.camera.ui.viewfinder.screen.applyPreviewRatio
@@ -88,7 +101,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.VolumeKey
 import app.grapheneos.camera.util.setBlurBitmapCompat
-import com.google.android.material.color.DynamicColors
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -127,10 +139,27 @@ open class MainActivity : AppCompatActivity() {
         extrasProducer = { viewfinderCreationExtras() },
     )
 
+    internal val quickSettings: QuickSettingsViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
+    private val statusBar: StatusBarViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
     internal val gestureHandler by lazy {
         ViewfinderGestureHandler(
             context = this,
             onAction = viewfinder::onAction,
+            settingsPanelDrag = SettingsPanelDragCallbacks(
+                isAvailable = { viewfinder.uiState.value.isSettingsPanelAvailable },
+                isShown = { !quickSettingsSheet.isHidden },
+                onDragStarted = quickSettingsSheet::startDrag,
+                onDragged = { delta -> quickSettingsSheet.drag(delta) },
+                onDragStopped = { velocity ->
+                    showSettingsPanel(quickSettingsSheet.release(velocity))
+                },
+            ),
         )
     }
 
@@ -139,8 +168,6 @@ open class MainActivity : AppCompatActivity() {
 
     @set:VisibleForTesting
     lateinit var tunePlayer: TunePlayer
-
-    lateinit var settingsDialog: SettingsDialog
 
     val threeButtons: View
         get() = binding.threeButtons
@@ -208,9 +235,6 @@ open class MainActivity : AppCompatActivity() {
     val qrOverlay: QROverlay
         get() = binding.qrOverlay
 
-    val settingsIcon: ImageView
-        get() = binding.settingsOption
-
     val mainOverlay: ImageView
         get() = binding.mainOverlay
 
@@ -242,10 +266,29 @@ open class MainActivity : AppCompatActivity() {
         )
     }
 
-    // Whether the transition still is standing in for the preview.
-    private var transitionShown = false
+    private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
-    private var bottomNavigationBarPadding: Int = 0
+    private val quickSettingsNavigator: QuickSettingsNavigator = QuickSettingsNavigatorImpl(
+        navigator = navigator,
+    )
+
+    private var overlayInsets by mutableStateOf(CameraOverlayInsets())
+
+    private val quickSettingsSheet by lazy {
+        val density = Density(context = this)
+
+        QuickSettingsSheetState(
+            settleVelocity = with(density) { SETTLE_VELOCITY.toPx() },
+            minFlingDistance = with(density) { MIN_FLING_DISTANCE.toPx() },
+        )
+    }
+
+    // Whether the transition still is standing in for the preview.
+    private var transitionShown by mutableStateOf(false)
+
+    private var isModeStripDragged by mutableStateOf(false)
+
+    private var isModeSwitchPending by mutableStateOf(false)
 
     private lateinit var snackBar: Snackbar
 
@@ -269,8 +312,6 @@ open class MainActivity : AppCompatActivity() {
         // would leave a bar down the side of the preview until the new camera streams.
         mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
         setBlurBitmapCompat(mainOverlay, lastFrame)
-        settingsIcon.visibility = View.INVISIBLE
-        settingsIcon.isEnabled = false
         mainOverlay.visibility = View.VISIBLE
     }
 
@@ -282,6 +323,7 @@ open class MainActivity : AppCompatActivity() {
 
     private fun hidePreviewTransition() {
         transitionShown = false
+        isModeSwitchPending = false
         mainOverlay.visibility = View.INVISIBLE
 
         if (viewfinder.uiState.value.isQrMode) {
@@ -289,11 +331,6 @@ open class MainActivity : AppCompatActivity() {
         }
 
         previewGrid.visibility = View.VISIBLE
-        if (!settingsDialog.isShowing) {
-            settingsIcon.visibility = View.VISIBLE
-        }
-
-        settingsIcon.isEnabled = true
     }
 
     // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
@@ -530,6 +567,11 @@ open class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
+            snapshotFlow { quickSettingsSheet.visibleFraction() }
+                .collect(renderer::renderSettingsPanelFraction)
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.zoomUiState.collect { zoom ->
                     renderer.renderZoom(zoom)
@@ -555,20 +597,43 @@ open class MainActivity : AppCompatActivity() {
 
         binding.composeOverlay.setContent {
             CameraTheme {
-                ViewfinderOverlay(screenModel = viewfinder)
+                CameraOverlay(
+                    viewfinder = viewfinder,
+                    statusBar = statusBar,
+                    quickSettings = quickSettings,
+                    sheetState = quickSettingsSheet,
+                    sheet = quickSettingsNavigator.quickSettingsNavKey(),
+                    isTransitionShown = transitionShown,
+                    isModeSwitching = isModeStripDragged || isModeSwitchPending,
+                    insets = overlayInsets,
+                    onSheetOpenChange = ::showSettingsPanel,
+                )
             }
         }
 
         previewView.scaleType = PreviewView.ScaleType.FIT_START
 
         tabLayout.setOnTouchListener { _, motionEvent ->
-            if (motionEvent.action == MotionEvent.ACTION_UP) {
-                val tab = tabLayout.getTabAtX(tabLayout.scrollX)
-                finalizeMode(tab)
-                return@setOnTouchListener true
-            }
+            when (motionEvent.action) {
+                MotionEvent.ACTION_MOVE -> {
+                    isModeStripDragged = isModeStripDragged || isModeStripMoved()
+                    false
+                }
 
-            return@setOnTouchListener false
+                MotionEvent.ACTION_UP -> {
+                    val tab = tabLayout.getTabAtX(tabLayout.scrollX)
+                    isModeStripDragged = false
+                    finalizeMode(tab)
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    isModeStripDragged = false
+                    false
+                }
+
+                else -> false
+            }
         }
 
         previewView.previewStreamState.observe(this) { state: StreamState ->
@@ -630,44 +695,19 @@ open class MainActivity : AppCompatActivity() {
         zoomBar.setMainActivity(this)
         exposureBar.setMainActivity(this)
 
-        settingsIcon.setOnClickListener {
-            viewfinder.onAction(SettingsAction.SettingsIconClicked)
-        }
-
-        settingsIcon.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                rootView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                val displayCutout = window.decorView.rootWindowInsets.displayCutout
-                val layoutParams = (settingsIcon.layoutParams as RelativeLayout.LayoutParams)
-
-                val rect = if (displayCutout?.boundingRects?.isNotEmpty() == true) {
-                    displayCutout.boundingRects.first()
-                } else {
-                    null
-                }
-
-                val windowsSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    windowManager.currentWindowMetrics.bounds
-                } else {
-                    val size = Point()
-                    // defaultDisplay isn't deprecated below API 30 as highlighted by the IDE
-                    // and this code would only execute if it is (Hint: enclosing if-block)
-                    @Suppress("DEPRECATION")
-                    windowManager.defaultDisplay.getRealSize(size)
-                    Rect(0, 0, size.x, size.y)
-                }
-
-                if (rect == null || rect.left <= 0 || rect.right == windowsSize.right) {
-                    layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
-                } else {
-                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
-                }
-            }
-        })
+        setContentView(binding.getRoot())
 
         var isInsetSet = false
 
+        val hiddenStatusBar = HiddenStatusBar(
+            window = window,
+            view = rootView,
+        )
+        hiddenStatusBar.install()
+
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            hiddenStatusBar.onWindowInsetsApplied(windowInsets)
+
             val insets = windowInsets.getInsetsIgnoringVisibility(
                 WindowInsetsCompat.Type.systemBars()
             )
@@ -685,14 +725,21 @@ open class MainActivity : AppCompatActivity() {
 
             zoomBarPanel.setPadding(0, 0, 0, insets.bottom)
             exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
-            bottomNavigationBarPadding = insets.bottom
+            binding.bottomRow.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = insets.bottom +
+                    resources.getDimensionPixelSize(R.dimen.bottom_row_above_navigation_bar)
+            }
 
             if (insets.top != 0 && !isInsetSet) {
+                val topBarBelowStatusBar = resources.getDimensionPixelSize(
+                    R.dimen.top_bar_below_status_bar,
+                )
+
                 binding.mainFrame.layoutParams =
                     (binding.mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
                         it.setMargins(
                             it.leftMargin,
-                            (8 * resources.displayMetrics.density.toInt()) + insets.top,
+                            insets.top + topBarBelowStatusBar,
                             it.rightMargin,
                             it.bottomMargin,
                         )
@@ -719,30 +766,11 @@ open class MainActivity : AppCompatActivity() {
             WindowInsetsCompat.CONSUMED
         }
 
-        setContentView(binding.getRoot())
-
-        WindowInsetsControllerCompat(window, rootView).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.statusBars())
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-
         enableEdgeToEdge()
 
         cdTimer.setMainActivity(this)
 
-        val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
-        settingsDialog = SettingsDialog(this, themedContext)
-
-        previewView.viewTreeObserver.addOnPreDrawListener(
-            object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    previewView.viewTreeObserver.removeOnPreDrawListener(this)
-                    repositionTabLayout()
-                    return true
-                }
-            }
-        )
+        setUpSettingsPanel()
 
         binding.moreOptions.setOnClickListener {
             showMoreQrFormatOptions(
@@ -770,48 +798,63 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun repositionTabLayout() {
-        threeButtons.visibility = View.VISIBLE
+    private fun setUpSettingsPanel() {
+        val navigation = ViewfinderNavigationCallbacks(
+            onOpenSettingsPanel = quickSettingsNavigator::navigateToQuickSettings,
+            onCloseSettingsPanel = { showSettingsPanel(false) },
+        )
 
-        tabLayout.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                tabLayout.viewTreeObserver
-                    .removeOnPreDrawListener(
-                        this
-                    )
-
-                val previewHeight169 = binding.previewContainer.width * 16 / 9
-
-                val extraHeight169 = binding.previewContainer.height -
-                    previewHeight169 -
-                    tabLayout.height -
-                    10 * resources.displayMetrics.density.toInt()
-
-                // When there's no extra space in 16:9 for even the bottom nav bar to be present without
-                // obscuring the preview or if there's sufficient space for the entire bottom UI to exist
-                val shouldSnapAboveBottomNav = extraHeight169 < bottomNavigationBarPadding ||
-                    extraHeight169 >=
-                    (threeButtons.height + tabLayout.height + tabLayout.marginTop)
-
-                tabLayout.layoutParams =
-                    (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
-                        it.setMargins(
-                            it.leftMargin,
-                            it.topMargin,
-                            it.rightMargin,
-                            if (shouldSnapAboveBottomNav) {
-                                bottomNavigationBarPadding
-                            } else {
-                                extraHeight169
-                            }
-                        )
-
-                        it
-                    }
-
-                return true
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.navigationEvents.collect { event ->
+                    navigation.navigate(event)
+                }
             }
-        })
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            snapshotFlow { quickSettingsNavigator.quickSettingsNavKey() != null }
+                .collect { open -> renderSettingsPanel(open) }
+        }
+
+        trackOverlayInsets()
+    }
+
+    private fun trackOverlayInsets() {
+        val overlay = binding.composeOverlay
+        val overlayParent = overlay.parent as ViewGroup
+        val previewBounds = Rect()
+
+        overlay.viewTreeObserver.addOnGlobalLayoutListener {
+            previewView.getDrawingRect(previewBounds)
+            overlayParent.offsetDescendantRectToMyCoords(previewView, previewBounds)
+
+            overlayInsets = with(Density(context = this)) {
+                CameraOverlayInsets(
+                    previewTop = previewBounds.top.toDp(),
+                    previewBottom = (overlay.height - previewBounds.bottom).toDp(),
+                    shutterRow = (overlay.height - threeButtons.top).toDp(),
+                    bottomRow = (overlay.height - binding.bottomRow.bottom).toDp(),
+                )
+            }
+        }
+    }
+
+    private fun showSettingsPanel(visible: Boolean) {
+        when {
+            visible -> quickSettingsNavigator.navigateToQuickSettings(highlight = null)
+            else -> quickSettingsNavigator.closeQuickSettings()
+        }
+    }
+
+    private fun renderSettingsPanel(open: Boolean) {
+        viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
+    }
+
+    private fun isModeStripMoved(): Boolean {
+        val cameraTab = tabLayout.getTabForMode(viewfinder.uiState.value.mode)
+
+        return cameraTab != null && !tabLayout.isSettledOn(cameraTab)
     }
 
     fun finalizeMode(tab: TabLayout.Tab? = null) {
@@ -828,6 +871,7 @@ open class MainActivity : AppCompatActivity() {
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
+            isModeSwitchPending = mode != viewfinder.uiState.value.mode
 
             // Blurred while the strip is still gliding, not once the camera has gone: the rebind
             // holds the main thread for half a second, so a transition left to the stream state
@@ -855,6 +899,13 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun viewfinderCreationExtras(): CreationExtras {
+        return cameraEntryPointCreationExtras()
+            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
+                factory.create(outputUri = outputUri)
+            }
+    }
+
+    private fun cameraEntryPointCreationExtras(): CreationExtras {
         val defaults = defaultViewModelCreationExtras
         val arguments = Bundle().apply {
             defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
@@ -863,9 +914,6 @@ open class MainActivity : AppCompatActivity() {
 
         return MutableCreationExtras(defaults)
             .apply { set(DEFAULT_ARGS_KEY, arguments) }
-            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
-                factory.create(outputUri = outputUri)
-            }
     }
 
     fun showMessage(@StringRes message: Int) {

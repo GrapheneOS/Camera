@@ -22,8 +22,11 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifySequence
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -46,7 +49,9 @@ class VideoRecorderTest {
     private val discardRecording = mockk<DiscardRecording>(relaxed = true)
     private val resolveCaptureLocation = mockk<ResolveCaptureLocation>()
     private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
-    private val capturedItemRepository = mockk<CapturedItemRepository>(relaxed = true)
+    private val capturedItemRepository = mockk<CapturedItemRepository>(relaxed = true) {
+        every { storageLocation } returns flowOf(CapturedItemRepository.MEDIA_STORE_LOCATION)
+    }
 
     private val output = recordingOutput(uri = Uri.EMPTY, dateString = "20260922_120000")
 
@@ -100,6 +105,25 @@ class VideoRecorderTest {
 
             coVerify(exactly = 1) { discardRecording(output) }
             assertTrue(events.isEmpty())
+        }
+    }
+
+    @Test
+    fun stop_whileReadingStorageLocation_skipsOutputCreation() {
+        runTest {
+            val location = CompletableDeferred<String>()
+            every { capturedItemRepository.storageLocation } returns flow { emit(location.await()) }
+            val recorder = createRecorder()
+            val events = collectEvents(recorder)
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                recorder.prepare(REQUEST, isStillWanted = { true })
+            }
+
+            recorder.stop()
+            location.complete(CapturedItemRepository.MEDIA_STORE_LOCATION)
+
+            coVerify(exactly = 0) { createRecordingOutput(any(), any()) }
+            assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
         }
     }
 
@@ -158,6 +182,25 @@ class VideoRecorderTest {
     }
 
     @Test
+    fun cancelledPreparation_doesNotReportALateLocationFailure() {
+        runTest {
+            val location = CompletableDeferred<CaptureLocation>()
+            coEvery { resolveCaptureLocation(true) } coAnswers { location.await() }
+            val recorder = createRecorder()
+            val events = collectEvents(recorder)
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                recorder.prepare(REQUEST.copy(includeLocation = true), isStillWanted = { true })
+            }
+
+            recorder.stop()
+            location.complete(CaptureLocation.Unavailable)
+
+            assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
+            coVerify(exactly = 1) { discardRecording(output) }
+        }
+    }
+
+    @Test
     fun prepare_withoutALocationFix_saysSoAndStillGetsReady() {
         runTest {
             coEvery { resolveCaptureLocation(includeLocation = true) } returns
@@ -179,33 +222,91 @@ class VideoRecorderTest {
     }
 
     @Test
-    fun start_startsOnlyTheFirstTimeTheSoundReportsBack() {
+    fun startPaused_startsWithRequestedAudioThenPauses() {
         runTest {
             val recorder = createRecorder()
-            recorder.prepare(REQUEST, isStillWanted = { true })
+            recorder.prepare(request = REQUEST, isStillWanted = { true })
 
-            recorder.start(muted = false, paused = false)
-            recorder.start(muted = false, paused = false)
+            recorder.startPaused(includeAudio = true)
 
-            verify(exactly = 1) { recordingSession.start(any(), any()) }
+            verifySequence {
+                recordingSession.start(match { it.includeAudio }, any())
+                recordingSession.setPaused(true)
+            }
         }
     }
 
     @Test
-    fun start_appliesThePauseAndMuteSetBeforeIt() {
+    fun startSoundPlayed_resumesOnlyTheFirstTimeTheSoundReportsBack() {
         runTest {
             val recorder = createRecorder()
             recorder.prepare(REQUEST, isStillWanted = { true })
+            val recordingId = requireNotNull(recorder.startPaused(includeAudio = false))
 
-            recorder.start(muted = true, paused = true)
+            recorder.onStartSoundPlayed(
+                recordingId = recordingId,
+                paused = false,
+                muted = false,
+            )
+            recorder.onStartSoundPlayed(
+                recordingId = recordingId,
+                paused = false,
+                muted = false,
+            )
 
-            verify(exactly = 1) { recordingSession.setMuted(true) }
-            verify(exactly = 1) { recordingSession.setPaused(true) }
+            verify(exactly = 1) { recordingSession.setPaused(false) }
         }
     }
 
     @Test
-    fun start_withNoCameraToRecordWith_throwsTheOutputAway() {
+    fun lateStartSound_fromCancelledRecording_cannotResumeNextRecording() {
+        runTest {
+            val recorder = createRecorder()
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            val cancelledRecordingId = requireNotNull(recorder.startPaused(includeAudio = true))
+            recorder.stop()
+
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            val currentRecordingId = requireNotNull(recorder.startPaused(includeAudio = true))
+            recorder.onStartSoundPlayed(
+                recordingId = cancelledRecordingId,
+                paused = false,
+                muted = false,
+            )
+
+            verify(exactly = 0) { recordingSession.setPaused(false) }
+            verify(exactly = 0) { recordingSession.setMuted(false) }
+
+            recorder.onStartSoundPlayed(
+                recordingId = currentRecordingId,
+                paused = false,
+                muted = false,
+            )
+
+            verify(exactly = 1) { recordingSession.setPaused(false) }
+        }
+    }
+
+    @Test
+    fun startSoundPlayed_keepsThePauseChosenDuringTheSound() {
+        runTest {
+            val recorder = createRecorder()
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            val recordingId = requireNotNull(recorder.startPaused(includeAudio = false))
+
+            recorder.setPaused(paused = false)
+            recorder.onStartSoundPlayed(
+                recordingId = recordingId,
+                paused = true,
+                muted = false,
+            )
+
+            verify(exactly = 0) { recordingSession.setPaused(false) }
+        }
+    }
+
+    @Test
+    fun startPaused_withNoCameraToRecordWith_throwsTheOutputAway() {
         runTest {
             every { recordingSession.start(any(), any()) } returns false
 
@@ -213,7 +314,7 @@ class VideoRecorderTest {
             val events = collectEvents(recorder)
             recorder.prepare(REQUEST, isStillWanted = { true })
 
-            recorder.start(muted = true, paused = false)
+            recorder.startPaused(includeAudio = false)
 
             coVerify(exactly = 1) { discardRecording(output) }
             verify(exactly = 0) { recordingSession.setMuted(any()) }
@@ -222,7 +323,7 @@ class VideoRecorderTest {
     }
 
     @Test
-    fun stop_beforeTheStartSoundEnded_throwsTheOutputAway() {
+    fun stop_beforeTheRecordingStarted_throwsTheOutputAway() {
         runTest {
             val recorder = createRecorder()
             val events = collectEvents(recorder)
@@ -232,7 +333,30 @@ class VideoRecorderTest {
 
             coVerify(exactly = 1) { discardRecording(output) }
             verify(exactly = 0) { recordingSession.stop() }
+            coVerify(exactly = 0) { playCameraSound(CameraSound.RECORDING_STOP) }
             assertTrue(RecordedVideoEvent.Abandoned in events)
+        }
+    }
+
+    @Test
+    fun stop_whileHeldForTheStartSound_abandonsTheRecordingAndThrowsItsOutputAway() {
+        runTest {
+            val onEvent = slot<(RecordingEvent) -> Unit>()
+            every { recordingSession.start(any(), capture(onEvent)) } returns true
+            val recorder = createRecorder()
+            val events = collectEvents(recorder)
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            recorder.startPaused(includeAudio = false)
+
+            recorder.stop()
+            verify(exactly = 1) { recordingSession.stop() }
+            assertEquals(RecordedVideoEvent.Abandoned, events.last())
+            onEvent.captured(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
+
+            coVerify(exactly = 1) { discardRecording(output) }
+            coVerify(exactly = 0) { publishRecording(any()) }
+            coVerify(exactly = 0) { playCameraSound(CameraSound.RECORDING_STOP) }
+            assertTrue(events.none { it is RecordedVideoEvent.Finished })
         }
     }
 
@@ -273,18 +397,6 @@ class VideoRecorderTest {
             onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten))
 
             coVerify(exactly = 1) { playCameraSound(CameraSound.RECORDING_STOP) }
-        }
-    }
-
-    @Test
-    fun abandoned_playsNoStopSound() {
-        runTest {
-            val recorder = createRecorder()
-
-            recorder.prepare(REQUEST, isStillWanted = { true })
-            recorder.stop()
-
-            coVerify(exactly = 0) { playCameraSound(CameraSound.RECORDING_STOP) }
         }
     }
 
@@ -370,7 +482,7 @@ class VideoRecorderTest {
             assertTrue(events.none { it is RecordedVideoEvent.Finished })
             assertTrue(events.any { it is RecordedVideoEvent.Saved })
 
-            recorder.start(muted = false, paused = false)
+            recorder.startPaused(includeAudio = false)
 
             verify(exactly = 2) { recordingSession.start(any(), any()) }
         }
@@ -381,7 +493,12 @@ class VideoRecorderTest {
         every { recordingSession.start(any(), capture(onEvent)) } returns true
 
         recorder.prepare(REQUEST, isStillWanted = { true })
-        recorder.start(muted = false, paused = false)
+        val recordingId = requireNotNull(recorder.startPaused(includeAudio = false))
+        recorder.onStartSoundPlayed(
+            recordingId = recordingId,
+            paused = false,
+            muted = false,
+        )
 
         return onEvent.captured
     }
@@ -412,10 +529,8 @@ class VideoRecorderTest {
 
     private companion object {
         val REQUEST = RecordVideoRequest(
-            storageLocation = "MediaStore",
             foreignUri = null,
             includeLocation = false,
-            includeAudio = false,
         )
     }
 }

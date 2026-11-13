@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,7 +30,6 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderUiStateMapperTest {
 
     private val mapper: ViewfinderUiStateMapper = ViewfinderUiStateMapperImpl(
-        settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
         captureUiStateMapper = CaptureUiStateMapperImpl(),
     )
 
@@ -234,14 +234,14 @@ class ViewfinderUiStateMapperTest {
 
     @Test
     fun selfTimerBadge_isHiddenWhereNoCountdownRuns() {
-        val photo = map(settings = CameraSettings(selfTimerDurationSeconds = SOME_SECONDS))
+        val photo = map(settings = CameraSettings(selfTimerDuration = SOME_SECONDS.seconds))
         val video = map(
             mode = CameraMode.VIDEO,
-            settings = CameraSettings(selfTimerDurationSeconds = SOME_SECONDS),
+            settings = CameraSettings(selfTimerDuration = SOME_SECONDS.seconds),
         )
         val qr = map(
             mode = CameraMode.QR_SCAN,
-            settings = CameraSettings(selfTimerDurationSeconds = SOME_SECONDS),
+            settings = CameraSettings(selfTimerDuration = SOME_SECONDS.seconds),
         )
 
         assertTrue(photo.selfTimerBadgeVisible)
@@ -253,7 +253,7 @@ class ViewfinderUiStateMapperTest {
 
     @Test
     fun selfTimerBadge_unset_isEmptyAndHidden() {
-        val state = map(settings = CameraSettings(selfTimerDurationSeconds = 0))
+        val state = map(settings = CameraSettings(selfTimerDuration = Duration.ZERO))
 
         assertEquals("", state.selfTimerBadge)
         assertFalse(state.selfTimerBadgeVisible)
@@ -282,7 +282,7 @@ class ViewfinderUiStateMapperTest {
     @Test
     fun selfTimerCountdown_hidesTheControlsItWouldRaceAndOffersToCancel() {
         val state = map(
-            settings = CameraSettings(selfTimerDurationSeconds = 5),
+            settings = CameraSettings(selfTimerDuration = 5.seconds),
             capture = ViewfinderCaptureState(isSelfTimerRunning = true),
         )
 
@@ -296,7 +296,7 @@ class ViewfinderUiStateMapperTest {
 
     @Test
     fun noSelfTimerCountdown_leavesTheShutterAndBadge() {
-        val state = map(settings = CameraSettings(selfTimerDurationSeconds = 5))
+        val state = map(settings = CameraSettings(selfTimerDuration = 5.seconds))
 
         assertTrue(state.thirdOptionVisible)
         assertTrue(state.cancelButtonVisible)

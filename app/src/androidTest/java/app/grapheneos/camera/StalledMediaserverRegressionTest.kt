@@ -83,7 +83,7 @@ class StalledMediaserverRegressionTest {
         lateinit var player: CameraSoundPlayer
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             player = CameraSoundPlayerImpl(
-                context = InstrumentationRegistry.getInstrumentation().targetContext,
+                resources = InstrumentationRegistry.getInstrumentation().targetContext.resources,
                 newMediaPlayer = { StalledMediaPlayer(mediaserver) },
             )
         }

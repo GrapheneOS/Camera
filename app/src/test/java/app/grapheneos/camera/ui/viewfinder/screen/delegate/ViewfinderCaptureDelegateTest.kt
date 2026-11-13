@@ -435,7 +435,7 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val delegate = createDelegate()
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = 5, timerLight = true))
+                it.copy(settings = CameraSettings(selfTimerDuration = 5.seconds, timerLight = true))
             }
 
             delegate.startSelfTimer()
@@ -457,11 +457,11 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val delegate = createDelegate()
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
-            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            advanceTimeBy(SELF_TIMER)
             runCurrent()
 
             coVerify(exactly = 0) { blinkTimerLight(any()) }
@@ -477,12 +477,12 @@ class ViewfinderCaptureDelegateTest {
                 stateHolder.effects.collect { effect -> timeline += effect to currentTime }
             }
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
 
-            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            advanceTimeBy(SELF_TIMER)
             runCurrent()
 
             assertEquals(
@@ -510,7 +510,7 @@ class ViewfinderCaptureDelegateTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
@@ -539,14 +539,14 @@ class ViewfinderCaptureDelegateTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
             stateHolder.update {
-                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+                it.copy(settings = CameraSettings(selfTimerDuration = SELF_TIMER))
             }
 
             delegate.startSelfTimer()
             delegate.onScreenDestroyed()
             delegate.cancelSelfTimer()
 
-            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            advanceTimeBy(SELF_TIMER)
             runCurrent()
 
             assertEquals(
@@ -618,12 +618,12 @@ class ViewfinderCaptureDelegateTest {
     }
 
     private companion object {
-        const val SELF_TIMER_SECONDS = 3
         const val STORAGE_LOCATION = "MediaStore"
         const val CAPTURE_ERROR_CODE = 2
         const val SAVE_FAILURE_STAGE = "FILE_WRITE"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
         val ITEM = CapturedItem(CapturedItemType.IMAGE, "20260920_120000_000", Uri.EMPTY)
+        val SELF_TIMER = 3.seconds
     }
 }

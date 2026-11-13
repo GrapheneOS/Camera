@@ -27,8 +27,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
@@ -36,6 +34,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect.Recording.PlayStartSound
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -115,38 +114,57 @@ class ViewfinderRecordingFlowTest {
 
             assertEquals(0, recordingSession.startCount)
             assertFalse(viewModel.uiState.value.isRecordingActive)
-            assertFalse(ViewfinderScreenEffect.Recording.PlayStartSound in effects)
+            assertTrue(effects.none { it is PlayStartSound })
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
     }
 
     @Test
-    fun aStopWhileTheStartSoundPlays_startsNothingAndThrowsTheOutputAway() {
+    fun theStartSound_isHeldOutOfTheRecording() {
         runTest {
             val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(RecordingAction.RecordingRequested)
-            assertTrue(ViewfinderScreenEffect.Recording.PlayStartSound in effects)
+            assertEquals(1, recordingSession.startCount)
+            assertTrue(recordingSession.isPaused)
 
+            finishStartSound(viewModel = viewModel, effects = effects)
+
+            assertFalse(recordingSession.isPaused)
+        }
+    }
+
+    @Test
+    fun aStopWhileTheStartSoundPlays_abandonsTheRecordingAndThrowsTheOutputAway() {
+        runTest {
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
-            viewModel.onAction(RecordingAction.StartSoundPlayed)
+            assertFalse(viewModel.uiState.value.isRecordingActive)
+            recordingSession.emit(
+                RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten),
+            )
+            finishStartSound(viewModel = viewModel, effects = effects)
 
-            assertEquals(0, recordingSession.startCount)
+            assertEquals(1, recordingSession.stopCount)
             assertFalse(viewModel.uiState.value.isRecordingActive)
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
     }
 
     @Test
-    fun aPauseAndMuteBeforeTheStart_reachTheRecordingOnceItStarts() {
+    fun aPauseAndMuteDuringTheStartSound_reachTheRecordingOnceItIsReleased() {
         runTest {
             val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
 
             viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
             viewModel.onAction(RecordingAction.MuteToggleClicked)
-            viewModel.onAction(RecordingAction.StartSoundPlayed)
+            finishStartSound(viewModel = viewModel, effects = effects)
 
             assertEquals(1, recordingSession.startCount)
             assertTrue(recordingSession.isPaused)
@@ -169,7 +187,7 @@ class ViewfinderRecordingFlowTest {
             viewModel.onAction(LifecycleAction.ScreenCreated(host))
 
             viewModel.onAction(RecordingAction.RecordingRequested)
-            viewModel.onAction(RecordingAction.StartSoundPlayed)
+            finishStartSound(viewModel = viewModel, effects = effects)
             recordingSession.emit(RecordingEvent.Started)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
             recordingSession.emit(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
@@ -186,6 +204,14 @@ class ViewfinderRecordingFlowTest {
             assertTrue(effects.any { it is ViewfinderScreenEffect.Recording.ShowForReview })
             verify(exactly = 1) { cameraSession.bind(any()) }
         }
+    }
+
+    private fun finishStartSound(
+        viewModel: ViewfinderViewModel,
+        effects: List<ViewfinderScreenEffect>,
+    ) {
+        val sound = effects.filterIsInstance<PlayStartSound>().single()
+        viewModel.onAction(RecordingAction.StartSoundPlayed(recordingId = sound.recordingId))
     }
 
     private fun TestScope.createViewModel(
@@ -222,7 +248,6 @@ class ViewfinderRecordingFlowTest {
             permissionDelegate = mockk(relaxed = true),
             recordingDelegate = ViewfinderRecordingDelegateImpl(
                 videoRecorder = videoRecorder(),
-                capturedItemRepository = capturedItemRepository,
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
             ),
@@ -230,14 +255,13 @@ class ViewfinderRecordingFlowTest {
             screenWakeDelegate = mockk(relaxed = true),
             galleryDelegate = mockk(relaxed = true),
             dialogDelegate = mockk(relaxed = true),
+            gestureDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = ViewfinderUiStateMapperImpl(
-                settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
                 captureUiStateMapper = CaptureUiStateMapperImpl(),
             ),
             zoomUiStateMapper = ZoomUiStateMapperImpl(),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
-            swipeEffectMapper = SwipeEffectMapperImpl(),
             volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
         )
     }

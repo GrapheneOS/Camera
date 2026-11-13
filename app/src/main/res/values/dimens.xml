@@ -1,21 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="toggle_button_padding">10dp</dimen>
-    <dimen name="toggle_button_size">46dp</dimen>
-
     <dimen name="qr_toggle_button_size">52dp</dimen>
 
-    <dimen name="settings_dialog_padding_vertical">12dp</dimen>
     <dimen name="settings_dialog_padding_horizontal">14dp</dimen>
 
-    <dimen name="settings_dialog_menu_item_horizontal">4dp</dimen>
-    <dimen name="settings_dialog_menu_item_vertical">8dp</dimen>
+    <dimen name="top_bar_below_status_bar">20dp</dimen>
 
-    <dimen name="settings_dialog_menu_item_height">44dp</dimen>
-
-    <dimen name="settings_dialog_horizontal_margin">12dp</dimen>
-
-    <dimen name="settings_dialog_switch_height">24dp</dimen>
-
-    <item name="settings_dialog_switch_scale" format="float" type="integer">0.8</item>
+    <dimen name="bottom_row_height">48dp</dimen>
+    <dimen name="bottom_row_above_navigation_bar">20dp</dimen>
 </resources>

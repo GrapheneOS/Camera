@@ -12,13 +12,13 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.util.formatVideoDuration
 import javax.inject.Inject
+import kotlin.time.Duration
 
 interface ViewfinderUiStateMapper {
     fun map(state: ViewfinderState): ViewfinderUiState
 }
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor(
-    private val settingsSheetUiStateMapper: SettingsSheetUiStateMapper,
     private val captureUiStateMapper: CaptureUiStateMapper,
 ) : ViewfinderUiStateMapper {
 
@@ -51,17 +51,17 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 recording = isRecordingActive,
             ),
             isRecordingActive = isRecordingActive,
-            isRecordingPaused = state.recording.isPaused,
             isRecordingMuted = state.recording.isMuted,
             muteToggleVisible = isRecording && settings.includeAudio,
             keepScreenOn = isRecordingActive || state.keepsScreenAwake,
+            isSelfIlluminating = state.selfIlluminate(),
+            isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
             recordingTimerText = formatVideoDuration(state.recording.duration.inWholeSeconds),
             cameraPreviewVisible = !state.capture.isCapturedPreviewShown,
             modeTabsVisible = modeTabsVisible(state),
             thumbnailLoaderVisible = state.capture.isSavingPicture,
             thumbnail = state.gallery.thumbnail,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
-            qrResultVisible = state.session.isQrResultShown,
             gridType = settings.gridType,
             mode = state.mode,
             aspectRatio = state.aspectRatio(),
@@ -77,7 +77,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             },
             levelFrameRotationDegrees = deviceRotation,
             exposure = exposureState(state.session.exposure),
-            settingsSheet = settingsSheetUiStateMapper.map(state),
             capture = captureUiStateMapper.map(state),
             dialog = state.dialog,
         )
@@ -150,7 +149,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         isVideoMode: Boolean,
     ): ViewfinderUiState {
         val settings = state.settings
-        val selfTimerSeconds = settings.selfTimerDurationSeconds
+        val selfTimerDuration = settings.selfTimerDuration
         val isSelfTimerRunning = state.capture.isSelfTimerRunning
 
         return ViewfinderUiState(
@@ -175,11 +174,13 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             ),
             flipCameraIcon = R.drawable.flip_camera,
             flipCameraDescription = R.string.flip_camera,
-            selfTimerBadge = when (selfTimerSeconds) {
-                0 -> ""
-                else -> "${selfTimerSeconds}s"
+            selfTimerBadge = when (selfTimerDuration) {
+                Duration.ZERO -> ""
+                else -> "${selfTimerDuration.inWholeSeconds}s"
             },
-            selfTimerBadgeVisible = selfTimerSeconds != 0 && !isVideoMode && !isSelfTimerRunning,
+            selfTimerBadgeVisible = selfTimerDuration != Duration.ZERO &&
+                !isVideoMode &&
+                !isSelfTimerRunning,
             selfTimerCountdownVisible = isSelfTimerRunning,
             selfTimerCancelVisible = isSelfTimerRunning,
         )

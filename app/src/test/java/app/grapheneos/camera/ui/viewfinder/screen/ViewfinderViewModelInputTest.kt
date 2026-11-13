@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -16,6 +17,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -87,7 +89,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun captureButtonClicked_withASelfTimer_startsAndCancelsTheCountdown() {
         runTest {
             val viewModel = createViewModel()
-            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
+            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDuration = 3.seconds)) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
             stateHolder.update {
@@ -100,25 +102,6 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
                 captureDelegate.startSelfTimer()
                 captureDelegate.cancelSelfTimer()
             }
-        }
-    }
-
-    @Test
-    fun previewSwiped_sidewaysMovesAcrossTheModeTabs() {
-        runTest {
-            val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
-
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = 1),
-                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = -1),
-                ),
-                effects,
-            )
         }
     }
 
@@ -229,16 +212,34 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun settingsIconClicked_opensTheSheetOutsideQrMode() {
+    fun previewTapped_withTheSettingsPanelOpen_onlyClosesIt() {
         runTest {
             val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 
-            viewModel.onAction(SettingsAction.SettingsIconClicked)
-            stateHolder.update { state -> state.copy(mode = CameraMode.QR_SCAN) }
-            viewModel.onAction(SettingsAction.SettingsIconClicked)
+            viewModel.onAction(CameraAction.Preview.Tapped(x = 1f, y = 2f))
 
-            assertEquals(listOf(ViewfinderScreenEffect.Settings.OpenSheet), effects)
+            verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
+            verify(exactly = 0) { cameraDelegate.focusAt(x = any(), y = any()) }
+        }
+    }
+
+    @Test
+    fun settingsPanel_followsTheStatusBarTheButtonSwipesAndTheHost() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(SettingsAction.StatusBarClicked(QuickSetting.SELF_TIMER))
+            viewModel.onAction(SettingsAction.QuickSettingsButtonClicked)
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
+            viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
+
+            verifyOrder {
+                settingsDelegate.openSettingsPanel(QuickSetting.SELF_TIMER)
+                settingsDelegate.openSettingsPanel()
+                gestureDelegate.onPreviewSwiped(SwipeDirection.UP)
+                settingsDelegate.onSettingsPanelVisibilityChanged(true)
+            }
         }
     }
 

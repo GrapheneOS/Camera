@@ -13,6 +13,7 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
@@ -34,6 +35,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -51,6 +53,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderCameraDelegateTest {
 
@@ -293,7 +296,7 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun zoomStepping_stepsAtOnceThenAtEachIntervalWhileHeld() {
-        trackZoomRatio(start = 1f)
+        trackZoomRatio()
 
         val delegate = createAttachedDelegate()
         delegate.startZoomStepping(ZoomDirection.IN)
@@ -307,7 +310,7 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun zoomStepping_stopped_takesNoFurtherStep() {
-        trackZoomRatio(start = 1f)
+        trackZoomRatio()
 
         val delegate = createAttachedDelegate()
         delegate.startZoomStepping(ZoomDirection.IN)
@@ -405,17 +408,6 @@ class ViewfinderCameraDelegateTest {
         sessionEvents.tryEmit(featuresSelected())
 
         assertEquals(listOf(Effect.ShowVideoQualityUnsupported(VideoQuality.UHD)), effects)
-    }
-
-    @Test
-    fun refreshVideoQualities_publishesWhatTheCameraRecordsAt() {
-        val qualities = listOf(VideoQuality.UHD, VideoQuality.FHD)
-        every { session.supportedVideoQualities() } returns qualities
-
-        val delegate = createAttachedDelegate()
-        delegate.refreshVideoQualities()
-
-        assertEquals(qualities, stateHolder.state.value.session.videoQualities)
     }
 
     @Test
@@ -528,6 +520,16 @@ class ViewfinderCameraDelegateTest {
         verify(exactly = 1) { session.setBarcodeFormats(BarcodeFormat.entries.toSet()) }
     }
 
+    @Test
+    fun flashMode_storedElsewhere_reachesTheSession() {
+        createAttachedDelegate()
+
+        stateHolder.update { it.copy(modeSettings = ModeSettings(flashMode = FlashMode.AUTO)) }
+
+        verify(exactly = 1) { session.setFlashMode(FlashMode.AUTO) }
+        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
+    }
+
     private fun lensUnsupported(facing: LensFacing) {
         every {
             session.isLensFacingSupported(
@@ -546,8 +548,8 @@ class ViewfinderCameraDelegateTest {
         )
     }
 
-    private fun trackZoomRatio(start: Float) {
-        var zoomRatio = start
+    private fun trackZoomRatio() {
+        var zoomRatio = 1f
         every { session.zoom } answers { ZOOM.copy(zoomRatio = zoomRatio, minZoomRatio = 0.5f) }
         every { session.setZoomRatio(any()) } answers { zoomRatio = firstArg() }
     }

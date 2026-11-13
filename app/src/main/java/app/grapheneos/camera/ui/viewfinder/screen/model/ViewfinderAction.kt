@@ -2,8 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 
 sealed interface ViewfinderAction {
@@ -11,12 +11,6 @@ sealed interface ViewfinderAction {
     sealed interface CameraAction : ViewfinderAction {
 
         data object FlipCameraClicked : CameraAction
-
-        data object FlashToggleClicked : CameraAction
-
-        data object TorchToggleClicked : CameraAction
-
-        data object AspectRatioToggleClicked : CameraAction
 
         data object ZoomInKeyPressed : CameraAction
 
@@ -108,13 +102,15 @@ sealed interface ViewfinderAction {
 
     sealed interface RecordingAction : ViewfinderAction {
 
-        data object RecordingStopRequested : RecordingAction
+        data object MuteToggleClicked : RecordingAction
 
-        data object StartSoundPlayed : RecordingAction
+        data object RecordingStopRequested : RecordingAction
 
         data object RecordingRequested : RecordingAction
 
-        data object MuteToggleClicked : RecordingAction
+        data class StartSoundPlayed(
+            val recordingId: Int,
+        ) : RecordingAction
 
         data class RecordingPauseToggled(
             val paused: Boolean,
@@ -153,28 +149,21 @@ sealed interface ViewfinderAction {
         ) : PermissionAction
     }
 
+    sealed interface LocationAction : ViewfinderAction {
+
+        data object EnableLocationClicked : LocationAction
+    }
+
     sealed interface SettingsAction : ViewfinderAction {
 
-        data object SettingsIconClicked : SettingsAction
+        data object QuickSettingsButtonClicked : SettingsAction
 
-        data object CameraSettingsClicked : SettingsAction
-
-        data object EnableLocationClicked : SettingsAction
-
-        data class AudioToggled(
-            val enabled: Boolean,
+        data class StatusBarClicked(
+            val setting: QuickSetting,
         ) : SettingsAction
 
-        data class SelfIlluminationToggled(
-            val enabled: Boolean,
-        ) : SettingsAction
-
-        data class SelfTimerSelected(
-            val seconds: Int,
-        ) : SettingsAction
-
-        data class VideoQualitySelected(
-            val quality: VideoQuality,
+        data class SettingsPanelVisibilityChanged(
+            val visible: Boolean,
         ) : SettingsAction
     }
 

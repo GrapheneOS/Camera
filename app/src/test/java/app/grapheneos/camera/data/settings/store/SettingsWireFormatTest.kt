@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import java.io.ByteArrayOutputStream
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -26,7 +27,7 @@ class SettingsWireFormatTest {
         gridType = GridType.GOLDEN_RATIO,
         focusTimeoutSeconds = SOME_FOCUS_TIMEOUT_SECONDS,
         volumeKeyAction = VolumeKeyAction.ZOOM,
-        selfTimerDurationSeconds = SOME_SELF_TIMER_DURATION,
+        selfTimerDuration = SOME_SELF_TIMER_DURATION,
         timerLight = true,
         enableCameraSounds = false,
         includeAudio = false,
@@ -235,6 +236,8 @@ class SettingsWireFormatTest {
                 selfIllumination = true,
                 videoQualityFront = StoredVideoQuality.HD,
                 videoQualityBack = StoredVideoQuality.UHD,
+                frameRateFront = 30,
+                frameRateBack = 60,
             )
 
             assertEquals(EVERY_MODE_SETTING_ON_DISK, encodeMode(mode))
@@ -293,6 +296,8 @@ class SettingsWireFormatTest {
                     StoredFlashMode.AUTO to """{"modes":{"VIDEO":{"flash_mode":0}}}""",
                     StoredFlashMode.ON to """{"modes":{"VIDEO":{"flash_mode":1}}}""",
                     StoredFlashMode.OFF to """{"modes":{"VIDEO":{"flash_mode":2}}}""",
+                    StoredFlashMode.LOW_LIGHT_BOOST to
+                        """{"modes":{"VIDEO":{"flash_mode":100}}}""",
                 ),
                 StoredFlashMode.entries.associateWith {
                     encodeMode(StoredModeSettings(flashMode = it))
@@ -374,7 +379,6 @@ class SettingsWireFormatTest {
     private companion object {
         const val MODE = "VIDEO"
         const val SOME_FOCUS_TIMEOUT_SECONDS = 10L
-        const val SOME_SELF_TIMER_DURATION = 3
         const val SOME_PHOTO_QUALITY = 71
         const val SOME_BARCODE_FORMAT = "AZTEC"
 
@@ -393,8 +397,10 @@ class SettingsWireFormatTest {
 
         const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode":2,""" +
             """"self_illumination":true,""" +
-            """"video_quality_front":"HD","video_quality_back":"UHD"}}}"""
+            """"video_quality_front":"HD","video_quality_back":"UHD",""" +
+            """"frame_rate_front":30,"frame_rate_back":60}}}"""
 
         val SOME_FLASH_MODE = StoredFlashMode.OFF
+        val SOME_SELF_TIMER_DURATION = 3.seconds
     }
 }

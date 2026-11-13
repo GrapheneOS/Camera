@@ -116,8 +116,8 @@ class VideoCapturerRegressionTest {
     }
 
     /**
-     * Stopping while the start is still queued behind the sound must abandon it: no recording,
-     * no leftover output entry, and the recorder stays usable.
+     * Stopping while the recording is still held behind the start sound must abandon it: no
+     * recording, no leftover output entry, and the recorder stays usable.
      */
     @Test
     fun stopRecording_duringDeferredStart_cancelsTheStart() {
@@ -153,7 +153,7 @@ class VideoCapturerRegressionTest {
         }
     }
 
-    /** A pause requested while the start is queued must apply once the recording starts. */
+    /** A pause requested while the start sound plays must hold once the sound ends. */
     @Test
     fun pauseDuringDeferredStart_appliesWhenRecordingStarts() {
         recordingTest { scenario ->

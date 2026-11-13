@@ -91,13 +91,10 @@ open class CaptureActivity : MainActivity() {
         // not flash the empty preview the unbind leaves behind. It is taken down from there.
         mainOverlay.setImageBitmap(bitmap)
         mainOverlay.visibility = View.VISIBLE
-        settingsIcon.visibility = View.INVISIBLE
     }
 
     private fun hidePreview() {
         viewfinder.onAction(CaptureAction.CapturedPreviewDismissed)
-
-        settingsIcon.visibility = View.VISIBLE
     }
 
     fun renderCapturedPreview(visible: Boolean) {

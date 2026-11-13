@@ -1,33 +1,33 @@
 package app.grapheneos.camera.data.media.store
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.datastore.core.DataMigration
 import app.grapheneos.camera.data.core.store.LEGACY_CAPTURE_KEYS
 import app.grapheneos.camera.data.core.store.LEGACY_LAST_CAPTURED_ITEM_DATE_STRING
 import app.grapheneos.camera.data.core.store.LEGACY_LAST_CAPTURED_ITEM_TYPE
 import app.grapheneos.camera.data.core.store.LEGACY_LAST_CAPTURED_ITEM_URI
+import app.grapheneos.camera.data.core.store.PreferenceFiles
 import app.grapheneos.camera.data.core.store.legacyCommonPreferences
 import app.grapheneos.camera.data.core.store.removeLegacyCommonKeys
 
 // The stores migrate the shared file in arbitrary order, so each removes only its own keys.
 internal class MediaPrefsMigration(
-    private val context: Context,
+    private val files: PreferenceFiles,
 ) : DataMigration<MediaPrefs> {
 
     override suspend fun shouldMigrate(currentData: MediaPrefs): Boolean {
-        return legacyCommonPreferences(context).all.keys.any(::owns)
+        return legacyCommonPreferences(files).all.keys.any(::owns)
     }
 
     override suspend fun migrate(currentData: MediaPrefs): MediaPrefs {
         val stored = currentData.lastCapturedItem
-            ?: readLastCapturedItem(legacyCommonPreferences(context))
+            ?: readLastCapturedItem(legacyCommonPreferences(files))
 
         return currentData.copy(lastCapturedItem = stored)
     }
 
     override suspend fun cleanUp() {
-        removeLegacyCommonKeys(context, ::owns)
+        removeLegacyCommonKeys(files, ::owns)
     }
 
     private fun owns(key: String): Boolean {

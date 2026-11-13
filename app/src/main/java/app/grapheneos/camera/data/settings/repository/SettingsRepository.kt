@@ -1,15 +1,13 @@
 package app.grapheneos.camera.data.settings.repository
 
 import androidx.datastore.core.DataStore
-import app.grapheneos.camera.data.core.model.FlashMode
-import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapper
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.di.core.ApplicationScope
@@ -18,10 +16,13 @@ import app.grapheneos.camera.di.core.DurablePreferences
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -36,10 +37,16 @@ interface SettingsRepository {
     val settings: StateFlow<CameraSettings>
 
     fun update(transform: (CameraSettings) -> CameraSettings): CameraSettings
+
     fun modeSettings(slot: ModeSlot): ModeSettings
-    fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings
-    fun setSelfIllumination(slot: ModeSlot, value: Boolean): ModeSettings
-    fun setVideoQuality(slot: ModeSlot, value: VideoQuality): ModeSettings
+    fun observeModeSettings(slot: ModeSlot): Flow<ModeSettings>
+
+    /** Stores only the fields [transform] changes, so the others keep following their defaults. */
+    fun updateMode(
+        slot: ModeSlot,
+        transform: (ModeSettings) -> ModeSettings,
+    ): ModeSettings
+
     fun sessionCopy(): SettingsRepository
 }
 
@@ -67,41 +74,36 @@ internal class SettingsRepositoryImpl @Inject constructor(
     }
 
     override fun modeSettings(slot: ModeSlot): ModeSettings {
-        return modeSettingsMapper.map(
-            stored = prefs.value.mode(slot.mode),
-            isFrontFacing = slot.isFrontFacing,
-        )
+        return modeSettingsOf(prefs = prefs.value, slot = slot)
     }
 
-    override fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings {
-        return writeMode(
-            slot = slot,
-            store = { stored -> stored.copy(flashMode = modeSettingsMapper.map(value)) },
-            asRequested = { it.copy(flashMode = value) },
-        )
+    override fun observeModeSettings(slot: ModeSlot): Flow<ModeSettings> {
+        return prefs
+            .map { prefs -> modeSettingsOf(prefs = prefs, slot = slot) }
+            .distinctUntilChanged()
     }
 
-    override fun setSelfIllumination(slot: ModeSlot, value: Boolean): ModeSettings {
-        return writeMode(
-            slot = slot,
-            store = { stored -> stored.copy(selfIllumination = value) },
-            asRequested = { it.copy(selfIllumination = value) },
-        )
-    }
+    override fun updateMode(
+        slot: ModeSlot,
+        transform: (ModeSettings) -> ModeSettings,
+    ): ModeSettings {
+        val current = modeSettings(slot)
+        val updated = transform(current)
+        if (updated == current) return current
 
-    override fun setVideoQuality(slot: ModeSlot, value: VideoQuality): ModeSettings {
-        return writeMode(
-            slot = slot,
-            store = { stored ->
-                val quality = storedVideoQualityMapper.map(value)
+        write { prefs ->
+            prefs.withMode(
+                mode = slot.mode,
+                settings = storedChanges(
+                    stored = prefs.mode(slot.mode),
+                    current = current,
+                    updated = updated,
+                    isFrontFacing = slot.isFrontFacing,
+                ),
+            )
+        }
 
-                when {
-                    slot.isFrontFacing -> stored.copy(videoQualityFront = quality)
-                    else -> stored.copy(videoQualityBack = quality)
-                }
-            },
-            asRequested = { it.copy(videoQuality = value) },
-        )
+        return updated
     }
 
     override fun sessionCopy(): SettingsRepository {
@@ -115,23 +117,51 @@ internal class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    private fun writeMode(
-        slot: ModeSlot,
-        store: (StoredModeSettings) -> StoredModeSettings,
-        asRequested: (ModeSettings) -> ModeSettings,
-    ): ModeSettings {
-        val updated = write { prefs ->
-            prefs.withMode(
-                mode = slot.mode,
-                settings = store(prefs.mode(slot.mode)),
+    private fun storedChanges(
+        stored: StoredModeSettings,
+        current: ModeSettings,
+        updated: ModeSettings,
+        isFrontFacing: Boolean,
+    ): StoredModeSettings {
+        val framesPerSecond = updated.videoFrameRate.framesPerSecond
+        val flashMode = when (updated.flashMode) {
+            current.flashMode -> stored.flashMode
+            else -> modeSettingsMapper.map(updated.flashMode)
+        }
+        val selfIllumination = when (updated.selfIllumination) {
+            current.selfIllumination -> stored.selfIllumination
+            else -> updated.selfIllumination
+        }
+        val withSwitches = stored.copy(
+            flashMode = flashMode,
+            selfIllumination = selfIllumination,
+        )
+        val withQuality = when {
+            updated.videoQuality == current.videoQuality -> withSwitches
+
+            isFrontFacing -> withSwitches.copy(
+                videoQualityFront = storedVideoQualityMapper.map(updated.videoQuality),
+            )
+
+            else -> withSwitches.copy(
+                videoQualityBack = storedVideoQualityMapper.map(updated.videoQuality),
             )
         }
 
-        return asRequested(
-            modeSettingsMapper.map(
-                stored = updated.mode(slot.mode),
-                isFrontFacing = slot.isFrontFacing,
-            ),
+        return when {
+            updated.videoFrameRate == current.videoFrameRate -> withQuality
+            isFrontFacing -> withQuality.copy(frameRateFront = framesPerSecond)
+            else -> withQuality.copy(frameRateBack = framesPerSecond)
+        }
+    }
+
+    private fun modeSettingsOf(
+        prefs: SettingsPrefs,
+        slot: ModeSlot,
+    ): ModeSettings {
+        return modeSettingsMapper.map(
+            stored = prefs.mode(slot.mode),
+            isFrontFacing = slot.isFrontFacing,
         )
     }
 

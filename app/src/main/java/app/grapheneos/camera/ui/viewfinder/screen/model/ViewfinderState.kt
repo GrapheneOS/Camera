@@ -26,6 +26,7 @@ data class ViewfinderState(
     val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
     val missingPermissions: Set<AppPermission> = emptySet(),
     val dialog: ViewfinderDialog? = null,
+    val isSettingsPanelOpen: Boolean = false,
     val deviceOrientation: DeviceOrientation? = null,
     val displayRotation: Int = Surface.ROTATION_0,
     val autoRotateEnabled: Boolean = false,
@@ -71,6 +72,10 @@ data class ViewfinderState(
         return settings.geoTagging && AppPermission.LOCATION !in missingPermissions
     }
 
+    fun lacksMicrophone(): Boolean {
+        return settings.includeAudio && AppPermission.MICROPHONE in missingPermissions
+    }
+
     fun showsLevel(): Boolean {
         return settings.gyroscopeSuggestions && isInPhotoMode()
     }
@@ -78,5 +83,9 @@ data class ViewfinderState(
     fun selfIlluminate(): Boolean {
         return modeSettings.selfIllumination &&
             session.lensFacing == LensFacing.FRONT
+    }
+
+    fun isSettingsPanelAvailable(): Boolean {
+        return !(capture.isSelfTimerRunning || isQrMode())
     }
 }
