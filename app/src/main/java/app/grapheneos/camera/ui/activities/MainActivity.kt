@@ -62,6 +62,7 @@ import app.grapheneos.camera.ui.camerascreen.CameraOverlay
 import app.grapheneos.camera.ui.camerascreen.CameraOverlayInsets
 import app.grapheneos.camera.ui.camerascreen.HiddenStatusBar
 import app.grapheneos.camera.ui.common.TunePlayer
+import app.grapheneos.camera.ui.core.gesture.MIN_FLING_DISTANCE
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
@@ -274,13 +275,20 @@ open class MainActivity : AppCompatActivity() {
     private var overlayInsets by mutableStateOf(CameraOverlayInsets())
 
     private val quickSettingsSheet by lazy {
+        val density = Density(context = this)
+
         QuickSettingsSheetState(
-            settleVelocity = with(Density(context = this)) { SETTLE_VELOCITY.toPx() },
+            settleVelocity = with(density) { SETTLE_VELOCITY.toPx() },
+            minFlingDistance = with(density) { MIN_FLING_DISTANCE.toPx() },
         )
     }
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown by mutableStateOf(false)
+
+    private var isModeStripDragged by mutableStateOf(false)
+
+    private var isModeSwitchPending by mutableStateOf(false)
 
     private lateinit var snackBar: Snackbar
 
@@ -315,6 +323,7 @@ open class MainActivity : AppCompatActivity() {
 
     private fun hidePreviewTransition() {
         transitionShown = false
+        isModeSwitchPending = false
         mainOverlay.visibility = View.INVISIBLE
 
         if (viewfinder.uiState.value.isQrMode) {
@@ -595,6 +604,7 @@ open class MainActivity : AppCompatActivity() {
                     sheetState = quickSettingsSheet,
                     sheet = quickSettingsNavigator.quickSettingsNavKey(),
                     isTransitionShown = transitionShown,
+                    isModeSwitching = isModeStripDragged || isModeSwitchPending,
                     insets = overlayInsets,
                     onSheetOpenChange = ::showSettingsPanel,
                 )
@@ -604,13 +614,26 @@ open class MainActivity : AppCompatActivity() {
         previewView.scaleType = PreviewView.ScaleType.FIT_START
 
         tabLayout.setOnTouchListener { _, motionEvent ->
-            if (motionEvent.action == MotionEvent.ACTION_UP) {
-                val tab = tabLayout.getTabAtX(tabLayout.scrollX)
-                finalizeMode(tab)
-                return@setOnTouchListener true
-            }
+            when (motionEvent.action) {
+                MotionEvent.ACTION_MOVE -> {
+                    isModeStripDragged = isModeStripDragged || isModeStripMoved()
+                    false
+                }
 
-            return@setOnTouchListener false
+                MotionEvent.ACTION_UP -> {
+                    val tab = tabLayout.getTabAtX(tabLayout.scrollX)
+                    isModeStripDragged = false
+                    finalizeMode(tab)
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    isModeStripDragged = false
+                    false
+                }
+
+                else -> false
+            }
         }
 
         previewView.previewStreamState.observe(this) { state: StreamState ->
@@ -828,6 +851,12 @@ open class MainActivity : AppCompatActivity() {
         viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
     }
 
+    private fun isModeStripMoved(): Boolean {
+        val cameraTab = tabLayout.getTabForMode(viewfinder.uiState.value.mode)
+
+        return cameraTab != null && !tabLayout.isSettledOn(cameraTab)
+    }
+
     fun finalizeMode(tab: TabLayout.Tab? = null) {
         // The strip is untouchable during a recording but not while its start sound still plays, and
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
@@ -842,6 +871,7 @@ open class MainActivity : AppCompatActivity() {
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
+            isModeSwitchPending = mode != viewfinder.uiState.value.mode
 
             // Blurred while the strip is still gliding, not once the camera has gone: the rebind
             // holds the main thread for half a second, so a transition left to the stream state

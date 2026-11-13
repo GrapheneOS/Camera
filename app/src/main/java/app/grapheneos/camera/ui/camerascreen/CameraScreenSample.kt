@@ -47,6 +47,7 @@ import app.grapheneos.camera.ui.components.lensswitchbutton.LensSwitchButton
 import app.grapheneos.camera.ui.components.modeselector.ModeSelector
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
+import app.grapheneos.camera.ui.core.gesture.MIN_FLING_DISTANCE
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
 import app.grapheneos.camera.ui.core.preview.PREVIEW_LENS_SWITCH_ICON
@@ -145,7 +146,10 @@ private fun rememberSampleSheetState(): QuickSettingsSheetState {
     val density = LocalDensity.current
 
     return remember(density) {
-        QuickSettingsSheetState(settleVelocity = with(density) { SETTLE_VELOCITY.toPx() })
+        QuickSettingsSheetState(
+            settleVelocity = with(density) { SETTLE_VELOCITY.toPx() },
+            minFlingDistance = with(density) { MIN_FLING_DISTANCE.toPx() },
+        )
     }
 }
 
@@ -175,7 +179,6 @@ private fun SampleLayers(
                 uiState = state.statusBar,
                 enabled = sheetState.isHidden,
                 onItemClick = state::openSheet,
-                onAction = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(TOP_BAR_HEIGHT),
