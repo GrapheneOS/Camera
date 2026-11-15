@@ -1,5 +1,7 @@
 package app.grapheneos.camera.data.settings.mapper
 
+import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
@@ -35,12 +37,13 @@ class StoredVideoQualityMapperTest {
 
             assertEquals(
                 quality,
-                readBack.map(stored = stored, isFrontFacing = false).videoQuality,
+                readBack.map(stored = stored, slot = BACK_SLOT).videoQuality,
             )
         }
     }
 
     private companion object {
+        val BACK_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
         val OFFERED_QUALITIES = listOf(
             VideoQuality.UHD,
             VideoQuality.FHD,

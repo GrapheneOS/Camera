@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoFrameRate
@@ -25,23 +24,24 @@ internal interface QuickSettingsUiStateMapper {
 internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSettingsUiStateMapper {
 
     override fun map(state: QuickSettingsState): QuickSettingsUiState {
-        val moreButtonVisible = !state.isRecording
+        val settingsButtonVisible = !state.isRecording
         val camera = state.boundCamera ?: return QuickSettingsUiState(
-            moreButtonVisible = moreButtonVisible,
+            settingsButtonVisible = settingsButtonVisible,
+        )
+
+        val flashMode = camera.appliedFlashMode(
+            stored = state.modeSettings.flashMode,
+            frameRate = state.modeSettings.videoFrameRate,
         )
 
         return QuickSettingsUiState(
-            moreButtonVisible = moreButtonVisible,
+            settingsButtonVisible = settingsButtonVisible,
             isVideoMode = camera.isVideoMode,
-            isSelfIlluminating = camera.lensFacing == LensFacing.FRONT &&
-                state.modeSettings.selfIllumination,
+            isSelfIlluminating = flashMode == FlashMode.SELF_ILLUMINATION,
             flash = flash(
                 state = state,
                 camera = camera,
-            ),
-            selfIllumination = selfIllumination(
-                state = state,
-                camera = camera,
+                flashMode = flashMode,
             ),
             selfTimer = selfTimer(
                 state = state,
@@ -70,16 +70,14 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
     private fun flash(
         state: QuickSettingsState,
         camera: BoundCamera,
+        flashMode: FlashMode,
     ): QuickChoiceUiModel<FlashMode>? {
         val options = camera.flashModes()
         val isLowLightBoostLimited = camera.limitsLowLightBoost(state.modeSettings.videoFrameRate)
 
         return when {
             options.size > 1 -> QuickChoiceUiModel(
-                selected = camera.appliedFlashMode(
-                    stored = state.modeSettings.flashMode,
-                    frameRate = state.modeSettings.videoFrameRate,
-                ),
+                selected = flashMode,
                 options = options.toImmutableList(),
                 unavailable = when {
                     isLowLightBoostLimited -> persistentSetOf(FlashMode.LOW_LIGHT_BOOST)
@@ -89,16 +87,6 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
             )
 
             else -> null
-        }
-    }
-
-    private fun selfIllumination(
-        state: QuickSettingsState,
-        camera: BoundCamera,
-    ): Boolean? {
-        return when (camera.lensFacing) {
-            LensFacing.FRONT -> state.modeSettings.selfIllumination
-            LensFacing.BACK -> null
         }
     }
 

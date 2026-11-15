@@ -139,6 +139,7 @@ class CameraSessionTest {
             cameraSessionPlanFactory = cameraSessionPlanFactory,
             photoResolutionSupport = mockk(relaxed = true),
             videoBitrateSupport = mockk(relaxed = true),
+            lowLightBoostSupport = mockk(relaxed = true),
             videoQualitySupport = mockk(relaxed = true),
             cameraXConstantsMapper = CameraXConstantsMapperImpl(),
             cameraXStateMapper = CameraXStateMapperImpl(),

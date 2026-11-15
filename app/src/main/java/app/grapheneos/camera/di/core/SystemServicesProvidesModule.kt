@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
 import android.hardware.SensorManager
+import android.hardware.camera2.CameraManager
 import android.location.LocationManager
 import android.os.Build
 import android.os.Vibrator
@@ -47,6 +48,14 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): AssetManager {
         return context.assets
+    }
+
+    @Provides
+    @Reusable
+    fun provideCameraManager(
+        @ApplicationContext context: Context,
+    ): CameraManager {
+        return context.getSystemService(CameraManager::class.java)
     }
 
     @Provides

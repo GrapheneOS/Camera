@@ -264,19 +264,34 @@ class SettingsPrefsMigrationTest {
     @Test
     fun migrate_perModeSettings_stayWithTheirOwnMode() {
         runTest {
-            modePreferences(MODE).edit(commit = true) { putBoolean(SELF_ILLUMINATION, true) }
+            modePreferences(MODE).edit(commit = true) { putInt(FLASH_MODE, LEGACY_FLASH_MODE_AUTO) }
             modePreferences(OTHER_MODE).edit(commit = true) { putInt(FLASH_MODE, SOME_FLASH_MODE) }
 
             val modes = migrate().modes
 
             assertEquals(
-                StoredModeSettings(selfIllumination = true),
+                StoredModeSettings(
+                    flashModeFront = StoredFlashMode.AUTO,
+                    flashModeBack = StoredFlashMode.AUTO,
+                ),
                 modes.getValue(MODE.name),
             )
             assertEquals(
-                StoredModeSettings(flashMode = StoredFlashMode.ON),
+                StoredModeSettings(
+                    flashModeFront = StoredFlashMode.ON,
+                    flashModeBack = StoredFlashMode.ON,
+                ),
                 modes.getValue(OTHER_MODE.name),
             )
+        }
+    }
+
+    @Test
+    fun migrate_selfIllumination_isLeftOff() {
+        runTest {
+            modePreferences(MODE).edit(commit = true) { putBoolean(SELF_ILLUMINATION, true) }
+
+            assertEquals(StoredModeSettings(), migrate().modes.getValue(MODE.name))
         }
     }
 
@@ -290,8 +305,8 @@ class SettingsPrefsMigrationTest {
                     photoQuality = 55,
                 ),
                 modes = mapOf(
-                    MODE.name to StoredModeSettings(selfIllumination = true),
-                    futureMode to StoredModeSettings(flashMode = StoredFlashMode.OFF),
+                    MODE.name to StoredModeSettings(frameRateBack = SOME_FRAME_RATE),
+                    futureMode to StoredModeSettings(flashModeBack = StoredFlashMode.OFF),
                 ),
             )
             commons().edit(commit = true) { putInt(PHOTO_QUALITY, SOME_PHOTO_QUALITY) }
@@ -301,8 +316,8 @@ class SettingsPrefsMigrationTest {
 
             assertEquals(StoredAspectRatio.RATIO_16_9, migrated.common.aspectRatio)
             assertEquals(SOME_PHOTO_QUALITY, migrated.common.photoQuality)
-            assertEquals(true, migrated.modes.getValue(MODE.name).selfIllumination)
-            assertEquals(StoredFlashMode.ON, migrated.modes.getValue(MODE.name).flashMode)
+            assertEquals(SOME_FRAME_RATE, migrated.modes.getValue(MODE.name).frameRateBack)
+            assertEquals(StoredFlashMode.ON, migrated.modes.getValue(MODE.name).flashModeBack)
             assertEquals(current.modes.getValue(futureMode), migrated.modes.getValue(futureMode))
         }
     }
@@ -316,7 +331,7 @@ class SettingsPrefsMigrationTest {
             val migrated = migrate()
 
             assertEquals(StoredAspectRatio.RATIO_16_9, migrated.common.aspectRatio)
-            assertEquals(StoredFlashMode.AUTO, migrated.modes.getValue(MODE.name).flashMode)
+            assertEquals(StoredFlashMode.AUTO, migrated.modes.getValue(MODE.name).flashModeBack)
         }
     }
 
@@ -401,6 +416,7 @@ class SettingsPrefsMigrationTest {
         const val MAX_PHOTO_QUALITY = 100
         const val SOME_PHOTO_QUALITY = 71
         const val SOME_FLASH_MODE = 1
+        const val SOME_FRAME_RATE = 60
         const val LEGACY_FLASH_MODE_AUTO = 0
         const val LEGACY_ASPECT_RATIO_16_9 = 1
     }

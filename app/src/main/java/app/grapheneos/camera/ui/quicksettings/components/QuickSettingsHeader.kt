@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -30,17 +30,17 @@ import app.grapheneos.camera.ui.core.animation.crossfade
 private val HORIZONTAL_PADDING = 16.dp
 private val BOTTOM_PADDING = 8.dp
 private val TITLE_SPACING = 16.dp
-private val MORE_BUTTON_WIDTH = 52.dp
-private val MORE_BUTTON_HEIGHT = 40.dp
-private val MORE_ICON_SIZE = 20.dp
+private val SETTINGS_BUTTON_WIDTH = 52.dp
+private val SETTINGS_BUTTON_HEIGHT = 40.dp
+private val SETTINGS_ICON_SIZE = 20.dp
 
 @Composable
 internal fun QuickSettingsHeader(
     isVideoMode: Boolean,
-    moreButtonVisible: Boolean,
+    settingsButtonVisible: Boolean,
     enabled: Boolean,
-    onMoreClick: () -> Unit,
-    onMoreLongClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onSettingsLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -68,15 +68,15 @@ internal fun QuickSettingsHeader(
             modifier = Modifier
                 .minimumInteractiveComponentSize()
                 .size(
-                    width = MORE_BUTTON_WIDTH,
-                    height = MORE_BUTTON_HEIGHT,
+                    width = SETTINGS_BUTTON_WIDTH,
+                    height = SETTINGS_BUTTON_HEIGHT,
                 ),
         ) {
-            if (moreButtonVisible) {
-                MoreButton(
+            if (settingsButtonVisible) {
+                SettingsButton(
                     enabled = enabled,
-                    onClick = onMoreClick,
-                    onLongClick = onMoreLongClick,
+                    onClick = onSettingsClick,
+                    onLongClick = onSettingsLongClick,
                 )
             }
         }
@@ -92,7 +92,7 @@ internal fun quickSettingsTitle(isVideoMode: Boolean): String {
 }
 
 @Composable
-private fun MoreButton(
+private fun SettingsButton(
     enabled: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -117,9 +117,9 @@ private fun MoreButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = Icons.Outlined.MoreHoriz,
+            imageVector = Icons.Outlined.Settings,
             contentDescription = stringResource(R.string.camera_settings),
-            modifier = Modifier.size(size = MORE_ICON_SIZE),
+            modifier = Modifier.size(size = SETTINGS_ICON_SIZE),
         )
     }
 }

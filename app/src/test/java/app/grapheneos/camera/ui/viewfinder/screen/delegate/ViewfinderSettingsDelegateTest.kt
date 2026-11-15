@@ -358,6 +358,6 @@ class ViewfinderSettingsDelegateTest {
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
         val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
-        val SLOTTED = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
+        val SLOTTED = ModeSettings(flashMode = FlashMode.AUTO, videoQuality = VideoQuality.FHD)
     }
 }

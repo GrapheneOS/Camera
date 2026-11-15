@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.settings.repository
 
 import androidx.datastore.core.DataStore
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
@@ -9,6 +10,7 @@ import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapper
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
+import app.grapheneos.camera.data.settings.store.StoredFlashMode
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.DefaultDispatcher
@@ -41,7 +43,11 @@ interface SettingsRepository {
     fun modeSettings(slot: ModeSlot): ModeSettings
     fun observeModeSettings(slot: ModeSlot): Flow<ModeSettings>
 
-    /** Stores only the fields [transform] changes, so the others keep following their defaults. */
+    /**
+     * Stores only the fields [transform] changes, so the others keep following their defaults. A
+     * light that shines while the camera is open is kept for the slot until the process ends, and
+     * never saved.
+     */
     fun updateMode(
         slot: ModeSlot,
         transform: (ModeSettings) -> ModeSettings,
@@ -59,27 +65,31 @@ internal class SettingsRepositoryImpl @Inject constructor(
     @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : SettingsRepository {
 
-    private val prefs = MutableStateFlow(runBlocking { dataStore.data.first() })
+    private val contents = MutableStateFlow(
+        Contents(prefs = runBlocking { dataStore.data.first() }),
+    )
 
-    private val _settings = MutableStateFlow(cameraSettingsMapper.map(prefs.value.common))
+    private val _settings = MutableStateFlow(cameraSettingsMapper.map(contents.value.prefs.common))
     override val settings: StateFlow<CameraSettings> = _settings.asStateFlow()
 
     override fun update(transform: (CameraSettings) -> CameraSettings): CameraSettings {
-        val updated = write { prefs ->
-            val settings = transform(cameraSettingsMapper.map(prefs.common))
-            prefs.copy(common = cameraSettingsMapper.map(settings))
+        val updated = write { contents ->
+            val settings = transform(cameraSettingsMapper.map(contents.prefs.common))
+            contents.copy(
+                prefs = contents.prefs.copy(common = cameraSettingsMapper.map(settings)),
+            )
         }
 
-        return cameraSettingsMapper.map(updated.common)
+        return cameraSettingsMapper.map(updated.prefs.common)
     }
 
     override fun modeSettings(slot: ModeSlot): ModeSettings {
-        return modeSettingsOf(prefs = prefs.value, slot = slot)
+        return modeSettingsOf(contents = contents.value, slot = slot)
     }
 
     override fun observeModeSettings(slot: ModeSlot): Flow<ModeSettings> {
-        return prefs
-            .map { prefs -> modeSettingsOf(prefs = prefs, slot = slot) }
+        return contents
+            .map { contents -> modeSettingsOf(contents = contents, slot = slot) }
             .distinctUntilChanged()
     }
 
@@ -91,14 +101,29 @@ internal class SettingsRepositoryImpl @Inject constructor(
         val updated = transform(current)
         if (updated == current) return current
 
-        write { prefs ->
-            prefs.withMode(
-                mode = slot.mode,
-                settings = storedChanges(
-                    stored = prefs.mode(slot.mode),
+        val persistableFlashMode = modeSettingsMapper.map(
+            flashMode = updated.flashMode,
+            mode = slot.mode,
+        )
+
+        write { contents ->
+            contents.copy(
+                prefs = contents.prefs.withMode(
+                    mode = slot.mode,
+                    settings = storedChanges(
+                        stored = contents.prefs.mode(slot.mode),
+                        current = current,
+                        updated = updated,
+                        persistableFlashMode = persistableFlashMode,
+                        isFrontFacing = slot.isFrontFacing,
+                    ),
+                ),
+                unsavedFlashModes = unsavedChanges(
+                    unsaved = contents.unsavedFlashModes,
+                    slot = slot,
                     current = current,
                     updated = updated,
-                    isFrontFacing = slot.isFrontFacing,
+                    persistableFlashMode = persistableFlashMode,
                 ),
             )
         }
@@ -108,7 +133,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
 
     override fun sessionCopy(): SettingsRepository {
         return SettingsRepositoryImpl(
-            dataStore = InMemoryDataStore(prefs.value),
+            dataStore = InMemoryDataStore(contents.value.prefs),
             cameraSettingsMapper = cameraSettingsMapper,
             modeSettingsMapper = modeSettingsMapper,
             storedVideoQualityMapper = storedVideoQualityMapper,
@@ -121,29 +146,23 @@ internal class SettingsRepositoryImpl @Inject constructor(
         stored: StoredModeSettings,
         current: ModeSettings,
         updated: ModeSettings,
+        persistableFlashMode: StoredFlashMode?,
         isFrontFacing: Boolean,
     ): StoredModeSettings {
         val framesPerSecond = updated.videoFrameRate.framesPerSecond
-        val flashMode = when (updated.flashMode) {
-            current.flashMode -> stored.flashMode
-            else -> modeSettingsMapper.map(updated.flashMode)
+        val withFlash = when {
+            updated.flashMode == current.flashMode || persistableFlashMode == null -> stored
+            isFrontFacing -> stored.copy(flashModeFront = persistableFlashMode)
+            else -> stored.copy(flashModeBack = persistableFlashMode)
         }
-        val selfIllumination = when (updated.selfIllumination) {
-            current.selfIllumination -> stored.selfIllumination
-            else -> updated.selfIllumination
-        }
-        val withSwitches = stored.copy(
-            flashMode = flashMode,
-            selfIllumination = selfIllumination,
-        )
         val withQuality = when {
-            updated.videoQuality == current.videoQuality -> withSwitches
+            updated.videoQuality == current.videoQuality -> withFlash
 
-            isFrontFacing -> withSwitches.copy(
+            isFrontFacing -> withFlash.copy(
                 videoQualityFront = storedVideoQualityMapper.map(updated.videoQuality),
             )
 
-            else -> withSwitches.copy(
+            else -> withFlash.copy(
                 videoQualityBack = storedVideoQualityMapper.map(updated.videoQuality),
             )
         }
@@ -155,25 +174,49 @@ internal class SettingsRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun modeSettingsOf(
-        prefs: SettingsPrefs,
+    private fun unsavedChanges(
+        unsaved: Map<ModeSlot, FlashMode>,
         slot: ModeSlot,
-    ): ModeSettings {
-        return modeSettingsMapper.map(
-            stored = prefs.mode(slot.mode),
-            isFrontFacing = slot.isFrontFacing,
-        )
+        current: ModeSettings,
+        updated: ModeSettings,
+        persistableFlashMode: StoredFlashMode?,
+    ): Map<ModeSlot, FlashMode> {
+        return when {
+            updated.flashMode == current.flashMode -> unsaved
+            persistableFlashMode == null -> unsaved + (slot to updated.flashMode)
+            else -> unsaved - slot
+        }
     }
 
-    private fun write(transform: (SettingsPrefs) -> SettingsPrefs): SettingsPrefs {
-        val updated = prefs.updateAndGet(transform)
+    private fun modeSettingsOf(
+        contents: Contents,
+        slot: ModeSlot,
+    ): ModeSettings {
+        val saved = modeSettingsMapper.map(
+            stored = contents.prefs.mode(slot.mode),
+            slot = slot,
+        )
 
-        _settings.value = cameraSettingsMapper.map(prefs.value.common)
+        return when (val unsavedFlashMode = contents.unsavedFlashModes[slot]) {
+            null -> saved
+            else -> saved.copy(flashMode = unsavedFlashMode)
+        }
+    }
+
+    private fun write(transform: (Contents) -> Contents): Contents {
+        val updated = contents.updateAndGet(transform)
+
+        _settings.value = cameraSettingsMapper.map(updated.prefs.common)
 
         writeScope.launch(defaultDispatcher) {
-            dataStore.updateData { prefs.value }
+            dataStore.updateData { contents.value.prefs }
         }
 
         return updated
     }
+
+    private data class Contents(
+        val prefs: SettingsPrefs,
+        val unsavedFlashModes: Map<ModeSlot, FlashMode> = emptyMap(),
+    )
 }

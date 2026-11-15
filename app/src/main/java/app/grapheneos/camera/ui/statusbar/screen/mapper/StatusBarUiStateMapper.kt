@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.statusbar.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
@@ -19,16 +18,18 @@ internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiSta
 
     override fun map(state: StatusBarState): StatusBarUiState {
         val camera = state.boundCamera ?: return StatusBarUiState()
-        val isSelfIlluminating = camera.lensFacing == LensFacing.FRONT &&
-            state.modeSettings.selfIllumination
+        val flashMode = camera.appliedFlashMode(
+            stored = state.modeSettings.flashMode,
+            frameRate = state.modeSettings.videoFrameRate,
+        )
 
         return StatusBarUiState(
             items = items(
                 state = state,
                 camera = camera,
-                isSelfIlluminating = isSelfIlluminating,
+                flashMode = flashMode,
             ),
-            isSelfIlluminating = isSelfIlluminating,
+            isSelfIlluminating = flashMode == FlashMode.SELF_ILLUMINATION,
         )
     }
 
@@ -36,20 +37,13 @@ internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiSta
     private fun items(
         state: StatusBarState,
         camera: BoundCamera,
-        isSelfIlluminating: Boolean,
+        flashMode: FlashMode,
     ): ImmutableList<StatusItemUiModel> {
         val selfTimer = state.settings.selfTimerDuration
-        val flashMode = camera.appliedFlashMode(
-            stored = state.modeSettings.flashMode,
-            frameRate = state.modeSettings.videoFrameRate,
-        )
 
         return buildList {
             if (flashMode != FlashMode.OFF) {
                 add(StatusItemUiModel.Flash(mode = flashMode))
-            }
-            if (isSelfIlluminating) {
-                add(StatusItemUiModel.SelfIllumination)
             }
             if (!camera.isVideoMode && selfTimer != Duration.ZERO) {
                 add(StatusItemUiModel.SelfTimer(duration = selfTimer))

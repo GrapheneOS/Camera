@@ -3,8 +3,6 @@ package app.grapheneos.camera.ui.statusbar.components
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -41,8 +39,6 @@ internal fun StatusItem(
     enabled: Boolean,
     onClick: (QuickSetting) -> Unit,
 ) {
-    val on = stringResource(R.string.quick_settings_on)
-
     when (item) {
         is StatusItemUiModel.SelfTimer -> {
             val value = selfTimerLabel(item.duration)
@@ -62,14 +58,6 @@ internal fun StatusItem(
             onClick = { onClick(QuickSetting.FLASH) },
         ) {
             StatusIcon(icon = flashIcon(item.mode))
-        }
-
-        StatusItemUiModel.SelfIllumination -> StatusBarButton(
-            description = statusDescription(R.string.self_illumination, on),
-            enabled = enabled,
-            onClick = { onClick(QuickSetting.SELF_ILLUMINATION) },
-        ) {
-            StatusIcon(icon = Icons.Outlined.Lightbulb)
         }
 
         is StatusItemUiModel.Resolution -> {

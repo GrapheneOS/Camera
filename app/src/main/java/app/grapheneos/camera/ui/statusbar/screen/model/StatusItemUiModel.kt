@@ -8,8 +8,6 @@ import kotlin.time.Duration
 @Immutable
 internal sealed interface StatusItemUiModel {
 
-    data object SelfIllumination : StatusItemUiModel
-
     data class Flash(
         val mode: FlashMode,
     ) : StatusItemUiModel

@@ -81,7 +81,7 @@ data class ViewfinderState(
     }
 
     fun selfIlluminate(): Boolean {
-        return modeSettings.selfIllumination &&
+        return modeSettings.flashMode == FlashMode.SELF_ILLUMINATION &&
             session.lensFacing == LensFacing.FRONT
     }
 

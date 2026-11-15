@@ -18,10 +18,6 @@ internal sealed interface QuickSettingsAction {
         val mode: FlashMode,
     ) : QuickSettingsAction
 
-    data class SelfIlluminationToggled(
-        val enabled: Boolean,
-    ) : QuickSettingsAction
-
     sealed interface RequiresIdleRecorder : QuickSettingsAction {
 
         data object CameraSettingsClicked : RequiresIdleRecorder

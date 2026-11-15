@@ -433,10 +433,6 @@ private class CameraScreenSampleState {
                 updateMode { it.copy(flashMode = action.mode) }
             }
 
-            is QuickSettingsAction.SelfIlluminationToggled -> {
-                updateMode { it.copy(selfIllumination = action.enabled) }
-            }
-
             is RequiresIdleRecorder.SelfTimerSelected -> {
                 settings = settings.copy(selfTimerDuration = action.duration)
             }

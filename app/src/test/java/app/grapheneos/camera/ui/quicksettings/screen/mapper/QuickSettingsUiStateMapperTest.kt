@@ -110,15 +110,16 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun selfIllumination_isOfferedForTheFrontLensOnly() {
-        val modeSettings = ModeSettings(selfIllumination = true)
+    fun selfIllumination_isAFlashModeOfTheFrontLensOnly() {
+        val modeSettings = ModeSettings(flashMode = FlashMode.SELF_ILLUMINATION)
 
         val front = map(modeSettings = modeSettings, camera = FRONT_PHOTO_CAMERA)
         val back = map(modeSettings = modeSettings)
 
-        assertEquals(true, front.selfIllumination)
+        assertEquals(FlashMode.SELF_ILLUMINATION, front.flash?.selected)
         assertTrue(front.isSelfIlluminating)
-        assertNull(back.selfIllumination)
+        assertFalse(FlashMode.SELF_ILLUMINATION in back.flash?.options.orEmpty())
+        assertEquals(FlashMode.OFF, back.flash?.selected)
         assertFalse(back.isSelfIlluminating)
     }
 
@@ -204,13 +205,12 @@ class QuickSettingsUiStateMapperTest {
         )
 
         assertNotNull(state.flash)
-        assertNotNull(state.selfIllumination)
         assertNull(state.videoQuality)
         assertNull(state.videoFrameRate)
         assertNull(state.audio)
-        assertFalse(map(camera = null, isRecording = true).moreButtonVisible)
-        assertFalse(state.moreButtonVisible)
-        assertTrue(map(camera = VIDEO_CAMERA).moreButtonVisible)
+        assertFalse(map(camera = null, isRecording = true).settingsButtonVisible)
+        assertFalse(state.settingsButtonVisible)
+        assertTrue(map(camera = VIDEO_CAMERA).settingsButtonVisible)
     }
 
     @Test

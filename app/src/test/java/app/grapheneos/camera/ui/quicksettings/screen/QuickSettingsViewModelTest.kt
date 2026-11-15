@@ -211,12 +211,15 @@ class QuickSettingsViewModelTest {
             viewModel.onAction(RequiresIdleRecorder.CameraSettingsClicked)
             viewModel.onAction(RequiresIdleRecorder.CameraSettingsLongClicked)
             viewModel.onAction(RequiresIdleRecorder.AudioToggled(enabled = false))
-            viewModel.onAction(Action.SelfIlluminationToggled(enabled = true))
+            viewModel.onAction(Action.FlashModeSelected(FlashMode.SELF_ILLUMINATION))
 
             assertTrue(effects.isEmpty())
             verify(exactly = 0) { copyText(any()) }
             assertTrue(storedSettings.value.includeAudio)
-            assertTrue(storedModeSettings.getValue(FRONT_VIDEO_SLOT).selfIllumination)
+            assertEquals(
+                FlashMode.SELF_ILLUMINATION,
+                storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode,
+            )
         }
     }
 
@@ -226,7 +229,7 @@ class QuickSettingsViewModelTest {
             boundCamera.value = null
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.SelfIlluminationToggled(enabled = true))
+            viewModel.onAction(Action.FlashModeSelected(FlashMode.SELF_ILLUMINATION))
 
             assertEquals(emptyMap<ModeSlot, ModeSettings>(), storedModeSettings)
         }

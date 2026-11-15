@@ -32,13 +32,15 @@ data class BoundCamera(
             if (hasFlashUnit) {
                 add(FlashMode.ON)
             }
+            if (lensFacing == LensFacing.FRONT) {
+                add(FlashMode.SELF_ILLUMINATION)
+            }
             if (isLowLightBoostSupported) {
                 add(FlashMode.LOW_LIGHT_BOOST)
             }
         }
     }
 
-    // A stored mode this camera doesn't offer, or can't use right now, leaves the flash off.
     fun appliedFlashMode(
         stored: FlashMode,
         frameRate: VideoFrameRate,

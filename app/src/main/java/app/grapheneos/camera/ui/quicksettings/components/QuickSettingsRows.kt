@@ -4,13 +4,13 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.MicOff
 import androidx.compose.material.icons.outlined._30fpsSelect
 import androidx.compose.material.icons.outlined._60fpsSelect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -35,7 +35,7 @@ internal fun QuickSettingsRows(
     rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
-    LightRows(
+    FlashRow(
         uiState = uiState,
         enabled = enabled,
         rowHighlight = rowHighlight,
@@ -56,7 +56,7 @@ internal fun QuickSettingsRows(
 }
 
 @Composable
-private fun LightRows(
+private fun FlashRow(
     uiState: QuickSettingsUiState,
     enabled: Boolean,
     rowHighlight: RowHighlightState,
@@ -65,6 +65,7 @@ private fun LightRows(
     AnimatedSettingRow(
         setting = uiState.flash,
         enabled = enabled,
+        layoutKey = { it.options },
     ) { flash, rowEnabled ->
         QuickSettingsRow(
             enabled = rowEnabled,
@@ -75,20 +76,6 @@ private fun LightRows(
             valueLabel = { mode -> flashLabel(mode) },
             icon = { mode -> flashIcon(mode) },
             highlight = { rowHighlight.alphaOf(QuickSetting.FLASH) },
-        )
-    }
-    AnimatedSettingRow(
-        setting = uiState.selfIllumination,
-        enabled = enabled,
-    ) { selfIllumination, rowEnabled ->
-        QuickSettingsRow(
-            enabled = rowEnabled,
-            label = stringResource(R.string.self_illumination),
-            checked = selfIllumination,
-            onToggle = { onAction(Action.SelfIlluminationToggled(enabled = it)) },
-            offIcon = Icons.Outlined.Block,
-            onIcon = Icons.Outlined.Lightbulb,
-            highlight = { rowHighlight.alphaOf(QuickSetting.SELF_ILLUMINATION) },
         )
     }
 }
@@ -103,6 +90,7 @@ private fun PhotoRows(
     AnimatedSettingRow(
         setting = uiState.selfTimer,
         enabled = enabled,
+        layoutKey = { it.options },
     ) { selfTimer, rowEnabled ->
         QuickSettingsRow(
             enabled = rowEnabled,
@@ -117,6 +105,7 @@ private fun PhotoRows(
     AnimatedSettingRow(
         setting = uiState.aspectRatio,
         enabled = enabled,
+        layoutKey = { it.options },
     ) { aspectRatio, rowEnabled ->
         QuickSettingsRow(
             enabled = rowEnabled,
@@ -139,6 +128,7 @@ private fun VideoRows(
     AnimatedSettingRow(
         setting = uiState.videoQuality,
         enabled = enabled,
+        layoutKey = { it.options },
     ) { videoQuality, rowEnabled ->
         QuickSettingsRow(
             enabled = rowEnabled,
@@ -154,6 +144,7 @@ private fun VideoRows(
     AnimatedSettingRow(
         setting = uiState.videoFrameRate,
         enabled = enabled,
+        layoutKey = { it.options },
     ) { videoFrameRate, rowEnabled ->
         QuickSettingsRow(
             enabled = rowEnabled,
@@ -188,17 +179,21 @@ private fun VideoRows(
 private fun <T> AnimatedSettingRow(
     setting: T?,
     enabled: Boolean,
+    layoutKey: (T) -> Any = { Unit },
     row: @Composable (setting: T, enabled: Boolean) -> Unit,
 ) {
+    val currentLayoutKey by rememberUpdatedState(setting?.let(layoutKey))
+
     AnimatedContent(
         targetState = setting,
         modifier = Modifier.fillMaxWidth(),
         transitionSpec = { crossfadeResizing() },
-        contentKey = { shownSetting -> shownSetting != null },
+        contentKey = { shownSetting -> shownSetting?.let(layoutKey) },
     ) { shownSetting ->
         Box(modifier = Modifier.fillMaxWidth()) {
             if (shownSetting != null) {
-                row(shownSetting, enabled && setting != null)
+                val isCurrentLayout = layoutKey(shownSetting) == currentLayoutKey
+                row(shownSetting, enabled && isCurrentLayout)
             }
         }
     }
