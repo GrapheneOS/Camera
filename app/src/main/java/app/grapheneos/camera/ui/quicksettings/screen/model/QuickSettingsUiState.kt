@@ -12,12 +12,11 @@ internal data class QuickSettingsUiState(
     val isVideoMode: Boolean = false,
     val isSelfIlluminating: Boolean = false,
     val flash: QuickChoiceUiModel<FlashMode>? = null,
-    val selfIllumination: Boolean? = null,
     val selfTimer: QuickChoiceUiModel<Duration>? = null,
     val aspectRatio: QuickChoiceUiModel<AspectRatio>? = null,
     val videoQuality: QuickChoiceUiModel<VideoQuality>? = null,
     val videoFrameRate: QuickChoiceUiModel<VideoFrameRate>? = null,
     val audio: Boolean? = null,
-    val moreButtonVisible: Boolean = true,
+    val settingsButtonVisible: Boolean = true,
     val dialog: QuickSettingsDialog? = null,
 )

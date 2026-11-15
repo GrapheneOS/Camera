@@ -229,11 +229,11 @@ class SettingsWireFormatTest {
     }
 
     @Test
-    fun everyModeSetting_chosen_isStoredUnderTheKeyItHasAlwaysHad() {
+    fun everyModeSetting_chosen_usesItsWireKey() {
         runTest {
             val mode = StoredModeSettings(
-                flashMode = SOME_FLASH_MODE,
-                selfIllumination = true,
+                flashModeFront = StoredFlashMode.LOW_LIGHT_BOOST,
+                flashModeBack = SOME_FLASH_MODE,
                 videoQualityFront = StoredVideoQuality.HD,
                 videoQualityBack = StoredVideoQuality.UHD,
                 frameRateFront = 30,
@@ -278,12 +278,13 @@ class SettingsWireFormatTest {
     @Test
     fun videoQuality_aNameThisVersionNoLongerHas_readsAsLeftToTheDevice() {
         runTest {
-            val stored = """{"modes":{"VIDEO":{"flash_mode":2,"video_quality_back":"EIGHT_K"}}}"""
+            val stored = """{"modes":{"VIDEO":{"flash_mode_back":2,""" +
+                """"video_quality_back":"EIGHT_K"}}}"""
 
             val mode = decodeMode(stored)
 
             assertEquals(StoredVideoQuality.DEVICE_CHOICE, mode.videoQualityBack)
-            assertEquals(SOME_FLASH_MODE, mode.flashMode)
+            assertEquals(SOME_FLASH_MODE, mode.flashModeBack)
         }
     }
 
@@ -292,15 +293,15 @@ class SettingsWireFormatTest {
         runTest {
             assertEquals(
                 mapOf(
-                    StoredFlashMode.UNKNOWN to """{"modes":{"VIDEO":{"flash_mode":-1}}}""",
-                    StoredFlashMode.AUTO to """{"modes":{"VIDEO":{"flash_mode":0}}}""",
-                    StoredFlashMode.ON to """{"modes":{"VIDEO":{"flash_mode":1}}}""",
-                    StoredFlashMode.OFF to """{"modes":{"VIDEO":{"flash_mode":2}}}""",
+                    StoredFlashMode.UNKNOWN to """{"modes":{"VIDEO":{"flash_mode_back":-1}}}""",
+                    StoredFlashMode.AUTO to """{"modes":{"VIDEO":{"flash_mode_back":0}}}""",
+                    StoredFlashMode.ON to """{"modes":{"VIDEO":{"flash_mode_back":1}}}""",
+                    StoredFlashMode.OFF to """{"modes":{"VIDEO":{"flash_mode_back":2}}}""",
                     StoredFlashMode.LOW_LIGHT_BOOST to
-                        """{"modes":{"VIDEO":{"flash_mode":100}}}""",
+                        """{"modes":{"VIDEO":{"flash_mode_back":100}}}""",
                 ),
                 StoredFlashMode.entries.associateWith {
-                    encodeMode(StoredModeSettings(flashMode = it))
+                    encodeMode(StoredModeSettings(flashModeBack = it))
                 },
             )
         }
@@ -309,12 +310,12 @@ class SettingsWireFormatTest {
     @Test
     fun flashMode_aValueThisVersionDoesNotKnow_readsAsUnknown() {
         runTest {
-            val stored = """{"modes":{"VIDEO":{"flash_mode":7,"self_illumination":true}}}"""
+            val stored = """{"modes":{"VIDEO":{"flash_mode_back":7,"frame_rate_back":60}}}"""
 
             val mode = decodeMode(stored)
 
-            assertEquals(StoredFlashMode.UNKNOWN, mode.flashMode)
-            assertEquals(true, mode.selfIllumination)
+            assertEquals(StoredFlashMode.UNKNOWN, mode.flashModeBack)
+            assertEquals(60, mode.frameRateBack)
         }
     }
 
@@ -395,8 +396,8 @@ class SettingsWireFormatTest {
             """"keep_selfies_as_seen":false,"scan_all_codes":true,""" +
             """"enabled_barcode_formats":["AZTEC"]}}"""
 
-        const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode":2,""" +
-            """"self_illumination":true,""" +
+        const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode_front":100,""" +
+            """"flash_mode_back":2,""" +
             """"video_quality_front":"HD","video_quality_back":"UHD",""" +
             """"frame_rate_front":30,"frame_rate_back":60}}}"""
 

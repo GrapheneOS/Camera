@@ -17,6 +17,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsContent
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
@@ -42,17 +43,17 @@ class QuickSettingsRowsTest {
     private var showsTimer by mutableStateOf(true)
 
     @Test
-    fun hidingMoreButton_keepsTheHeaderHeight() {
+    fun hidingSettingsButton_keepsTheHeaderHeight() {
         var visible by mutableStateOf(true)
         composeRule.setContent {
             CameraTheme {
                 QuickSettingsHeader(
                     isVideoMode = true,
-                    moreButtonVisible = visible,
+                    settingsButtonVisible = visible,
                     modifier = Modifier.testTag("header"),
                     enabled = true,
-                    onMoreClick = {},
-                    onMoreLongClick = {},
+                    onSettingsClick = {},
+                    onSettingsLongClick = {},
                 )
             }
         }
@@ -65,6 +66,45 @@ class QuickSettingsRowsTest {
 
         assertEquals(height, header.fetchSemanticsNode().boundsInRoot.height)
         button.assertDoesNotExist()
+    }
+
+    @Test
+    fun changingFlashOptions_disablesTheOutgoingLayout() {
+        var options by mutableStateOf(persistentListOf(FlashMode.OFF, FlashMode.LOW_LIGHT_BOOST))
+        composeRule.setContent {
+            CameraTheme {
+                Column(modifier = Modifier.width(400.dp)) {
+                    QuickSettingsRows(
+                        uiState = QuickSettingsUiState(
+                            flash = QuickChoiceUiModel(
+                                selected = FlashMode.OFF,
+                                options = options,
+                            ),
+                        ),
+                        enabled = true,
+                        rowHighlight = remember { RowHighlightState() },
+                        onAction = {},
+                    )
+                }
+            }
+        }
+
+        val outgoingOption = composeRule.onNodeWithContentDescription("Flash Mode, Low light")
+        outgoingOption.assertIsEnabled()
+        composeRule.mainClock.autoAdvance = false
+        try {
+            composeRule.runOnIdle { options = persistentListOf(FlashMode.OFF, FlashMode.ON) }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.waitForIdle()
+            composeRule.mainClock.advanceTimeBy(MID_TRANSITION_MILLIS)
+
+            outgoingOption.assertIsNotEnabled()
+            composeRule.onNodeWithContentDescription("Flash Mode, On").assertIsEnabled()
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+        }
+
+        outgoingOption.assertDoesNotExist()
     }
 
     @Test

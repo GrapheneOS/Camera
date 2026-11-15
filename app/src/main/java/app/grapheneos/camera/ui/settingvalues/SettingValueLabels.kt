@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FlashAuto
 import androidx.compose.material.icons.outlined.FlashOff
 import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.ModeNight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,6 +21,7 @@ internal fun flashLabel(mode: FlashMode): String {
         FlashMode.AUTO -> stringResource(R.string.quick_settings_auto)
         FlashMode.ON -> stringResource(R.string.quick_settings_on)
         FlashMode.LOW_LIGHT_BOOST -> stringResource(R.string.quick_settings_low_light)
+        FlashMode.SELF_ILLUMINATION -> stringResource(R.string.self_illumination)
     }
 }
 
@@ -29,6 +31,7 @@ internal fun flashIcon(mode: FlashMode): ImageVector {
         FlashMode.AUTO -> Icons.Outlined.FlashAuto
         FlashMode.ON -> Icons.Outlined.FlashOn
         FlashMode.LOW_LIGHT_BOOST -> Icons.Outlined.ModeNight
+        FlashMode.SELF_ILLUMINATION -> Icons.Outlined.Lightbulb
     }
 }
 

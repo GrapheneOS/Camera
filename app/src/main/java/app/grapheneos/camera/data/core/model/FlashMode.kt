@@ -5,4 +5,5 @@ enum class FlashMode {
     ON,
     AUTO,
     LOW_LIGHT_BOOST,
+    SELF_ILLUMINATION,
 }

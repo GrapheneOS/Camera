@@ -159,12 +159,12 @@ internal class SettingsPrefsMigration(
         modePreferences: SharedPreferences,
         current: StoredModeSettings,
     ): StoredModeSettings {
+        val flashMode = intOrNull(modePreferences, FLASH_MODE)
+            ?.let(StoredFlashModeSerializer::fromWireValue)
+
         return current.copy(
-            flashMode = intOrNull(modePreferences, FLASH_MODE)
-                ?.let(StoredFlashModeSerializer::fromWireValue)
-                ?: current.flashMode,
-            selfIllumination = booleanOrNull(modePreferences, SELF_ILLUMINATION)
-                ?: current.selfIllumination,
+            flashModeFront = flashMode ?: current.flashModeFront,
+            flashModeBack = flashMode ?: current.flashModeBack,
             videoQualityFront = readVideoQuality(
                 modePreferences = modePreferences,
                 key = VIDEO_QUALITY_FRONT,
@@ -227,7 +227,6 @@ internal class SettingsPrefsMigration(
         const val SCAN_PREFIX = "scan_"
         const val DEFAULT_SCAN_KEY = "scan_QR_CODE"
         const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
-        const val SELF_ILLUMINATION = "self_illumination"
         const val SELF_TIMER_DURATION = "self_timer_duration"
         const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
         const val VIDEO_QUALITY_FRONT = "video_quality_FRONT"

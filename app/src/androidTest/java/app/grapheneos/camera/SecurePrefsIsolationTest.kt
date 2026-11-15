@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.ModeSlot
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
@@ -21,7 +22,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -73,7 +74,7 @@ class SecurePrefsIsolationTest {
 
     private lateinit var ownersSettings: CameraSettings
 
-    private var ownersSelfIllumination = false
+    private var ownersFrameRate = VideoFrameRate.FPS_30
 
     private fun storedOnceItHolds(condition: (SettingsPrefs) -> Boolean): SettingsPrefs {
         return runBlocking {
@@ -94,7 +95,7 @@ class SecurePrefsIsolationTest {
         val owners = durable.settingsRepository()
 
         ownersSettings = owners.settings.value
-        ownersSelfIllumination = owners.modeSettings(SLOT).selfIllumination
+        ownersFrameRate = owners.modeSettings(SLOT).videoFrameRate
     }
 
     @After
@@ -102,7 +103,7 @@ class SecurePrefsIsolationTest {
         val owners = durable.settingsRepository()
 
         owners.update { ownersSettings }
-        owners.updateMode(SLOT) { it.copy(selfIllumination = ownersSelfIllumination) }
+        owners.updateMode(SLOT) { it.copy(videoFrameRate = ownersFrameRate) }
     }
 
     @Test
@@ -142,23 +143,24 @@ class SecurePrefsIsolationTest {
     @Test
     fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
         asTheOwner { repository ->
-            repository.updateMode(SLOT) { it.copy(selfIllumination = false) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = VideoFrameRate.FPS_30) }
         }
 
         asASecureSession { repository ->
-            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = VideoFrameRate.FPS_60) }
 
-            assertTrue(
+            assertEquals(
                 "The session lost its own mode-scoped write, so it was handed a second copy" +
                     " of the owner's preferences instead of the one it had been changing",
-                repository.modeSettings(SLOT).selfIllumination,
+                VideoFrameRate.FPS_60,
+                repository.modeSettings(SLOT).videoFrameRate,
             )
         }
 
-        assertEquals(
+        assertNotEquals(
             "A secure session wrote through to the owner's mode preferences",
-            false,
-            storedAfterEveryEarlierWrite().modes[MODE.name]?.selfIllumination,
+            VideoFrameRate.FPS_60.framesPerSecond,
+            storedAfterEveryEarlierWrite().modes[MODE.name]?.frameRateBack,
         )
     }
 

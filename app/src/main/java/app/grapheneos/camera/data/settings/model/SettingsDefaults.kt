@@ -55,6 +55,4 @@ object SettingsDefaults {
     const val SCAN_ALL_CODES = false
 
     const val GEO_TAGGING = false
-
-    const val SELF_ILLUMINATION = false
 }

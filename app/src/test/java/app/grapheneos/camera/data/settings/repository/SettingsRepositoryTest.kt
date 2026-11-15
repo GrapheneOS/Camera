@@ -4,18 +4,22 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.ModeSlot
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
 import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapper
+import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapperImpl
 import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapper
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
+import app.grapheneos.camera.data.settings.store.StoredFlashMode
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import app.grapheneos.camera.data.settings.store.settingsPrefsSerializer
@@ -64,7 +68,8 @@ class SettingsRepositoryTest {
     private val dataStore: DataStore<SettingsPrefs> = InMemoryDataStore(SettingsPrefs())
 
     private val modeSettingsMapper: ModeSettingsMapper = mockk {
-        every { map(stored = any(), isFrontFacing = any()) } returns ModeSettings()
+        every { map(stored = any(), slot = any()) } returns ModeSettings()
+        every { map(flashMode = any(), mode = any()) } returns StoredFlashMode.OFF
     }
 
     private val storedVideoQualityMapper: StoredVideoQualityMapper = mockk {
@@ -101,11 +106,11 @@ class SettingsRepositoryTest {
             val repository = repository(from = stalledStore())
 
             repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
             repository.modeSettings(SLOT)
 
             assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
-            assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
+            assertEquals(SOME_STORED_MODE, lastMappedMode())
         }
     }
 
@@ -151,13 +156,13 @@ class SettingsRepositoryTest {
         runTest {
             val owners = repository(from = stalledStore())
             owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            owners.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            owners.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
 
             val session = owners.sessionCopy()
             session.modeSettings(SLOT)
 
             assertEquals(SOME_PHOTO_QUALITY, settingsOf(session).photoQuality)
-            assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
+            assertEquals(SOME_STORED_MODE, lastMappedMode())
         }
     }
 
@@ -169,7 +174,7 @@ class SettingsRepositoryTest {
 
             val session = owners.sessionCopy()
             session.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
-            session.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            session.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
 
             assertEquals(OTHER_PHOTO_QUALITY, settingsOf(session).photoQuality)
             assertEquals(SOME_PHOTO_QUALITY, settingsOf(owners).photoQuality)
@@ -207,11 +212,11 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
-            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
             repository.modeSettings(SLOT)
 
             assertEquals(
-                StoredModeSettings(selfIllumination = true),
+                SOME_STORED_MODE,
                 lastMappedMode(),
             )
         }
@@ -223,13 +228,13 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             every {
-                modeSettingsMapper.map(stored = any(), isFrontFacing = any())
+                modeSettingsMapper.map(stored = any(), slot = any())
             } returns MAPPER_RESULT
 
             val selected = repository.modeSettings(FRONT_SLOT)
 
             verify(exactly = 1) {
-                modeSettingsMapper.map(stored = StoredModeSettings(), isFrontFacing = true)
+                modeSettingsMapper.map(stored = StoredModeSettings(), slot = FRONT_SLOT)
             }
             confirmVerified(modeSettingsMapper)
             assertEquals(MAPPER_RESULT, selected)
@@ -258,9 +263,9 @@ class SettingsRepositoryTest {
         runTest {
             val repository = repository()
 
-            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
 
-            assertEquals(StoredModeSettings(selfIllumination = true), stored().modes[MODE.name])
+            assertEquals(SOME_STORED_MODE, stored().modes[MODE.name])
         }
     }
 
@@ -271,7 +276,7 @@ class SettingsRepositoryTest {
 
             repository.updateMode(SLOT) { it }
 
-            assertNull(stored().modes[MODE.name])
+            assertNull(stored().mode(MODE).flashModeFront)
         }
     }
 
@@ -321,24 +326,27 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
-            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
             repository.modeSettings(OTHER_SLOT)
 
             assertEquals(StoredModeSettings(), lastMappedMode())
 
             repository.modeSettings(SLOT)
 
-            assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
+            assertEquals(SOME_STORED_MODE, lastMappedMode())
         }
     }
 
     @Test
     fun observeModeSettings_followsWritesToThatSlotOnly() {
         runTest {
-            every { modeSettingsMapper.map(stored = any(), isFrontFacing = any()) } answers {
+            every { modeSettingsMapper.map(stored = any(), slot = any()) } answers {
                 val stored = firstArg<StoredModeSettings>()
 
-                ModeSettings(selfIllumination = stored.selfIllumination == true)
+                when (stored.frameRateBack) {
+                    null -> ModeSettings()
+                    else -> ModeSettings(videoFrameRate = SOME_FRAME_RATE)
+                }
             }
             val repository = repository()
             val observed = mutableListOf<ModeSettings>()
@@ -346,13 +354,92 @@ class SettingsRepositoryTest {
                 repository.observeModeSettings(SLOT).collect { observed += it }
             }
 
-            repository.updateMode(OTHER_SLOT) { it.copy(selfIllumination = true) }
-            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(OTHER_SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
+            repository.updateMode(SLOT) { it.copy(videoFrameRate = SOME_FRAME_RATE) }
 
             assertEquals(
-                listOf(ModeSettings(), ModeSettings(selfIllumination = true)),
+                listOf(ModeSettings(), ModeSettings(videoFrameRate = SOME_FRAME_RATE)),
                 observed,
             )
+        }
+    }
+
+    @Test
+    fun updateMode_selfIllumination_isTemporaryAndScopedToItsSlot() {
+        runTest {
+            val repository = repository(mapper = ModeSettingsMapperImpl())
+
+            repository.updateMode(FRONT_SLOT) { it.copy(flashMode = FlashMode.SELF_ILLUMINATION) }
+
+            val relaunched = repository(mapper = ModeSettingsMapperImpl())
+
+            assertEquals(FlashMode.SELF_ILLUMINATION, repository.modeSettings(FRONT_SLOT).flashMode)
+            assertEquals(FlashMode.OFF, repository.modeSettings(SLOT).flashMode)
+            assertNull(stored().mode(MODE).flashModeFront)
+            assertEquals(SettingsDefaults.FLASH_MODE, relaunched.modeSettings(FRONT_SLOT).flashMode)
+        }
+    }
+
+    @Test
+    fun updateMode_savedFlashMode_replacesTemporaryLight() {
+        runTest {
+            val repository = repository(mapper = ModeSettingsMapperImpl())
+
+            repository.updateMode(FRONT_SLOT) { it.copy(flashMode = FlashMode.SELF_ILLUMINATION) }
+            repository.updateMode(FRONT_SLOT) { it.copy(flashMode = FlashMode.LOW_LIGHT_BOOST) }
+
+            assertEquals(FlashMode.LOW_LIGHT_BOOST, repository.modeSettings(FRONT_SLOT).flashMode)
+            val relaunched = repository(mapper = ModeSettingsMapperImpl())
+            assertEquals(FlashMode.LOW_LIGHT_BOOST, relaunched.modeSettings(FRONT_SLOT).flashMode)
+            assertEquals(
+                StoredModeSettings(flashModeFront = StoredFlashMode.LOW_LIGHT_BOOST),
+                stored().modes[MODE.name],
+            )
+        }
+    }
+
+    @Test
+    fun updateMode_videoLight_isNotRestoredFromStorage() {
+        runTest {
+            val repository = repository(mapper = ModeSettingsMapperImpl())
+
+            repository.updateMode(SLOT) { it.copy(flashMode = FlashMode.ON) }
+
+            assertEquals(FlashMode.ON, repository.modeSettings(SLOT).flashMode)
+            assertNull(stored().mode(MODE).flashModeBack)
+            val relaunched = repository(mapper = ModeSettingsMapperImpl())
+            assertEquals(FlashMode.OFF, relaunched.modeSettings(SLOT).flashMode)
+        }
+    }
+
+    @Test
+    fun updateMode_photoFlash_isRestoredFromStorage() {
+        runTest {
+            val repository = repository(mapper = ModeSettingsMapperImpl())
+
+            repository.updateMode(OTHER_SLOT) { it.copy(flashMode = FlashMode.ON) }
+
+            val relaunched = repository(mapper = ModeSettingsMapperImpl())
+            assertEquals(FlashMode.ON, relaunched.modeSettings(OTHER_SLOT).flashMode)
+        }
+    }
+
+    @Test
+    fun sessionCopy_excludesTemporaryLightsAndKeepsSavedFlashModes() {
+        runTest {
+            val owners = repository(mapper = ModeSettingsMapperImpl())
+            owners.updateMode(SLOT) { it.copy(flashMode = FlashMode.ON) }
+            owners.updateMode(FRONT_SLOT) { it.copy(flashMode = FlashMode.SELF_ILLUMINATION) }
+            owners.updateMode(OTHER_SLOT) { it.copy(flashMode = FlashMode.AUTO) }
+
+            val session = owners.sessionCopy()
+
+            assertEquals(FlashMode.OFF, session.modeSettings(SLOT).flashMode)
+            assertEquals(FlashMode.OFF, session.modeSettings(FRONT_SLOT).flashMode)
+            assertEquals(FlashMode.AUTO, session.modeSettings(OTHER_SLOT).flashMode)
+            session.updateMode(FRONT_SLOT) { it.copy(flashMode = FlashMode.LOW_LIGHT_BOOST) }
+            assertEquals(FlashMode.SELF_ILLUMINATION, owners.modeSettings(FRONT_SLOT).flashMode)
+            assertEquals(FlashMode.ON, owners.modeSettings(SLOT).flashMode)
         }
     }
 
@@ -395,11 +482,12 @@ class SettingsRepositoryTest {
 
     private fun TestScope.repository(
         from: DataStore<SettingsPrefs> = dataStore,
+        mapper: ModeSettingsMapper = modeSettingsMapper,
     ): SettingsRepository {
         return SettingsRepositoryImpl(
             dataStore = from,
             cameraSettingsMapper = cameraSettingsMapper,
-            modeSettingsMapper = modeSettingsMapper,
+            modeSettingsMapper = mapper,
             storedVideoQualityMapper = storedVideoQualityMapper,
             writeScope = backgroundScope,
             defaultDispatcher = mainDispatcherRule.testDispatcher,
@@ -408,7 +496,7 @@ class SettingsRepositoryTest {
 
     private fun lastMappedMode(): StoredModeSettings {
         val mapped = mutableListOf<StoredModeSettings>()
-        verify { modeSettingsMapper.map(stored = capture(mapped), isFrontFacing = any()) }
+        verify { modeSettingsMapper.map(stored = capture(mapped), slot = any()) }
         return mapped.last()
     }
 
@@ -439,7 +527,15 @@ class SettingsRepositoryTest {
         val FRONT_SLOT = ModeSlot(mode = MODE, isFrontFacing = true)
         val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, isFrontFacing = false)
 
-        val MAPPER_RESULT = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
+        val SOME_FRAME_RATE = VideoFrameRate.FPS_60
+        val SOME_STORED_MODE = StoredModeSettings(
+            frameRateBack = SOME_FRAME_RATE.framesPerSecond,
+        )
+
+        val MAPPER_RESULT = ModeSettings(
+            flashMode = FlashMode.AUTO,
+            videoQuality = VideoQuality.FHD,
+        )
 
         const val QR_CODE_FORMAT = "QR_CODE"
         const val AZTEC_FORMAT = "AZTEC"

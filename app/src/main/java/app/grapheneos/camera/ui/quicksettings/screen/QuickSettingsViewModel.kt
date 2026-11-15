@@ -98,7 +98,6 @@ internal class QuickSettingsViewModel @Inject constructor(
         when (action) {
             is RequiresIdleRecorder -> onIdleRecorderAction(action)
             is Action.FlashModeSelected -> setFlashMode(action.mode)
-            is Action.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is Action.LimitClicked -> showLimit(action.limit)
             is Action.LimitDismissed -> hideLimit()
         }
@@ -162,12 +161,6 @@ internal class QuickSettingsViewModel @Inject constructor(
         val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(flashMode = mode) }
-    }
-
-    private fun setSelfIllumination(enabled: Boolean) {
-        val slot = state.boundCamera?.modeSlot() ?: return
-
-        settingsRepository.updateMode(slot = slot) { it.copy(selfIllumination = enabled) }
     }
 
     private fun setVideoFrameRate(frameRate: VideoFrameRate) {

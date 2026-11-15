@@ -64,12 +64,12 @@ class StatusBarUiStateMapperTest {
     @Test
     fun onTheFrontLens_showsTheSelfIlluminationWhenItIsOn() {
         val state = map(
-            modeSettings = ModeSettings(selfIllumination = true),
+            modeSettings = ModeSettings(flashMode = FlashMode.SELF_ILLUMINATION),
             camera = PHOTO_CAMERA.copy(lensFacing = LensFacing.FRONT),
         )
 
         assertTrue(state.isSelfIlluminating)
-        assertEquals(listOf(StatusItemUiModel.SelfIllumination), state.items)
+        assertEquals(listOf(StatusItemUiModel.Flash(FlashMode.SELF_ILLUMINATION)), state.items)
     }
 
     @Test

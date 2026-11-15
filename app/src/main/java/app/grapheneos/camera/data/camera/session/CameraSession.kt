@@ -120,6 +120,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val photoResolutionSupport: PhotoResolutionSupport,
     private val videoBitrateSupport: VideoBitrateSupport,
+    private val lowLightBoostSupport: LowLightBoostSupport,
     private val videoQualitySupport: VideoQualitySupport,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
     private val cameraXStateMapper: CameraXStateMapper,
@@ -361,9 +362,13 @@ internal class CameraSessionImpl @Inject constructor(
             appliedExtension = appliedExtension,
         )
         if (outcome == BindOutcome.BOUND) {
+            val cameraInfo = requireNotNull(camera) { "A bound session has a camera" }.cameraInfo
+
             _boundCamera.value = boundCameraOf(
+                cameraInfo = cameraInfo,
                 settings = settings,
                 highFrameRate = videoFeatureGroup.highFrameRate,
+                appliedExtensionMode = appliedExtension?.extensionMode,
             )
             attachControls()
         }
@@ -804,19 +809,26 @@ internal class CameraSessionImpl @Inject constructor(
     }
 
     private fun boundCameraOf(
+        cameraInfo: CameraInfo,
         settings: CameraBindSettings,
         highFrameRate: HighFrameRateSupport?,
+        appliedExtensionMode: ExtensionMode?,
     ): BoundCamera {
+        val isVideoMode = settings.video != null
+
         return BoundCamera(
             mode = settings.mode,
-            isVideoMode = settings.video != null,
+            isVideoMode = isVideoMode,
             lensFacing = lensFacing,
-            hasFlashUnit = camera?.cameraInfo?.hasFlashUnit() ?: false,
-            isLowLightBoostSupported = camera?.cameraInfo?.isLowLightBoostSupported ?: false,
-            videoQualities = camera?.cameraInfo
-                ?.takeIf { settings.video != null }
-                ?.let(videoQualitySupport::supported)
-                .orEmpty(),
+            hasFlashUnit = cameraInfo.hasFlashUnit(),
+            isLowLightBoostSupported = lowLightBoostSupport.isSupported(
+                cameraInfo = cameraInfo,
+                extensionMode = appliedExtensionMode,
+            ),
+            videoQualities = when {
+                isVideoMode -> videoQualitySupport.supported(cameraInfo)
+                else -> emptyList()
+            },
             highFrameRate = highFrameRate,
         )
     }

@@ -121,10 +121,14 @@ internal fun QuickSettingsContent(
             ) {
                 QuickSettingsHeader(
                     isVideoMode = uiState.isVideoMode,
-                    moreButtonVisible = uiState.moreButtonVisible,
+                    settingsButtonVisible = uiState.settingsButtonVisible,
                     enabled = enabled,
-                    onMoreClick = { onAction(RequiresIdleRecorder.CameraSettingsClicked) },
-                    onMoreLongClick = { onAction(RequiresIdleRecorder.CameraSettingsLongClicked) },
+                    onSettingsClick = {
+                        onAction(RequiresIdleRecorder.CameraSettingsClicked)
+                    },
+                    onSettingsLongClick = {
+                        onAction(RequiresIdleRecorder.CameraSettingsLongClicked)
+                    },
                 )
                 QuickSettingsRows(
                     uiState = uiState,

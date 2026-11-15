@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -89,7 +90,7 @@ class ViewfinderStateTest {
 
     @Test
     fun selfIlluminate_needsTheSettingAndTheFrontLens() {
-        val enabled = ModeSettings(selfIllumination = true)
+        val enabled = ModeSettings(flashMode = FlashMode.SELF_ILLUMINATION)
         val front = ViewfinderSessionState(lensFacing = LensFacing.FRONT)
         val back = ViewfinderSessionState(lensFacing = LensFacing.BACK)
 

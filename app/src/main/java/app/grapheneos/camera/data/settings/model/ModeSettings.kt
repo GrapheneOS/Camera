@@ -6,7 +6,6 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 
 data class ModeSettings(
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
-    val selfIllumination: Boolean = SettingsDefaults.SELF_ILLUMINATION,
     val videoQuality: VideoQuality = SettingsDefaults.VIDEO_QUALITY,
     val videoFrameRate: VideoFrameRate = SettingsDefaults.VIDEO_FRAME_RATE,
 )
