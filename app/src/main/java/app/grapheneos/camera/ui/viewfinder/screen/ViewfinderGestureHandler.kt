@@ -7,9 +7,9 @@ import android.view.ScaleGestureDetector
 import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import kotlin.math.abs
 
 internal class ViewfinderGestureHandler(
@@ -21,6 +21,8 @@ internal class ViewfinderGestureHandler(
     ScaleGestureDetector.OnScaleGestureListener {
 
     val gestureDetector = GestureDetector(context, this)
+
+    var isSettingsPanelAvailable = false
 
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
 
@@ -114,7 +116,7 @@ internal class ViewfinderGestureHandler(
                 dragTracker.down(
                     x = event.x,
                     y = event.y,
-                    canDragVertically = settingsPanelDrag.isAvailable(),
+                    canDragVertically = isSettingsPanelAvailable,
                 )
             }
 

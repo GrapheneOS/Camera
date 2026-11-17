@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 
 sealed interface ViewfinderAction {
 
@@ -43,6 +45,21 @@ sealed interface ViewfinderAction {
             data object Released : ZoomStepKey
         }
 
+        sealed interface ModeStrip : CameraAction {
+
+            data object Dragged : ModeStrip
+
+            data object TouchCancelled : ModeStrip
+
+            data class Released(
+                val mode: CameraMode,
+            ) : ModeStrip
+
+            data class Settled(
+                val mode: CameraMode,
+            ) : ModeStrip
+        }
+
         sealed interface Preview : CameraAction {
 
             data class Tapped(
@@ -78,13 +95,11 @@ sealed interface ViewfinderAction {
 
         data object StorageLocationNotFound : CaptureAction
 
-        data object CapturedPreviewShown : CaptureAction
+        data object RetakeClicked : CaptureAction
 
-        data object CapturedPreviewDismissed : CaptureAction
+        data object ConfirmClicked : CaptureAction
 
-        data class CapturedPreviewConfirmed(
-            val bitmap: Bitmap,
-        ) : CaptureAction
+        data object PlayResultClicked : CaptureAction
 
         sealed interface VolumeKeyEvent : CaptureAction {
 
@@ -130,6 +145,8 @@ sealed interface ViewfinderAction {
         data object ScreenInteracted : LifecycleAction
 
         data object PreviewStreamingStarted : LifecycleAction
+
+        data object PreviewStreamingStopped : LifecycleAction
 
         data object ScreenDestroyed : LifecycleAction
 

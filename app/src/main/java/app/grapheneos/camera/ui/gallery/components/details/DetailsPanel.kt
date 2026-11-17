@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.round
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.ui.common.components.systemBarsAndCutout
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
@@ -45,7 +46,6 @@ internal fun DetailsPanel(
     position: () -> Float,
     details: GalleryDetails,
     isVideo: Boolean,
-    uri: String,
     isCurrentPage: Boolean,
     onShownChange: (Boolean) -> Unit,
     onOpenMapClick: (() -> Unit)?,
@@ -92,7 +92,6 @@ internal fun DetailsPanel(
                 DetailsPanelContent(
                     details = details,
                     isVideo = isVideo,
-                    uri = uri,
                     showsDragHandle = !isSidePanel,
                     dragHandleAlpha = { 1f - detailsState.expansionAt(position()) },
                     onOpenMapClick = onOpenMapClick,
@@ -168,7 +167,7 @@ private fun DetailsPanelPreview() {
                 details = GalleryDetails.Loaded(
                     CapturedItemDetails(
                         fileName = "IMG_20231016_120000_000.jpg",
-                        relativePath = "DCIM/Camera/",
+                        folder = StorageFolder.MainStorage(path = "DCIM/Camera"),
                         sizeBytes = 3_456_789,
                         resolution = AndroidSize(4032, 3024),
                         duration = null,
@@ -177,7 +176,6 @@ private fun DetailsPanelPreview() {
                     ),
                 ),
                 isVideo = false,
-                uri = "content://media/external/images/media/1",
                 isCurrentPage = true,
                 onShownChange = {},
                 onOpenMapClick = {},

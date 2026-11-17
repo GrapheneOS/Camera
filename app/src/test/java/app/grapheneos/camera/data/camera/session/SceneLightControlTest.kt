@@ -2,9 +2,9 @@ package app.grapheneos.camera.data.camera.session
 
 import androidx.camera.core.CameraControl
 import app.grapheneos.camera.data.camera.model.BoundCamera
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import com.google.common.util.concurrent.SettableFuture
 import io.mockk.every

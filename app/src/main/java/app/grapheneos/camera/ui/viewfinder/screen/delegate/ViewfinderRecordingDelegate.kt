@@ -9,11 +9,11 @@ import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -108,7 +108,12 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
             includeAudio = state.settings.includeAudio,
         ) ?: return
 
-        postEffect(Effect.Recording.PlayStartSound(recordingId = recordingId))
+        postEffect(
+            Effect.Recording.PlayStartSound(
+                recordingId = recordingId,
+                soundEnabled = state.settings.enableCameraSounds,
+            ),
+        )
     }
 
     override fun onStartSoundPlayed(recordingId: Int) {
@@ -120,9 +125,11 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         )
     }
 
-    // Not tied to the recording phase: the user may have paused before the recording actually
+    // Any active phase, not only RECORDING: the user may have paused before the recording actually
     // started.
     override fun setPaused(paused: Boolean) {
+        if (!stateHolder.state.value.recording.isActive()) return
+
         update { it.copy(isPaused = paused) }
         videoRecorder.setPaused(paused)
     }
@@ -170,8 +177,8 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
             is RecordedVideoEvent.OutputUnavailable -> onOutputUnavailable()
             is RecordedVideoEvent.Abandoned -> markStopped()
             is RecordedVideoEvent.Started -> update { it.copy(phase = RecordingPhase.RECORDING) }
-            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
             is RecordedVideoEvent.Progressed -> update { it.copy(duration = event.duration) }
+            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
             is RecordedVideoEvent.Saved -> onRecordingSaved(event)
 
             is RecordedVideoEvent.ReadyToStart -> {
@@ -190,7 +197,9 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
     }
 
     private fun onOutputUnavailable() {
-        _recordingEvents.trySend(ViewfinderRecordingEvent.OutputUnavailable)
+        if (!stateHolder.state.value.isCaptureSession) {
+            _recordingEvents.trySend(ViewfinderRecordingEvent.OutputUnavailable)
+        }
 
         postEffect(Effect.ShowMessage(R.string.unable_to_access_output_file))
         markStopped()
@@ -228,7 +237,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         }
 
         if (state.isCaptureSession && !state.recording.isActive()) {
-            postEffect(Effect.Recording.ShowForReview(uri = event.uri))
+            _recordingEvents.trySend(ViewfinderRecordingEvent.CaptureResultSaved(uri = event.uri))
         }
     }
 

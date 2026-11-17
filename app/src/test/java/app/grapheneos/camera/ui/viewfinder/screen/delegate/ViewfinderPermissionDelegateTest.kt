@@ -8,11 +8,12 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -74,6 +75,28 @@ class ViewfinderPermissionDelegateTest {
 
             createDelegate().request(permission = AppPermission.MICROPHONE, explainsFirst = false)
 
+            assertEquals(
+                listOf(
+                    Effect.Permission.Request(
+                        permission = AppPermission.MICROPHONE,
+                        explainsFirst = false,
+                    ),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun requestMissingMicrophone_asksOnlyWhenAudioIsOnWithoutIt() {
+        runTest {
+            val effects = collectEffects(stateHolder)
+            val delegate = createDelegate()
+
+            assertFalse(delegate.requestMissingMicrophone())
+            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
+
+            assertTrue(delegate.requestMissingMicrophone())
             assertEquals(
                 listOf(
                     Effect.Permission.Request(

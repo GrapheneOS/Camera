@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
+import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.statusbar.screen.mapper.StatusBarUiStateMapper
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarState
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
@@ -30,7 +30,7 @@ internal class StatusBarViewModel @Inject constructor(
 ) : ViewModel(),
     StatusBarScreenModel {
 
-    private val stateHolder = ScreenStateHolder<StatusBarState, Nothing>(
+    private val stateHolder = StateHolder(
         initial = StatusBarState(
             settings = settingsRepository.settings.value,
         ),

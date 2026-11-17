@@ -2,12 +2,12 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -19,14 +19,14 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import io.mockk.every
-import io.mockk.verify
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -176,7 +176,9 @@ class ViewfinderSettingsDelegateTest {
             val events = collectNavEvents(stateHolder)
 
             delegate.openSettingsPanel()
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
             delegate.openSettingsPanel()
             stateHolder.update {
                 it.copy(mode = CameraMode.QR_SCAN, capture = ViewfinderCaptureState())
@@ -241,7 +243,9 @@ class ViewfinderSettingsDelegateTest {
             val events = collectNavEvents(stateHolder)
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
 
             assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
         }
@@ -252,7 +256,9 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             createDelegate()
             val events = collectNavEvents(stateHolder)
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
 
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 
@@ -291,13 +297,13 @@ class ViewfinderSettingsDelegateTest {
     fun openCameraSettings_opensThemWithWhatTheCameraSupports() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
 
             delegate.openCameraSettings(CAPABILITIES)
 
             assertEquals(
-                listOf(ViewfinderScreenEffect.Settings.OpenCameraSettings(CAPABILITIES)),
-                effects,
+                listOf(ViewfinderNavEvent.OpenCameraSettings(CAPABILITIES)),
+                events,
             )
         }
     }
@@ -307,12 +313,14 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
             stateHolder.update {
                 it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
             }
 
             delegate.openCameraSettings(CAPABILITIES)
 
+            assertTrue(events.isEmpty())
             assertEquals(
                 listOf(
                     ViewfinderScreenEffect.ShowMessage(
@@ -356,8 +364,8 @@ class ViewfinderSettingsDelegateTest {
             ),
         )
 
-        val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
-        val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
+        val SLOT = ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.BACK)
+        val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, lensFacing = LensFacing.BACK)
         val SLOTTED = ModeSettings(flashMode = FlashMode.AUTO, videoQuality = VideoQuality.FHD)
     }
 }

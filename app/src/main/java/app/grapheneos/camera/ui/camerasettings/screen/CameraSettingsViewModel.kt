@@ -4,8 +4,8 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
@@ -20,13 +20,17 @@ import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapper
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsDialog as Dialog
+import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
+import app.grapheneos.camera.ui.camerasettings.screen.model.StorageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 internal interface CameraSettingsScreenModel {
@@ -34,6 +38,7 @@ internal interface CameraSettingsScreenModel {
     val uiState: StateFlow<CameraSettingsUiState>
 
     val effects: Flow<Effect>
+    val navigationEvents: Flow<NavEvent>
 
     fun onAction(action: Action)
 }
@@ -70,22 +75,42 @@ internal class CameraSettingsViewModel @Inject constructor(
     override val uiState: StateFlow<CameraSettingsUiState> = stateHolder.derive(uiStateMapper::map)
 
     override val effects: Flow<Effect> = stateHolder.effects
+    override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents
 
     private val state: CameraSettingsState
         get() = stateHolder.state.value
 
-    init {
-        viewModelScope.launch {
-            settingsRepository.settings.collect { settings ->
-                stateHolder.update { it.copy(settings = settings) }
-            }
-        }
+    private var storageSpaceLoad: Job? = null
 
-        viewModelScope.launch {
-            capturedItemRepository.storageLocation.collect { location ->
-                stateHolder.update { it.copy(storageLocation = location) }
-                refreshStorageSpace()
+    init {
+        viewModelScope.launch { trackSettings() }
+
+        if (!entryPoint.isSecureSession) {
+            viewModelScope.launch { trackStorage() }
+        }
+    }
+
+    private suspend fun trackSettings() {
+        settingsRepository.settings.collect { settings ->
+            stateHolder.update { it.copy(settings = settings) }
+        }
+    }
+
+    private suspend fun trackStorage() {
+        capturedItemRepository.storageLocation.collectLatest { location ->
+            val folder = capturedItemRepository.storageFolder(location)
+
+            stateHolder.update { state ->
+                val storage = state.storage ?: StorageState(location = location)
+
+                state.copy(
+                    storage = storage.copy(
+                        location = location,
+                        folder = folder,
+                    ),
+                )
             }
+            refreshStorageSpace()
         }
     }
 
@@ -99,9 +124,9 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.DialogConfirmed -> onDialogConfirmed(action)
             is Action.DialogDismissed -> showDialog(null)
             is Action.StorageLocationClicked -> stateHolder.send(Effect.PickStorageLocation)
-            is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
+            is Action.StorageLocationPicked -> onStorageLocationPicked(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
-            is Action.LicensesClicked -> stateHolder.send(Effect.OpenLicenses)
+            is Action.LicensesClicked -> stateHolder.postNavEvent(NavEvent.OpenLicenses)
         }
     }
 
@@ -216,11 +241,11 @@ internal class CameraSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun changeStorageLocation(tree: Uri?) {
+    private fun onStorageLocationPicked(tree: Uri?) {
         if (tree == null) return
 
         viewModelScope.launch {
-            changeStorageLocation.invoke(tree)
+            changeStorageLocation(tree)
         }
     }
 
@@ -231,15 +256,20 @@ internal class CameraSettingsViewModel @Inject constructor(
     }
 
     private fun refreshStorageSpace() {
-        val location = state.storageLocation.takeUnless { state.isSecureSession } ?: return
+        val storage = state.storage ?: return
 
-        viewModelScope.launch {
-            val storageSpace = storageSpaceRepository.storageSpace(location)
+        storageSpaceLoad?.cancel()
+        storageSpaceLoad = viewModelScope.launch {
+            val space = storage.folder?.let { folder ->
+                storageSpaceRepository.storageSpace(folder)
+            }
 
-            stateHolder.update {
-                it.copy(
-                    storageSpace = storageSpace,
-                    isStorageSpaceLoaded = true,
+            stateHolder.update { state ->
+                state.copy(
+                    storage = state.storage?.copy(
+                        space = space,
+                        isSpaceLoaded = true,
+                    ),
                 )
             }
         }
@@ -248,7 +278,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun videoModeSettings(lensFacing: LensFacing): ModeSettings {
         val slot = ModeSlot(
             mode = CameraMode.VIDEO,
-            isFrontFacing = lensFacing == LensFacing.FRONT,
+            lensFacing = lensFacing,
         )
 
         return settingsRepository.modeSettings(slot)

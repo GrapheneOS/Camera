@@ -14,13 +14,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import app.grapheneos.camera.ui.components.motion.FADE_IN
 import app.grapheneos.camera.ui.components.motion.FADE_OUT
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreen
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreenModel
 import app.grapheneos.camera.ui.viewfinder.components.ViewfinderBottomRow
@@ -36,15 +37,17 @@ internal fun CameraOverlay(
     quickSettings: QuickSettingsScreenModel,
     sheetState: QuickSettingsSheetState,
     sheet: QuickSettingsNavKey?,
-    isTransitionShown: Boolean,
-    isModeSwitching: Boolean,
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
+    onQuickSettingsNavigate: (QuickSettingsNavEvent) -> Unit,
 ) {
     ViewfinderOverlay(screenModel = viewfinder) { uiState ->
-        val controlsShown = uiState.isSettingsPanelAvailable && !uiState.capturedPreviewVisible
-        val statusBarVisible = controlsShown && !uiState.isRecordingActive && !isModeSwitching
-        val controlsEnabled = sheetState.isHidden && !isTransitionShown && !isModeSwitching
+        val controlsShown = uiState.isSettingsPanelAvailable && !uiState.captureResult.visible
+        val isModeSwitching = uiState.modeTabs.isSwitching
+        val statusBarVisible = controlsShown && !uiState.recording.isActive && !isModeSwitching
+        val controlsEnabled = sheetState.isHidden &&
+            !uiState.preview.lastFrameVisible &&
+            !isModeSwitching
 
         Box(modifier = Modifier.fillMaxSize()) {
             AnimatedVisibility(
@@ -84,6 +87,7 @@ internal fun CameraOverlay(
                 ),
                 highlight = sheet?.highlight,
                 onVisibleChange = onSheetOpenChange,
+                onNavigate = onQuickSettingsNavigate,
             )
         }
     }
@@ -118,7 +122,7 @@ private fun BoxScope.BottomRowLayer(
         selfIlluminating = uiState.isSelfIlluminating,
     ) {
         ViewfinderBottomRow(
-            isVideoMode = uiState.isVideoMode,
+            isVideoMode = uiState.mode.isVideo,
             onQuickSettingsClick = onQuickSettingsClick,
             modifier = Modifier
                 .align(Alignment.BottomStart)

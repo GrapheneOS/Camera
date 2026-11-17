@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
@@ -23,6 +24,7 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapperImpl
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
+import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,6 +32,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,6 +53,7 @@ class CameraSettingsViewModelTest {
     private val storageLocation = MutableStateFlow(CapturedItemRepository.MEDIA_STORE_LOCATION)
     private val capturedItemRepository = mockk<CapturedItemRepository> {
         every { storageLocation } returns this@CameraSettingsViewModelTest.storageLocation
+        coEvery { storageFolder(any()) } returns STORAGE_FOLDER
     }
     private val changeStorageLocation = mockk<ChangeStorageLocation>()
     private val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation>(relaxed = true)
@@ -67,8 +71,8 @@ class CameraSettingsViewModelTest {
 
         viewModel.onAction(Action.CameraSoundsToggled(enabled = false))
 
-        assertEquals(false, storedSettings.value.enableCameraSounds)
-        assertEquals(false, viewModel.uiState.value.cameraSounds.checked)
+        assertFalse(storedSettings.value.enableCameraSounds)
+        assertFalse(viewModel.uiState.value.cameraSounds.checked)
     }
 
     @Test
@@ -109,12 +113,29 @@ class CameraSettingsViewModelTest {
         runTest {
             val viewModel = createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
 
+            val navigation = mutableListOf<NavEvent>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                viewModel.navigationEvents.collect { navigation += it }
+            }
+
             viewModel.onAction(Action.LocationSettingsClicked)
             viewModel.onAction(Action.StorageLocationClicked)
             viewModel.onAction(Action.LicensesClicked)
             viewModel.onAction(Action.GeoTaggingToggled(enabled = true))
 
             assertEquals(Effect.RequestLocationPermission, viewModel.effects.first())
+            assertTrue(navigation.isEmpty())
+        }
+    }
+
+    @Test
+    fun licensesClicked_navigatesWithinAnOrdinarySession() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(Action.LicensesClicked)
+
+            assertEquals(NavEvent.OpenLicenses, viewModel.navigationEvents.first())
         }
     }
 
@@ -148,7 +169,7 @@ class CameraSettingsViewModelTest {
 
         viewModel.onAction(Action.RemoveExifToggled(enabled = false))
 
-        assertEquals(true, storedSettings.value.removeExifAfterCapture)
+        assertTrue(storedSettings.value.removeExifAfterCapture)
     }
 
     @Test
@@ -164,7 +185,7 @@ class CameraSettingsViewModelTest {
         )
 
         assertEquals(77, storedSettings.value.photoQuality)
-        assertEquals(true, storedSettings.value.selectHighestResolution)
+        assertTrue(storedSettings.value.selectHighestResolution)
         assertNull(viewModel.uiState.value.dialog)
     }
 
@@ -263,15 +284,26 @@ class CameraSettingsViewModelTest {
         val viewModel = createViewModel()
 
         assertEquals(STORAGE_SPACE.freeBytes, viewModel.uiState.value.storageSpace?.freeBytes)
+        coVerify { storageSpaceRepository.storageSpace(STORAGE_FOLDER) }
+    }
+
+    @Test
+    fun storageFolder_ofTheStorageLocation_reachesTheScreen() {
+        val viewModel = createViewModel()
+
+        assertEquals(STORAGE_FOLDER, viewModel.uiState.value.storageLocation?.folder)
         coVerify {
-            storageSpaceRepository.storageSpace(CapturedItemRepository.MEDIA_STORE_LOCATION)
+            capturedItemRepository.storageFolder(CapturedItemRepository.MEDIA_STORE_LOCATION)
         }
     }
 
     @Test
-    fun storageSpace_inASecureSession_isNotRead() {
-        createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
+    fun storage_inASecureSession_isNotRead() {
+        val viewModel = createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
 
+        assertNull(viewModel.uiState.value.storageLocation)
+        assertNull(viewModel.uiState.value.storageSpace)
+        coVerify(exactly = 0) { capturedItemRepository.storageFolder(any()) }
         coVerify(exactly = 0) { storageSpaceRepository.storageSpace(any()) }
     }
 
@@ -340,6 +372,7 @@ class CameraSettingsViewModelTest {
             freeBytes = 1_000_000_000L,
             totalBytes = 4_000_000_000L,
         )
+        val STORAGE_FOLDER = StorageFolder.MainStorage(path = "DCIM/Camera")
         val TREE: Uri = Uri.parse(
             "content://com.android.externalstorage.documents/tree/primary%3ADCIM",
         )

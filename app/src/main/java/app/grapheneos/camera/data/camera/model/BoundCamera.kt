@@ -2,6 +2,7 @@ package app.grapheneos.camera.data.camera.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -19,7 +20,7 @@ data class BoundCamera(
     fun modeSlot(): ModeSlot {
         return ModeSlot(
             mode = mode,
-            isFrontFacing = lensFacing == LensFacing.FRONT,
+            lensFacing = lensFacing,
         )
     }
 

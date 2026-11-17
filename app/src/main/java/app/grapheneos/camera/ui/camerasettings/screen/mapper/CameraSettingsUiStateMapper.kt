@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
@@ -217,12 +217,11 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
     }
 
     private fun storageSpace(state: CameraSettingsState): StorageSpaceUiModel? {
-        if (state.isSecureSession) return null
-
-        val space = state.storageSpace
+        val storage = state.storage ?: return null
+        val space = storage.space
 
         return when {
-            !state.isStorageSpaceLoaded -> StorageSpaceUiModel()
+            !storage.isSpaceLoaded -> StorageSpaceUiModel()
             space == null -> null
             else -> StorageSpaceUiModel(
                 freeBytes = space.freeBytes,
@@ -278,11 +277,11 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
     }
 
     private fun storageLocation(state: CameraSettingsState): StorageLocationUiModel? {
-        val location = state.storageLocation.takeUnless { state.isSecureSession } ?: return null
+        val storage = state.storage ?: return null
 
         return StorageLocationUiModel(
-            location = location,
-            isChanged = location != CapturedItemRepository.MEDIA_STORE_LOCATION,
+            folder = storage.folder,
+            isChanged = storage.location != CapturedItemRepository.MEDIA_STORE_LOCATION,
         )
     }
 

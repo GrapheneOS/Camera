@@ -44,10 +44,10 @@ class CameraModeTabsRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
-                assertEquals(CameraMode.VIDEO, activity.tabLayout.selectedTab?.tag)
+                assertEquals(CameraMode.VIDEO, activity.tabLayout.selectedMode)
 
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                assertEquals(CameraMode.CAMERA, activity.tabLayout.selectedTab?.tag)
+                assertEquals(CameraMode.CAMERA, activity.tabLayout.selectedMode)
             }
         }
     }
@@ -70,7 +70,9 @@ class CameraModeTabsRegressionTest {
             // reads false between frames -- exactly where a sample would land.
             val passes = AtomicInteger()
             val listener = ViewTreeObserver.OnGlobalLayoutListener { passes.incrementAndGet() }
-            scenario.onActivity { it.tabLayout.viewTreeObserver.addOnGlobalLayoutListener(listener) }
+            scenario.onActivity {
+                it.tabLayout.viewTreeObserver.addOnGlobalLayoutListener(listener)
+            }
             Thread.sleep(WINDOW_MS)
             scenario.onActivity {
                 it.tabLayout.viewTreeObserver.removeOnGlobalLayoutListener(listener)
@@ -118,10 +120,10 @@ class CameraModeTabsRegressionTest {
             var nextMode: CameraMode? = null
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
-                val next = tabs.getTabAt(tabs.selectedTabPosition + 1)
+                val next = tabs.modeAt(tabs.selectedTabPosition + 1)
                 val mode = activity.viewfinder.uiState.value.mode
                 assertNotNull("no mode to the left of $mode", next)
-                nextMode = next!!.tag as CameraMode
+                nextMode = next
 
                 flingLeft(activity)
             }

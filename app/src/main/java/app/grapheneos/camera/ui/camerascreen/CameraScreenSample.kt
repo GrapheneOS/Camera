@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -49,6 +49,7 @@ import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
 import app.grapheneos.camera.ui.core.gesture.MIN_FLING_DISTANCE
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
+import app.grapheneos.camera.ui.core.model.QuickSetting
 import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
 import app.grapheneos.camera.ui.core.preview.PREVIEW_LENS_SWITCH_ICON
 import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
@@ -59,7 +60,6 @@ import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.components.RowHighlightState
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsContent
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsDialogs
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapperImpl

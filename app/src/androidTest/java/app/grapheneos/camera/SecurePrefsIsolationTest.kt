@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -182,6 +183,6 @@ class SecurePrefsIsolationTest {
 
         val STORAGE_TIMEOUT = 5.seconds
         val MODE = CameraMode.VIDEO
-        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
+        val SLOT = ModeSlot(mode = MODE, lensFacing = LensFacing.BACK)
     }
 }

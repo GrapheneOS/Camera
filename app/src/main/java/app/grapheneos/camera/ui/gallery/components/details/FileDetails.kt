@@ -34,6 +34,7 @@ import app.grapheneos.camera.data.media.model.CameraParameters
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.ui.common.components.copyOnLongClick
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.gallery.components.formatted
@@ -56,7 +57,6 @@ private val LOCATION_TEXT_SPACING = 20.dp
 internal fun FileDetails(
     details: CapturedItemDetails,
     isVideo: Boolean,
-    uri: String,
     onOpenMapClick: (() -> Unit)?,
     onCopy: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -89,7 +89,6 @@ internal fun FileDetails(
         FileDetailsCard(
             details = details,
             isVideo = isVideo,
-            uri = uri,
             isExpanded = isExpanded,
             onExpandedChange = { isExpanded = it },
             onCopy = onCopy,
@@ -196,7 +195,7 @@ private fun FileDetailsPreview() {
             FileDetails(
                 details = CapturedItemDetails(
                     fileName = "IMG_20231016_120000_000.jpg",
-                    relativePath = "DCIM/Camera/",
+                    folder = StorageFolder.MainStorage(path = "DCIM/Camera"),
                     sizeBytes = 3_456_789,
                     resolution = Size(4032, 3024),
                     duration = null,
@@ -216,7 +215,6 @@ private fun FileDetailsPreview() {
                     ),
                 ),
                 isVideo = false,
-                uri = "content://media/external/images/media/1",
                 onOpenMapClick = {},
                 onCopy = {},
             )

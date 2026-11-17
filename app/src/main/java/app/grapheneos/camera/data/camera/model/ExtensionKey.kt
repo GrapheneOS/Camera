@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.camera.model
 
 import app.grapheneos.camera.data.core.model.ExtensionMode
+import app.grapheneos.camera.data.core.model.LensFacing
 
 data class ExtensionKey(
     val lensFacing: LensFacing,

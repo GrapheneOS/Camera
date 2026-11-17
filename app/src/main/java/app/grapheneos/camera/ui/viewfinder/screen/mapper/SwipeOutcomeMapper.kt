@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeOutcome
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 
 interface SwipeOutcomeMapper {
@@ -19,7 +19,7 @@ internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper
         direction: SwipeDirection,
         state: ViewfinderState,
     ): SwipeOutcome? {
-        if (state.capture.isSelfTimerRunning) return null
+        if (state.capture.isSelfTimerRunning()) return null
 
         return when (direction) {
             SwipeDirection.UP -> showQrFormats(state)

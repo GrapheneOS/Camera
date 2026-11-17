@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.ui.common.components.copyOnLongClick
+import app.grapheneos.camera.ui.settingvalues.storageFolderTitle
 
 private const val FILE_NAME_MAX_LINES = 2
 
@@ -53,7 +54,6 @@ private val SETTING_DIVIDER_HEIGHT = 8.dp
 internal fun FileDetailsCard(
     details: CapturedItemDetails,
     isVideo: Boolean,
-    uri: String,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onCopy: (String) -> Unit,
@@ -90,7 +90,6 @@ internal fun FileDetailsCard(
             ExpandedSegments(
                 details = details,
                 isVideo = isVideo,
-                uri = uri,
                 settings = settings,
                 showsFile = cameraName != null,
                 onCopy = onCopy,
@@ -103,7 +102,6 @@ internal fun FileDetailsCard(
 private fun ExpandedSegments(
     details: CapturedItemDetails,
     isVideo: Boolean,
-    uri: String,
     settings: List<String>,
     showsFile: Boolean,
     onCopy: (String) -> Unit,
@@ -143,7 +141,6 @@ private fun ExpandedSegments(
         }
         StorageSegment(
             details = details,
-            uri = uri,
             shape = segmentShape(
                 isFirst = false,
                 isLast = true,
@@ -297,22 +294,15 @@ private fun ExposureSegment(
 @Composable
 private fun StorageSegment(
     details: CapturedItemDetails,
-    uri: String,
     shape: CornerBasedShape,
     onCopy: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    val folder = details.folder?.let { storageFolderTitle(it) }
+    val lines = listOfNotNull(folder, modifiedText(details))
     val size = remember(context, details.sizeBytes) {
         details.sizeBytes?.let { Formatter.formatFileSize(context, it) }
     }
-    val folder = remember(context, uri, details) {
-        folder(
-            context = context,
-            uri = uri,
-            details = details,
-        )
-    }
-    val lines = listOfNotNull(folder, modifiedText(details))
 
     Segment(shape = shape) {
         Column(

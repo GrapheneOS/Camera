@@ -90,7 +90,6 @@ internal fun ViewerPage(
             position = detailsPosition,
             details = details,
             isVideo = page.isVideo,
-            uri = page.key,
             isCurrentPage = isCurrentPage,
             onShownChange = gestures.onDetailsShownChange,
             onOpenMapClick = onOpenMapClick,

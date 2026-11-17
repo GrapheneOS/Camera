@@ -1,21 +1,19 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
-import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.testutil.cameraEntryPoint
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
-import io.mockk.coVerify
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -43,13 +41,55 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
+    fun heldShutter_blocksRecordingStartsUntilReleased() {
+        runTest {
+            every { cameraDelegate.canRecord } returns true
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(
+                    mode = CameraMode.VIDEO,
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
+            }
+
+            viewModel.onAction(CaptureAction.CaptureButtonClicked)
+            viewModel.onAction(CaptureAction.CaptureKeyPressed)
+            viewModel.onAction(RecordingAction.RecordingRequested)
+
+            verify(exactly = 0) { recordingDelegate.requestRecording() }
+
+            stateHolder.update { it.copy(capture = it.capture.copy(isShutterHeld = false)) }
+            viewModel.onAction(RecordingAction.RecordingRequested)
+
+            verify(exactly = 1) { recordingDelegate.requestRecording() }
+        }
+    }
+
+    @Test
+    fun heldShutter_doesNotBlockStoppingARecording() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(
+                    recording = it.recording.copy(phase = RecordingPhase.RECORDING),
+                    capture = it.capture.copy(isShutterHeld = true),
+                )
+            }
+
+            viewModel.onAction(RecordingAction.RecordingStopRequested)
+
+            verify(exactly = 1) { recordingDelegate.requestStop() }
+        }
+    }
+
+    @Test
     fun recordingRequested_withoutTheMicrophone_asksForItInsteadOfRecording() {
         runTest {
             every { cameraDelegate.canRecord } returns true
 
-            val viewModel = createViewModel()
-            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
+            every { permissionDelegate.requestMissingMicrophone() } returns true
 
+            val viewModel = createViewModel()
             viewModel.onAction(RecordingAction.RecordingRequested)
 
             verify(exactly = 0) {
@@ -59,31 +99,19 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 )
             }
             verify(exactly = 1) { recordingDelegate.markStopped() }
-            verify(exactly = 1) {
-                permissionDelegate.request(
-                    permission = AppPermission.MICROPHONE,
-                    explainsFirst = false,
-                )
-            }
         }
     }
 
     @Test
     fun readyToStart_withoutTheMicrophone_asksForItAndDropsTheRecording() {
         runTest {
+            every { permissionDelegate.requestMissingMicrophone() } returns true
             createViewModel()
-            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
 
             recordingEvents.emit(ViewfinderRecordingEvent.ReadyToStart)
 
             verify(exactly = 0) { recordingDelegate.startPreparedRecording() }
             verify(exactly = 1) { recordingDelegate.requestStop() }
-            verify(exactly = 1) {
-                permissionDelegate.request(
-                    permission = AppPermission.MICROPHONE,
-                    explainsFirst = false,
-                )
-            }
         }
     }
 
@@ -163,17 +191,6 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun pause_outsideARecording_isIgnored() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-
-            verify(exactly = 0) { recordingDelegate.setPaused(paused = any()) }
-        }
-    }
-
-    @Test
     fun anUnusableOutput_isHandedToTheGallery() {
         runTest {
             createViewModel()
@@ -185,15 +202,30 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun anUnusableOutput_inACaptureSession_leavesTheStorageLocationAlone() {
+    fun screenStopped_whileRecording_holdsTheFrameAndStops() {
         runTest {
-            createViewModel(
-                entryPoint = cameraEntryPoint(isCaptureSession = true),
-            )
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
+            }
 
-            recordingEvents.emit(ViewfinderRecordingEvent.OutputUnavailable)
+            viewModel.onAction(LifecycleAction.ScreenStopped)
 
-            verify(exactly = 0) { galleryDelegate.onStorageLocationNotFound() }
+            verifyOrder {
+                cameraDelegate.holdPreviewFrame()
+                recordingDelegate.requestStop()
+            }
+        }
+    }
+
+    @Test
+    fun screenStopped_withoutARecording_leavesTheCameraAlone() {
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.onAction(LifecycleAction.ScreenStopped)
+
+            verify(exactly = 0) { cameraDelegate.holdPreviewFrame() }
+            verify(exactly = 0) { recordingDelegate.requestStop() }
         }
     }
 

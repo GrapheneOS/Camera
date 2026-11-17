@@ -26,12 +26,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,7 +44,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import app.grapheneos.camera.ui.core.animation.SETTLE_SIZE_SPEC
-import app.grapheneos.camera.util.storageLocationToUiString
+import app.grapheneos.camera.ui.settingvalues.storageFolderTitle
 
 private val FOOTER_TOP_PADDING = 4.dp
 
@@ -395,13 +393,9 @@ private fun storageRows(
             }
         },
         SettingsRow(key = "storage_location") { shape, modifier ->
-            val context = LocalContext.current
-
             SettingsClickableItem(
                 title = stringResource(R.string.storage_location),
-                summary = remember(storageLocation.location) {
-                    storageLocationToUiString(context, storageLocation.location)
-                },
+                summary = storageLocation.folder?.let { storageFolderTitle(it) },
                 icon = Icons.Outlined.Folder,
                 isChanged = storageLocation.isChanged,
                 shape = shape,

@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStoreFactory
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -45,7 +46,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -523,9 +523,9 @@ class SettingsRepositoryTest {
         val MODE = CameraMode.VIDEO
         val OTHER_MODE = CameraMode.CAMERA
 
-        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
-        val FRONT_SLOT = ModeSlot(mode = MODE, isFrontFacing = true)
-        val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, isFrontFacing = false)
+        val SLOT = ModeSlot(mode = MODE, lensFacing = LensFacing.BACK)
+        val FRONT_SLOT = ModeSlot(mode = MODE, lensFacing = LensFacing.FRONT)
+        val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, lensFacing = LensFacing.BACK)
 
         val SOME_FRAME_RATE = VideoFrameRate.FPS_60
         val SOME_STORED_MODE = StoredModeSettings(

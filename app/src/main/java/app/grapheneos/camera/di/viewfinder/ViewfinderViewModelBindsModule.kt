@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.viewfinder
 
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -8,16 +10,18 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegateImpl
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegateImpl
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeSwitchDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegateImpl
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
@@ -42,9 +46,9 @@ internal abstract class ViewfinderViewModelBindsModule {
 
     @Binds
     @ViewModelScoped
-    abstract fun bindViewfinderGestureDelegate(
-        impl: ViewfinderGestureDelegateImpl,
-    ): ViewfinderGestureDelegate
+    abstract fun bindViewfinderModeSwitchDelegate(
+        impl: ViewfinderModeSwitchDelegateImpl,
+    ): ViewfinderModeSwitchDelegate
 
     @Binds
     @ViewModelScoped
@@ -87,6 +91,18 @@ internal abstract class ViewfinderViewModelBindsModule {
     abstract fun bindViewfinderOrientationDelegate(
         impl: ViewfinderOrientationDelegateImpl,
     ): ViewfinderOrientationDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindViewfinderCameraControlsDelegate(
+        impl: ViewfinderCameraControlsDelegateImpl,
+    ): ViewfinderCameraControlsDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindViewfinderPreviewControlsDelegate(
+        impl: ViewfinderPreviewControlsDelegateImpl,
+    ): ViewfinderPreviewControlsDelegate
 
     @Binds
     @ViewModelScoped

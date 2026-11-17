@@ -21,6 +21,8 @@ import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.data.media.model.StorageFolder
+import app.grapheneos.camera.data.media.store.SafFolderSource
 import app.grapheneos.camera.testutil.retrieverDataSourceOf
 import io.mockk.every
 import io.mockk.mockk
@@ -54,6 +56,9 @@ class CapturedItemDetailsRepositoryTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val contentResolver = mockk<ContentResolver>()
+    private val safFolderSource = mockk<SafFolderSource> {
+        every { folder(ITEM_URI) } returns DOCUMENT_FOLDER
+    }
 
     @After
     fun resetRetriever() {
@@ -76,7 +81,7 @@ class CapturedItemDetailsRepositoryTest {
             val details = detailsOf(CapturedItemType.IMAGE)
 
             assertEquals(FILE_NAME, details.fileName)
-            assertEquals(RELATIVE_PATH, details.relativePath)
+            assertEquals(StorageFolder.MainStorage(path = "DCIM/Camera"), details.folder)
             assertEquals(SIZE_BYTES, details.sizeBytes)
             assertEquals(Size(PHOTO_WIDTH, PHOTO_HEIGHT), details.resolution)
             assertEquals(absolute("2023-10-15T10:34:56Z"), details.created)
@@ -152,7 +157,7 @@ class CapturedItemDetailsRepositoryTest {
 
             val details = detailsOf(CapturedItemType.IMAGE)
 
-            assertNull(details.relativePath)
+            assertEquals(DOCUMENT_FOLDER, details.folder)
             assertEquals(wallClock("2023-10-15T12:34:56.789"), details.created)
             assertEquals(absolute("2023-10-15T10:35:00Z"), details.modified)
         }
@@ -318,6 +323,7 @@ class CapturedItemDetailsRepositoryTest {
         return CapturedItemDetailsRepositoryImpl(
             contentResolver = contentResolver,
             retrieverDataSource = retrieverDataSourceOf(context),
+            safFolderSource = safFolderSource,
             captureTimeMapper = CaptureTimeMapperImpl(),
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -350,6 +356,7 @@ class CapturedItemDetailsRepositoryTest {
         const val JPEG_QUALITY = 90
 
         val ITEM_URI: Uri = Uri.parse("content://media/external/images/media/1")
+        val DOCUMENT_FOLDER = StorageFolder.Document(name = "Camera")
 
         val MEDIA_STORE_COLUMNS = mapOf(
             OpenableColumns.DISPLAY_NAME to FILE_NAME,

@@ -80,6 +80,7 @@ class GalleryRegressionTest {
             CameraTheme {
                 GalleryScreen(
                     systemGalleryLauncher = mockk(relaxed = true),
+                    capturedItemIntents = mockk(relaxed = true),
                     onNavigateBack = {},
                     screenModel = screenModel,
                 )

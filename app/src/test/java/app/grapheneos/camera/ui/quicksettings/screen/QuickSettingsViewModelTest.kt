@@ -5,12 +5,12 @@ import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
-import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction.RequiresIdleRecorder
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog as Dialog
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsNavEvent as NavEvent
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
@@ -240,18 +241,20 @@ class QuickSettingsViewModelTest {
         runTest {
             val entryPoint = cameraEntryPoint(isSecureSession = true)
             val viewModel = viewModel(entryPoint = entryPoint)
+            val events = collectNavigation(viewModel)
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(RequiresIdleRecorder.CameraSettingsClicked)
+            assertEquals(emptyList<Effect>(), effects)
 
             assertEquals(
                 listOf(
-                    Effect.OpenCameraSettings(
+                    NavEvent.OpenCameraSettings(
                         entryPoint = entryPoint,
                         capabilities = CAPABILITIES,
                     ),
                 ),
-                effects,
+                events,
             )
         }
     }
@@ -307,6 +310,14 @@ class QuickSettingsViewModelTest {
         return effects
     }
 
+    private fun TestScope.collectNavigation(viewModel: QuickSettingsViewModel): List<NavEvent> {
+        val events = mutableListOf<NavEvent>()
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            viewModel.navigationEvents.toList(events)
+        }
+        return events
+    }
+
     private companion object {
         const val APP_LABEL = "Camera"
         const val COPIED_VERSION = "$APP_LABEL version ${BuildConfig.VERSION_NAME}"
@@ -333,8 +344,8 @@ class QuickSettingsViewModelTest {
             videoQualities = listOf(VideoQuality.FHD, VideoQuality.HD),
         )
 
-        val PHOTO_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
-        val FRONT_VIDEO_SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = true)
+        val PHOTO_SLOT = ModeSlot(mode = CameraMode.CAMERA, lensFacing = LensFacing.BACK)
+        val FRONT_VIDEO_SLOT = ModeSlot(mode = CameraMode.VIDEO, lensFacing = LensFacing.FRONT)
 
         val STORED_FRONT_VIDEO = ModeSettings(videoQuality = VideoQuality.HD)
     }

@@ -2,6 +2,7 @@ package app.grapheneos.camera.data.settings.repository
 
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
@@ -115,7 +116,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
                         current = current,
                         updated = updated,
                         persistableFlashMode = persistableFlashMode,
-                        isFrontFacing = slot.isFrontFacing,
+                        lensFacing = slot.lensFacing,
                     ),
                 ),
                 unsavedFlashModes = unsavedChanges(
@@ -147,30 +148,30 @@ internal class SettingsRepositoryImpl @Inject constructor(
         current: ModeSettings,
         updated: ModeSettings,
         persistableFlashMode: StoredFlashMode?,
-        isFrontFacing: Boolean,
+        lensFacing: LensFacing,
     ): StoredModeSettings {
         val framesPerSecond = updated.videoFrameRate.framesPerSecond
         val withFlash = when {
             updated.flashMode == current.flashMode || persistableFlashMode == null -> stored
-            isFrontFacing -> stored.copy(flashModeFront = persistableFlashMode)
-            else -> stored.copy(flashModeBack = persistableFlashMode)
-        }
-        val withQuality = when {
-            updated.videoQuality == current.videoQuality -> withFlash
-
-            isFrontFacing -> withFlash.copy(
-                videoQualityFront = storedVideoQualityMapper.map(updated.videoQuality),
+            else -> stored.withFlashMode(
+                lensFacing = lensFacing,
+                flashMode = persistableFlashMode,
             )
-
-            else -> withFlash.copy(
-                videoQualityBack = storedVideoQualityMapper.map(updated.videoQuality),
+        }
+        val withQuality = when (updated.videoQuality) {
+            current.videoQuality -> withFlash
+            else -> withFlash.withVideoQuality(
+                lensFacing = lensFacing,
+                quality = storedVideoQualityMapper.map(updated.videoQuality),
             )
         }
 
-        return when {
-            updated.videoFrameRate == current.videoFrameRate -> withQuality
-            isFrontFacing -> withQuality.copy(frameRateFront = framesPerSecond)
-            else -> withQuality.copy(frameRateBack = framesPerSecond)
+        return when (updated.videoFrameRate) {
+            current.videoFrameRate -> withQuality
+            else -> withQuality.withFrameRate(
+                lensFacing = lensFacing,
+                framesPerSecond = framesPerSecond,
+            )
         }
     }
 

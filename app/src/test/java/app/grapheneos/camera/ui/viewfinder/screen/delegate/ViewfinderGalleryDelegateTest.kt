@@ -13,11 +13,14 @@ import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.collectNavEvents
+import app.grapheneos.camera.testutil.immediateScope
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -146,7 +149,7 @@ class ViewfinderGalleryDelegateTest {
     fun openGallery_handsOverTheLastItemOnlyOnceItsThumbnailLoaded() {
         runTest {
             every { capturedItemSession.lastCapturedItem } returns ITEM
-            val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
             val delegate = createDelegate()
 
             delegate.openGallery()
@@ -155,10 +158,10 @@ class ViewfinderGalleryDelegateTest {
 
             assertEquals(
                 listOf(
-                    Effect.Gallery.Open(lastCapturedItem = null),
-                    Effect.Gallery.Open(lastCapturedItem = ITEM),
+                    NavEvent.OpenGallery(lastCapturedItem = null),
+                    NavEvent.OpenGallery(lastCapturedItem = ITEM),
                 ),
-                effects,
+                events,
             )
         }
     }
@@ -167,23 +170,27 @@ class ViewfinderGalleryDelegateTest {
     fun openGallery_inASecureSession_showsOnlyWhatThisSessionCaptured() {
         runTest {
             val effects = collectEffects(stateHolder)
+            val events = collectNavEvents(stateHolder)
             val delegate = createDelegate(entryPoint = cameraEntryPoint(isSecureSession = true))
 
             delegate.openGallery()
+            assertEquals(listOf(Effect.ShowMessage(R.string.no_image)), effects)
+            assertTrue(events.isEmpty())
+
             delegate.recordCapturedItem(ITEM)
             delegate.openGallery()
 
             verify(exactly = 1) { capturedItemSession.recordCapturedItem(ITEM) }
             assertEquals(
                 listOf(
-                    Effect.ShowMessage(R.string.no_image),
-                    Effect.Gallery.OpenSecure(
+                    NavEvent.OpenSecureGallery(
                         capturedItems = listOf(ITEM),
                         lastCapturedItem = null,
                     ),
                 ),
-                effects,
+                events,
             )
+            assertEquals(listOf(Effect.ShowMessage(R.string.no_image)), effects)
         }
     }
 
@@ -218,7 +225,7 @@ class ViewfinderGalleryDelegateTest {
                     Effect.ShowMessage(
                         R.string.please_wait_for_image_to_get_captured_before_sharing,
                     ),
-                    Effect.Gallery.Share(ITEM),
+                    Effect.ShareCapturedItem(ITEM),
                 ),
                 effects,
             )
@@ -256,7 +263,7 @@ class ViewfinderGalleryDelegateTest {
     @Test
     fun storageLocationNotFound_finishesTheRevertEvenWhenTheScreenGoesAway() {
         runTest {
-            val screenScope = CoroutineScope(backgroundScope.coroutineContext + Job())
+            val screenScope = CoroutineScope(immediateScope().coroutineContext + Job())
             val delegate = createDelegate(scope = screenScope)
 
             delegate.onStorageLocationNotFound()
@@ -273,7 +280,7 @@ class ViewfinderGalleryDelegateTest {
 
     private fun TestScope.createDelegate(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
-        scope: CoroutineScope = backgroundScope,
+        scope: CoroutineScope = immediateScope(),
         loadedThumbnail: suspend () -> Bitmap? = { THUMBNAIL },
     ): ViewfinderGalleryDelegate {
         coEvery {
@@ -284,21 +291,20 @@ class ViewfinderGalleryDelegateTest {
             )
         } coAnswers { loadedThumbnail() }
 
-        val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderGalleryDelegateImpl(
             capturedItemSession = capturedItemSession,
             capturedItemRepository = capturedItemRepository,
             entryPoint = entryPoint,
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             applicationScope = backgroundScope,
-            mainDispatcher = dispatcher,
+            mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         delegate.bind(
             scope = scope,
             stateHolder = stateHolder,
         )
-        scope.launch(dispatcher) {
+        scope.launch {
             delegate.trackLastCapturedItem()
         }
         delegate.onScreenCreated(

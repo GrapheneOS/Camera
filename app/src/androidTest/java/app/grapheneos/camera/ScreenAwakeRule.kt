@@ -34,7 +34,7 @@ class ScreenAwakeRule : ExternalResource() {
             if (locked && keyguard.isDeviceSecure) {
                 throw AssertionError(
                     "The keyguard is up and secured, and no test can enter the credential:" +
-                            " unlock the device before running the suite."
+                        " unlock the device before running the suite."
                 )
             }
 
