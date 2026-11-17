@@ -22,6 +22,7 @@ import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.collectNavEvents
+import app.grapheneos.camera.testutil.immediateScope
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
@@ -727,7 +728,7 @@ class ViewfinderCaptureDelegateTest {
         )
 
         delegate.bind(
-            scope = backgroundScope,
+            scope = immediateScope(),
             stateHolder = stateHolder,
         )
         delegate.onScreenCreated(

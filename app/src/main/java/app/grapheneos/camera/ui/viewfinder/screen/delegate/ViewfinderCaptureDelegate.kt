@@ -136,7 +136,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     override fun holdShutter() {
         updateCapture { it.copy(isShutterHeld = true) }
 
-        scope.launch(mainDispatcher) {
+        scope.launch {
             delay(SHUTTER_HOLD)
             updateCapture { it.copy(isShutterHeld = false) }
         }
@@ -232,7 +232,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         val settings = stateHolder.state.value.settings
         setSelfTimerRemaining(settings.selfTimerDuration)
 
-        selfTimer = scope.launch(mainDispatcher) {
+        selfTimer = scope.launch {
             val timer = this
 
             selfTimerCountdown(settings.selfTimerDuration).collect { secondsLeft ->
@@ -241,7 +241,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
                 val flashes = timerLightFlashes(secondsLeft)
                 if (settings.timerLight && flashes > 0) {
-                    timer.launch(mainDispatcher) { blinkTimerLight(flashes) }
+                    timer.launch { blinkTimerLight(flashes) }
                 }
             }
 

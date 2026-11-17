@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.testutil.immediateScope
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderFocusRequest
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
@@ -8,7 +9,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -117,12 +117,10 @@ class ViewfinderPreviewControlsDelegateTest {
     }
 
     private fun TestScope.createDelegate(): ViewfinderPreviewControlsDelegate {
-        val delegate = ViewfinderPreviewControlsDelegateImpl(
-            mainDispatcher = UnconfinedTestDispatcher(testScheduler),
-        )
+        val delegate = ViewfinderPreviewControlsDelegateImpl()
 
         delegate.bind(
-            scope = backgroundScope,
+            scope = immediateScope(),
             stateHolder = stateHolder,
         )
 

@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery.components.details
 
-import android.content.Context
 import android.util.Size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -10,7 +9,6 @@ import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CameraParameters
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
-import app.grapheneos.camera.ui.settingvalues.storageLocationTitle
 import app.grapheneos.camera.util.formatVideoDuration
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -111,17 +109,6 @@ internal fun modifiedText(details: CapturedItemDetails): String? {
     return modified
         ?.takeIf { created != null && it != created }
         ?.let { stringResource(R.string.gallery_details_modified, it) }
-}
-
-internal fun folder(
-    context: Context,
-    uri: String,
-    details: CapturedItemDetails,
-): String {
-    return when (val relativePath = details.relativePath) {
-        null -> storageLocationTitle(context, uri)
-        else -> "${context.getString(R.string.main_storage)}/${relativePath.trimEnd('/')}"
-    }
 }
 
 internal fun decimalFormat(

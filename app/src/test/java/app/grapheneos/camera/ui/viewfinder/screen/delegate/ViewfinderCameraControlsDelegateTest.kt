@@ -179,7 +179,7 @@ class ViewfinderCameraControlsDelegateTest {
         every { session.zoom } returns ZOOM
         val delegate = createDelegate()
         var changes = 0
-        scope.launch(mainDispatcherRule.testDispatcher) {
+        scope.launch {
             delegate.zoomChanges.collect { changes++ }
         }
 
@@ -202,14 +202,13 @@ class ViewfinderCameraControlsDelegateTest {
             session = session,
             playCameraSound = playCameraSound,
             nextZoomStopMapper = NextZoomStopMapperImpl(),
-            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 
         delegate.bind(
             scope = scope,
             stateHolder = stateHolder,
         )
-        scope.launch(mainDispatcherRule.testDispatcher) {
+        scope.launch {
             delegate.trackZoom()
         }
 

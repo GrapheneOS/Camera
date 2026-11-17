@@ -18,6 +18,8 @@ import app.grapheneos.camera.data.media.repository.CapturedItemTrashRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemTrashRepositoryImpl
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepositoryImpl
+import app.grapheneos.camera.data.media.store.SafFolderSource
+import app.grapheneos.camera.data.media.store.SafFolderSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -51,6 +53,12 @@ internal abstract class MediaBindsModule {
     abstract fun bindStorageSpaceRepository(
         impl: StorageSpaceRepositoryImpl,
     ): StorageSpaceRepository
+
+    @Binds
+    @Reusable
+    abstract fun bindSafFolderSource(
+        impl: SafFolderSourceImpl,
+    ): SafFolderSource
 
     @Binds
     @Reusable
