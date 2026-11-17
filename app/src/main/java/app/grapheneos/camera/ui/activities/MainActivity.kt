@@ -107,7 +107,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.zxing.BarcodeFormat
 import java.io.File
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -1290,15 +1289,13 @@ open class MainActivity : AppCompatActivity(),
 
     private var isQRDialogShowing = false
 
-    fun onScanResultSuccess(rawText: String) {
+    fun onScanResultSuccess(rawText: String, rawBytes: () -> ByteArray) {
 
         if (isQRDialogShowing) return
 
         isQRDialogShowing = true
 
-        val hString = bytesToHex(
-            rawText.toByteArray(StandardCharsets.UTF_8)
-        )
+        val hString = bytesToHex(rawBytes())
 
         runOnUiThread {
             val builder = MaterialAlertDialogBuilder(this)
