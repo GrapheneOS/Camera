@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -19,6 +20,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.StorageState
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -36,7 +38,7 @@ class CameraSettingsUiStateMapperTest {
     @Test
     fun defaults_areNotMarkedAsChanged() {
         val uiState = mapper.map(
-            CameraSettingsState(storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION),
+            CameraSettingsState(storage = storage()),
         )
 
         assertFalse(uiState.cameraSounds.isChanged)
@@ -62,7 +64,7 @@ class CameraSettingsUiStateMapperTest {
                     enableCameraSounds = false,
                     photoQuality = 80,
                 ),
-                storageLocation = "content://tree",
+                storage = storage(location = "content://tree"),
             ),
         )
 
@@ -265,11 +267,12 @@ class CameraSettingsUiStateMapperTest {
     fun storageSpace_isEstimatedFromTheChosenQualitiesAndTheBitrateCameraXRecordsAt() {
         val uiState = mapper.map(
             CameraSettingsState(
-                storageSpace = StorageSpace(
-                    freeBytes = 1_200_000_000L,
-                    totalBytes = 4_800_000_000L,
+                storage = storage(
+                    space = StorageSpace(
+                        freeBytes = 1_200_000_000L,
+                        totalBytes = 4_800_000_000L,
+                    ),
                 ),
-                isStorageSpaceLoaded = true,
                 capabilities = CameraCapabilities(
                     photoMegapixels = 12,
                     videoBitrates = mapOf(
@@ -300,11 +303,12 @@ class CameraSettingsUiStateMapperTest {
     fun storageSpace_atTwiceTheFrameRate_leavesHalfTheVideoMinutes() {
         val uiState = mapper.map(
             CameraSettingsState(
-                storageSpace = StorageSpace(
-                    freeBytes = 1_200_000_000L,
-                    totalBytes = 4_800_000_000L,
+                storage = storage(
+                    space = StorageSpace(
+                        freeBytes = 1_200_000_000L,
+                        totalBytes = 4_800_000_000L,
+                    ),
                 ),
-                isStorageSpaceLoaded = true,
                 capabilities = CameraCapabilities(
                     videoBitrates = mapOf(
                         VideoQuality.FHD to VideoBitrates(
@@ -326,14 +330,14 @@ class CameraSettingsUiStateMapperTest {
 
     @Test
     fun storageSpace_untilItIsRead_isShownAsLoading() {
-        val uiState = mapper.map(CameraSettingsState())
+        val uiState = mapper.map(CameraSettingsState(storage = storage(isSpaceLoaded = false)))
 
         assertEquals(StorageSpaceUiModel(), uiState.storageSpace)
     }
 
     @Test
     fun storageSpace_ofALocationOffTheDevicesStorage_isHidden() {
-        val uiState = mapper.map(CameraSettingsState(isStorageSpaceLoaded = true))
+        val uiState = mapper.map(CameraSettingsState(storage = storage(space = null)))
 
         assertNull(uiState.storageSpace)
     }
@@ -342,11 +346,12 @@ class CameraSettingsUiStateMapperTest {
     fun storageSpace_atFullResolution_isEstimatedForItsPixels() {
         val uiState = mapper.map(
             CameraSettingsState(
-                storageSpace = StorageSpace(
-                    freeBytes = 1_200_000_000L,
-                    totalBytes = 4_800_000_000L,
+                storage = storage(
+                    space = StorageSpace(
+                        freeBytes = 1_200_000_000L,
+                        totalBytes = 4_800_000_000L,
+                    ),
                 ),
-                isStorageSpaceLoaded = true,
                 capabilities = CameraCapabilities(
                     photoMegapixels = 12,
                     photoResolutions = PhotoResolutions(
@@ -366,23 +371,18 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
-    fun storageSpace_inASecureSession_isHidden() {
-        val uiState = mapper.map(CameraSettingsState(isSecureSession = true))
+    fun storage_untilItsLocationIsRead_isHidden() {
+        val uiState = mapper.map(CameraSettingsState())
 
+        assertNull(uiState.storageLocation)
         assertNull(uiState.storageSpace)
     }
 
     @Test
-    fun storage_inASecureSession_isHiddenBehindTheBanner() {
-        val uiState = mapper.map(
-            CameraSettingsState(
-                storageLocation = "content://tree",
-                isSecureSession = true,
-            ),
-        )
+    fun secureSession_showsTheBanner() {
+        val uiState = mapper.map(CameraSettingsState(isSecureSession = true))
 
         assertTrue(uiState.showsSecureSessionBanner)
-        assertNull(uiState.storageLocation)
     }
 
     @Test
@@ -392,6 +392,19 @@ class CameraSettingsUiStateMapperTest {
 
         assertTrue(unlocked.showsLicenses)
         assertFalse(lockscreen.showsLicenses)
+    }
+
+    private fun storage(
+        location: String = CapturedItemRepository.MEDIA_STORE_LOCATION,
+        space: StorageSpace? = null,
+        isSpaceLoaded: Boolean = true,
+    ): StorageState {
+        return StorageState(
+            location = location,
+            folder = StorageFolder.MainStorage(path = "DCIM/Camera"),
+            space = space,
+            isSpaceLoaded = isSpaceLoaded,
+        )
     }
 
     private fun everyCamera(features: LensFeatures): CameraCapabilities {

@@ -3,14 +3,12 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.sound.model.CameraSound
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -46,7 +44,6 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
     private val session: CameraSession,
     private val playCameraSound: PlayCameraSound,
     private val nextZoomStopMapper: NextZoomStopMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCameraControlsDelegate {
 
     private lateinit var scope: CoroutineScope
@@ -98,7 +95,7 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
     override fun startZoomStepping(direction: ZoomDirection) {
         stopZoomStepping()
 
-        zoomStepping = scope.launch(mainDispatcher) {
+        zoomStepping = scope.launch {
             while (stepToNextZoomStop(direction)) {
                 delay(ZOOM_STOP_INTERVAL)
             }
@@ -142,7 +139,7 @@ internal class ViewfinderCameraControlsDelegateImpl @Inject constructor(
         )
 
         if (!state.isVideoMode()) {
-            scope.launch(mainDispatcher) {
+            scope.launch {
                 playCameraSound(CameraSound.FOCUS_START)
             }
         }

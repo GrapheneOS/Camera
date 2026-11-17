@@ -14,6 +14,7 @@ import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.collectNavEvents
+import app.grapheneos.camera.testutil.immediateScope
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
@@ -262,7 +263,7 @@ class ViewfinderGalleryDelegateTest {
     @Test
     fun storageLocationNotFound_finishesTheRevertEvenWhenTheScreenGoesAway() {
         runTest {
-            val screenScope = CoroutineScope(backgroundScope.coroutineContext + Job())
+            val screenScope = CoroutineScope(immediateScope().coroutineContext + Job())
             val delegate = createDelegate(scope = screenScope)
 
             delegate.onStorageLocationNotFound()
@@ -279,7 +280,7 @@ class ViewfinderGalleryDelegateTest {
 
     private fun TestScope.createDelegate(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
-        scope: CoroutineScope = backgroundScope,
+        scope: CoroutineScope = immediateScope(),
         loadedThumbnail: suspend () -> Bitmap? = { THUMBNAIL },
     ): ViewfinderGalleryDelegate {
         coEvery {
@@ -290,21 +291,20 @@ class ViewfinderGalleryDelegateTest {
             )
         } coAnswers { loadedThumbnail() }
 
-        val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderGalleryDelegateImpl(
             capturedItemSession = capturedItemSession,
             capturedItemRepository = capturedItemRepository,
             entryPoint = entryPoint,
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             applicationScope = backgroundScope,
-            mainDispatcher = dispatcher,
+            mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         delegate.bind(
             scope = scope,
             stateHolder = stateHolder,
         )
-        scope.launch(dispatcher) {
+        scope.launch {
             delegate.trackLastCapturedItem()
         }
         delegate.onScreenCreated(

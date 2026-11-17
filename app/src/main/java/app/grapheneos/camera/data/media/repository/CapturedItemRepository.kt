@@ -22,8 +22,11 @@ import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapper
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.ImageBounds
+import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.RetrieverDataSource
+import app.grapheneos.camera.data.media.store.SafFolderSource
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.data.media.store.imageCollectionUri
@@ -57,6 +60,8 @@ interface CapturedItemRepository {
     val storageLocation: Flow<String>
 
     suspend fun setStorageLocation(value: String)
+
+    suspend fun storageFolder(location: String): StorageFolder?
 
     fun canStoreSafTree(tree: Uri): Boolean
 
@@ -100,6 +105,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     private val safTreeReleaseFlagsMapper: SafTreeReleaseFlagsMapper,
     private val contentResolver: ContentResolver,
     private val retrieverDataSource: RetrieverDataSource,
+    private val safFolderSource: SafFolderSource,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @VideoFrameDispatcher private val videoFrameDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
@@ -143,6 +149,18 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                         previousSafTrees = trees.map { it.toString() },
                     )
                 }
+            }
+        }
+    }
+
+    override suspend fun storageFolder(location: String): StorageFolder? {
+        return when (location) {
+            CapturedItemRepository.MEDIA_STORE_LOCATION -> {
+                StorageFolder.MainStorage(path = MEDIA_STORE_CAPTURE_PATH)
+            }
+
+            else -> withContext(ioDispatcher) {
+                safFolderSource.folder(location.toUri())
             }
         }
     }

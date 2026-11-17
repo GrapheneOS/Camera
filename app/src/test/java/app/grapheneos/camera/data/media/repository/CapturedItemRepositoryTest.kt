@@ -21,7 +21,9 @@ import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.ImageBounds
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.data.media.store.MediaPrefs
+import app.grapheneos.camera.data.media.store.SafFolderSourceImpl
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.data.media.store.mediaPrefsSerializer
@@ -94,6 +96,15 @@ class CapturedItemRepositoryTest {
     fun lastCapturedItem_freshInstall_returnsNull() {
         runTest {
             assertNull(repository().lastCapturedItem.first())
+        }
+    }
+
+    @Test
+    fun storageFolder_ofTheMediaStoreLocation_isTheCameraFolderOfTheMainStorage() {
+        runTest {
+            val folder = repository().storageFolder(CapturedItemRepository.MEDIA_STORE_LOCATION)
+
+            assertEquals(StorageFolder.MainStorage(path = "DCIM/Camera"), folder)
         }
     }
 
@@ -371,6 +382,10 @@ class CapturedItemRepositoryTest {
             safTreeReleaseFlagsMapper = SafTreeReleaseFlagsMapperImpl(),
             contentResolver = contentResolver,
             retrieverDataSource = retrieverDataSourceOf(context),
+            safFolderSource = SafFolderSourceImpl(
+                contentResolver = contentResolver,
+                storageVolumeNames = { null },
+            ),
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
             videoFrameDispatcher = UnconfinedTestDispatcher(testScheduler),
         )

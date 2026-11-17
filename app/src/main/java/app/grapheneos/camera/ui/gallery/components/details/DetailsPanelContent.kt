@@ -22,7 +22,6 @@ private val PLACEHOLDER_PADDING = 24.dp
 internal fun DetailsPanelContent(
     details: GalleryDetails,
     isVideo: Boolean,
-    uri: String,
     showsDragHandle: Boolean,
     dragHandleAlpha: () -> Float,
     onOpenMapClick: (() -> Unit)?,
@@ -44,7 +43,6 @@ internal fun DetailsPanelContent(
             is GalleryDetails.Loaded -> FileDetails(
                 details = details.details,
                 isVideo = isVideo,
-                uri = uri,
                 onOpenMapClick = onOpenMapClick,
                 onCopy = onCopy,
             )

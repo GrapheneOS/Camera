@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
@@ -52,6 +53,7 @@ class CameraSettingsViewModelTest {
     private val storageLocation = MutableStateFlow(CapturedItemRepository.MEDIA_STORE_LOCATION)
     private val capturedItemRepository = mockk<CapturedItemRepository> {
         every { storageLocation } returns this@CameraSettingsViewModelTest.storageLocation
+        coEvery { storageFolder(any()) } returns STORAGE_FOLDER
     }
     private val changeStorageLocation = mockk<ChangeStorageLocation>()
     private val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation>(relaxed = true)
@@ -282,15 +284,26 @@ class CameraSettingsViewModelTest {
         val viewModel = createViewModel()
 
         assertEquals(STORAGE_SPACE.freeBytes, viewModel.uiState.value.storageSpace?.freeBytes)
+        coVerify { storageSpaceRepository.storageSpace(STORAGE_FOLDER) }
+    }
+
+    @Test
+    fun storageFolder_ofTheStorageLocation_reachesTheScreen() {
+        val viewModel = createViewModel()
+
+        assertEquals(STORAGE_FOLDER, viewModel.uiState.value.storageLocation?.folder)
         coVerify {
-            storageSpaceRepository.storageSpace(CapturedItemRepository.MEDIA_STORE_LOCATION)
+            capturedItemRepository.storageFolder(CapturedItemRepository.MEDIA_STORE_LOCATION)
         }
     }
 
     @Test
-    fun storageSpace_inASecureSession_isNotRead() {
-        createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
+    fun storage_inASecureSession_isNotRead() {
+        val viewModel = createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
 
+        assertNull(viewModel.uiState.value.storageLocation)
+        assertNull(viewModel.uiState.value.storageSpace)
+        coVerify(exactly = 0) { capturedItemRepository.storageFolder(any()) }
         coVerify(exactly = 0) { storageSpaceRepository.storageSpace(any()) }
     }
 
@@ -359,6 +372,7 @@ class CameraSettingsViewModelTest {
             freeBytes = 1_000_000_000L,
             totalBytes = 4_000_000_000L,
         )
+        val STORAGE_FOLDER = StorageFolder.MainStorage(path = "DCIM/Camera")
         val TREE: Uri = Uri.parse(
             "content://com.android.externalstorage.documents/tree/primary%3ADCIM",
         )

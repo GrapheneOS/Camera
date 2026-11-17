@@ -18,7 +18,9 @@ import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.data.media.model.StorageFolder
 import app.grapheneos.camera.data.media.store.RetrieverDataSource
+import app.grapheneos.camera.data.media.store.SafFolderSource
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.getLongOrNull
 import app.grapheneos.camera.util.getStringOrNull
@@ -45,6 +47,7 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
     private val contentResolver: ContentResolver,
     private val captureTimeMapper: CaptureTimeMapper,
     private val retrieverDataSource: RetrieverDataSource,
+    private val safFolderSource: SafFolderSource,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemDetailsRepository {
 
@@ -70,21 +73,43 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
             CapturedItemType.IMAGE -> readImage(item.uri)
             CapturedItemType.VIDEO -> readVideo(item.uri)
         }
-        val stored by lazy { queryStoredTimestamps(item.uri) }
+        val timestamps = timestamps(item, media)
 
         return CapturedItemDetails(
             fileName = file.name,
-            relativePath = file.relativePath,
+            folder = folder(item, file.relativePath),
             sizeBytes = file.sizeBytes,
             resolution = media.resolution,
             duration = media.duration,
+            created = timestamps.created,
+            modified = timestamps.modified,
+            camera = media.camera,
+            location = media.location,
+        )
+    }
+
+    private fun timestamps(
+        item: CapturedItem,
+        media: MediaMetadata,
+    ): Timestamps {
+        val stored by lazy { queryStoredTimestamps(item.uri) }
+
+        return Timestamps(
             created = media.created
                 ?: stored.created
                 ?: captureTimeMapper.map(item)?.let(MediaTimestamp::WallClock),
             modified = media.modified ?: stored.modified,
-            camera = media.camera,
-            location = media.location,
         )
+    }
+
+    private fun folder(
+        item: CapturedItem,
+        relativePath: String?,
+    ): StorageFolder? {
+        return when (relativePath) {
+            null -> safFolderSource.folder(item.uri)
+            else -> StorageFolder.MainStorage(path = relativePath.trimEnd('/'))
+        }
     }
 
     private fun readFileColumns(cursor: Cursor): FileColumns? {
@@ -263,12 +288,12 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
      * unit, and each provider rejects the columns it does not know, so the two are queried
      * separately and every failure just leaves the value unknown.
      */
-    private fun queryStoredTimestamps(uri: Uri): StoredTimestamps {
+    private fun queryStoredTimestamps(uri: Uri): Timestamps {
         val mediaStore = contentResolver.queryFirstRowOrNull(
             uri = uri,
             projection = MEDIA_STORE_TIMESTAMP_PROJECTION,
         ) { cursor ->
-            StoredTimestamps(
+            Timestamps(
                 created = cursor.getTimestamp(
                     column = MediaColumns.DATE_ADDED,
                     toInstant = Instant::ofEpochSecond,
@@ -288,7 +313,7 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
             }
         }
 
-        return StoredTimestamps(
+        return Timestamps(
             created = mediaStore?.created,
             modified = mediaStore?.modified ?: documentModified,
         )
@@ -319,7 +344,7 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
         val location: GeoCoordinates?,
     )
 
-    private data class StoredTimestamps(
+    private data class Timestamps(
         val created: MediaTimestamp?,
         val modified: MediaTimestamp?,
     )

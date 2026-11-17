@@ -5,7 +5,7 @@ import kotlin.time.Duration
 
 internal data class CapturedItemDetails(
     val fileName: String,
-    val relativePath: String?,
+    val folder: StorageFolder?,
     val sizeBytes: Long?,
     val resolution: Size?,
     val duration: Duration?,

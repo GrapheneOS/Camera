@@ -1,12 +1,10 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderFocusRequest
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState as Controls
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,9 +26,8 @@ interface ViewfinderPreviewControlsDelegate {
     fun hideExposurePanel()
 }
 
-internal class ViewfinderPreviewControlsDelegateImpl @Inject constructor(
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
-) : ViewfinderPreviewControlsDelegate {
+internal class ViewfinderPreviewControlsDelegateImpl @Inject constructor() :
+    ViewfinderPreviewControlsDelegate {
 
     private lateinit var scope: CoroutineScope
 
@@ -97,7 +94,7 @@ internal class ViewfinderPreviewControlsDelegateImpl @Inject constructor(
             setShown(true)
 
             timeout?.cancel()
-            timeout = scope.launch(mainDispatcher) {
+            timeout = scope.launch {
                 delay(PANEL_VISIBILITY_DURATION)
                 setShown(false)
             }

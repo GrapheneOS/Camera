@@ -24,10 +24,13 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsNavEve
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
+import app.grapheneos.camera.ui.camerasettings.screen.model.StorageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 internal interface CameraSettingsScreenModel {
@@ -77,18 +80,37 @@ internal class CameraSettingsViewModel @Inject constructor(
     private val state: CameraSettingsState
         get() = stateHolder.state.value
 
-    init {
-        viewModelScope.launch {
-            settingsRepository.settings.collect { settings ->
-                stateHolder.update { it.copy(settings = settings) }
-            }
-        }
+    private var storageSpaceLoad: Job? = null
 
-        viewModelScope.launch {
-            capturedItemRepository.storageLocation.collect { location ->
-                stateHolder.update { it.copy(storageLocation = location) }
-                refreshStorageSpace()
+    init {
+        viewModelScope.launch { trackSettings() }
+
+        if (!entryPoint.isSecureSession) {
+            viewModelScope.launch { trackStorage() }
+        }
+    }
+
+    private suspend fun trackSettings() {
+        settingsRepository.settings.collect { settings ->
+            stateHolder.update { it.copy(settings = settings) }
+        }
+    }
+
+    private suspend fun trackStorage() {
+        capturedItemRepository.storageLocation.collectLatest { location ->
+            val folder = capturedItemRepository.storageFolder(location)
+
+            stateHolder.update { state ->
+                val storage = state.storage ?: StorageState(location = location)
+
+                state.copy(
+                    storage = storage.copy(
+                        location = location,
+                        folder = folder,
+                    ),
+                )
             }
+            refreshStorageSpace()
         }
     }
 
@@ -102,7 +124,7 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.DialogConfirmed -> onDialogConfirmed(action)
             is Action.DialogDismissed -> showDialog(null)
             is Action.StorageLocationClicked -> stateHolder.send(Effect.PickStorageLocation)
-            is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
+            is Action.StorageLocationPicked -> onStorageLocationPicked(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
             is Action.LicensesClicked -> stateHolder.postNavEvent(NavEvent.OpenLicenses)
         }
@@ -219,11 +241,11 @@ internal class CameraSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun changeStorageLocation(tree: Uri?) {
+    private fun onStorageLocationPicked(tree: Uri?) {
         if (tree == null) return
 
         viewModelScope.launch {
-            changeStorageLocation.invoke(tree)
+            changeStorageLocation(tree)
         }
     }
 
@@ -234,15 +256,20 @@ internal class CameraSettingsViewModel @Inject constructor(
     }
 
     private fun refreshStorageSpace() {
-        val location = state.storageLocation.takeUnless { state.isSecureSession } ?: return
+        val storage = state.storage ?: return
 
-        viewModelScope.launch {
-            val storageSpace = storageSpaceRepository.storageSpace(location)
+        storageSpaceLoad?.cancel()
+        storageSpaceLoad = viewModelScope.launch {
+            val space = storage.folder?.let { folder ->
+                storageSpaceRepository.storageSpace(folder)
+            }
 
-            stateHolder.update {
-                it.copy(
-                    storageSpace = storageSpace,
-                    isStorageSpaceLoaded = true,
+            stateHolder.update { state ->
+                state.copy(
+                    storage = state.storage?.copy(
+                        space = space,
+                        isSpaceLoaded = true,
+                    ),
                 )
             }
         }

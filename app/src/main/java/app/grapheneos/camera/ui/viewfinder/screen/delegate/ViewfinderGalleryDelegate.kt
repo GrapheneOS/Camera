@@ -93,7 +93,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
         val thumbnailSize = host?.thumbnailSize ?: return
 
         thumbnailLoad?.cancel()
-        thumbnailLoad = scope.launch(mainDispatcher) {
+        thumbnailLoad = scope.launch {
             prepared.await()
 
             val item = capturedItemSession.lastCapturedItem

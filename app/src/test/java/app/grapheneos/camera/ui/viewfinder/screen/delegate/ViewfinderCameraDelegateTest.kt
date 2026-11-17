@@ -205,7 +205,7 @@ class ViewfinderCameraDelegateTest {
     fun providerReady_isHandedOn() {
         val delegate = createAttachedDelegate()
         val events = mutableListOf<ViewfinderCameraEvent>()
-        scope.launch(mainDispatcherRule.testDispatcher) {
+        scope.launch {
             delegate.cameraEvents.collect { events += it }
         }
 
@@ -397,10 +397,10 @@ class ViewfinderCameraDelegateTest {
         )
 
         delegate.bind(stateHolder)
-        scope.launch(mainDispatcherRule.testDispatcher) {
+        scope.launch {
             delegate.trackSession()
         }
-        scope.launch(mainDispatcherRule.testDispatcher) {
+        scope.launch {
             stateHolder.effects.collect { effects += it }
         }
 
