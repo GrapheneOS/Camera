@@ -22,14 +22,17 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.isForeignOutputUriAllowed
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.lang.Exception
 import java.nio.ByteBuffer
+import java.util.concurrent.Executors
 import androidx.core.graphics.scale
 
 open class CaptureActivity : MainActivity() {
 
     companion object {
         private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
+        private val outputExecutor = Executors.newSingleThreadExecutor()
     }
 
     lateinit var outputUri: Uri
@@ -37,6 +40,7 @@ open class CaptureActivity : MainActivity() {
     var bitmap: Bitmap? = null
 
     private var isTakingPicture = false
+    private var isSavingOutput = false
 
     private lateinit var retakeIcon: ImageView
 
@@ -209,9 +213,7 @@ open class CaptureActivity : MainActivity() {
     }
 
     private fun confirmImage() {
-
         val resultIntent = Intent("inline-data")
-
         val bitmap = bitmap
         if (bitmap == null) {
             setResult(RESULT_CANCELED)
@@ -220,39 +222,51 @@ open class CaptureActivity : MainActivity() {
         }
 
         if (::outputUri.isInitialized) {
-            val bos = ByteArrayOutputStream()
+            if (isSavingOutput) return
+            isSavingOutput = true
+            confirmButton.isEnabled = false
+            cancelButtonView.isEnabled = false
+            previewLoader.visibility = View.VISIBLE
 
-            val cf: CompressFormat =
-                if (outputUri.path?.endsWith(".png") == true) {
-                    CompressFormat.PNG
-                } else {
-                    CompressFormat.JPEG
+            val outputUri = outputUri
+            val appContext = applicationContext
+            outputExecutor.execute {
+                val result = try {
+                    val compressFormat = if (outputUri.path?.endsWith(".png") == true) {
+                        CompressFormat.PNG
+                    } else {
+                        CompressFormat.JPEG
+                    }
+                    val bos = ByteArrayOutputStream()
+                    check(bitmap.compress(compressFormat, 100, bos)) { "unable to encode image" }
+                    check(isForeignOutputUriAllowed(appContext, outputUri)) {
+                        "refused output uri $outputUri"
+                    }
+                    val output = appContext.contentResolver.openOutputStream(outputUri)
+                        ?: throw IOException("unable to open output uri $outputUri")
+                    output.use { it.write(bos.toByteArray()) }
+                    RESULT_OK
+                } catch (e: Exception) {
+                    RESULT_CANCELED
                 }
 
-            bitmap.compress(cf, 100, bos)
-            val bitmapData: ByteArray = bos.toByteArray()
-
-            var result = RESULT_CANCELED
-
-            try {
-                check(isForeignOutputUriAllowed(this, outputUri)) { "refused output uri $outputUri" }
-                contentResolver.openOutputStream(outputUri)?.use {
-                    it.write(bitmapData)
+                mainExecutor.execute main@{
+                    if (isFinishing || isDestroyed) return@main
+                    previewLoader.visibility = View.GONE
+                    if (result == RESULT_CANCELED) {
+                        showMessage(getString(R.string.unable_to_save_image))
+                    }
+                    setResult(result)
+                    finish()
                 }
-                result = RESULT_OK
-            } catch (e: Exception) {
-                showMessage(getString(R.string.unable_to_save_image))
             }
-
-            setResult(result)
         } else {
             val resized = resizeImage(bitmap)
             this.bitmap = resized
             resultIntent.putExtra("data", resized)
             setResult(RESULT_OK, resultIntent)
+            finish()
         }
-
-        finish()
     }
 
     private fun imageProxyToBitmap(image: ImageProxy, rotation: Float): Bitmap {
