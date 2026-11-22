@@ -47,6 +47,9 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.SwitchDefaults
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
@@ -140,13 +143,20 @@ internal fun SettingsSwitchItem(
         icon = icon,
         enabled = enabled,
         isChanged = isChanged,
-        trailing = {
+         trailing = {
             Switch(
                 checked = checked,
                 onCheckedChange = null,
                 enabled = enabled,
+                thumbContent = {
+                    Icon(
+                        imageVector = if (checked) Icons.Filled.Check else Icons.Filled.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(SwitchDefaults.IconSize),
+                    )
+                },
             )
-        },
+        },   
     )
 }
 
