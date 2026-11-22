@@ -143,7 +143,7 @@ internal fun SettingsSwitchItem(
         icon = icon,
         enabled = enabled,
         isChanged = isChanged,
-         trailing = {
+        trailing = {
             Switch(
                 checked = checked,
                 onCheckedChange = null,
@@ -156,7 +156,7 @@ internal fun SettingsSwitchItem(
                     )
                 },
             )
-        },   
+        },
     )
 }
 
