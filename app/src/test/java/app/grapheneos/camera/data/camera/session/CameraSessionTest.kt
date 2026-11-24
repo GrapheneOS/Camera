@@ -80,6 +80,7 @@ class CameraSessionTest {
     }
 
     private val sceneLightControl = mockk<SceneLightControl>(relaxed = true)
+    private val lowLightBoostSupport = mockk<LowLightBoostSupport>(relaxed = true)
 
     private val cameraInfo = mockk<CameraInfo>(relaxed = true) {
         every { zoomState } returns zoomStates
@@ -282,15 +283,20 @@ class CameraSessionTest {
     @Test
     fun lowLightBoost_staysSelectedDuringCompensationUntilTurnedOff() {
         runTest {
-            every { cameraInfo.isLowLightBoostSupported } returns true
+            every {
+                lowLightBoostSupport.isSupported(cameraInfo = cameraInfo, extensionMode = null)
+            } returns true
             val session = boundSession(PHOTO_SETTINGS)
             runCurrent()
             clearMocks(sceneLightControl, answers = false)
 
             session.setFlashMode(FlashMode.LOW_LIGHT_BOOST)
+            verify { sceneLightControl.setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
+
             exposure.value = exposure.value?.copy(compensationIndex = 3)
             runCurrent()
 
+            assertEquals(true, session.boundCamera.value?.isExposureCompensated)
             verify(exactly = 0) { sceneLightControl.setFlashMode(FlashMode.OFF) }
 
             session.setFlashMode(FlashMode.OFF)
@@ -374,7 +380,7 @@ class CameraSessionTest {
             cameraSessionPlanFactory = cameraSessionPlanFactory,
             photoResolutionSupport = mockk(relaxed = true),
             videoBitrateSupport = mockk(relaxed = true),
-            lowLightBoostSupport = mockk(relaxed = true),
+            lowLightBoostSupport = lowLightBoostSupport,
             videoQualitySupport = mockk(relaxed = true),
             cameraXConstantsMapper = CameraXConstantsMapperImpl(),
             flashMapper = CameraFlashMapperImpl(),
