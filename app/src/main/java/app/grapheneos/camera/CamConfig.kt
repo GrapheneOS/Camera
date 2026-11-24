@@ -1666,7 +1666,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val captureMode = when {
             waitForFocusLock -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-            enableZsl -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+            // CameraX drops ZSL for extensions only after binding, too late for the session.
+            enableZsl && appliedExtension == null -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
             else -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
         }
 
