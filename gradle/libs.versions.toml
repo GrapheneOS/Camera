@@ -1,10 +1,10 @@
 [versions]
-agp = "9.5.2"
+agp = "9.5.3"
 kotlin = "2.4.21"
 ksp = "2.3.14"
 
 appcompat = "1.8.0"
-camerax = "1.6.2"
+camerax = "1.7.0"
 constraintlayout = "2.2.2"
 coreKtx = "1.19.1"
 material = "1.14.0"
