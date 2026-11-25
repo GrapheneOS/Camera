@@ -58,28 +58,34 @@ fun startOfScan(jpeg: ByteArray): Int {
 /** What ImageCapture hands the saver for a JPEG capture: the buffer the HAL filled. */
 @SuppressLint("RestrictedApi")
 class JpegImageProxy(private val bytes: ByteArray) : ImageProxy {
-    private var cropRect = Rect(0, 0, HAL_JPEG_WIDTH, HAL_JPEG_HEIGHT)
+    private var crop = Rect(0, 0, HAL_JPEG_WIDTH, HAL_JPEG_HEIGHT)
 
     override fun close() {}
-    override fun getCropRect() = Rect(cropRect)
+    override val cropRect: Rect
+        get() = Rect(crop)
+
     override fun setCropRect(rect: Rect?) {
-        cropRect = rect ?: Rect(0, 0, HAL_JPEG_WIDTH, HAL_JPEG_HEIGHT)
+        crop = rect ?: Rect(0, 0, HAL_JPEG_WIDTH, HAL_JPEG_HEIGHT)
     }
-    override fun getFormat() = ImageFormat.JPEG
-    override fun getWidth() = HAL_JPEG_WIDTH
-    override fun getHeight() = HAL_JPEG_HEIGHT
+
+    override val format = ImageFormat.JPEG
+    override val width = HAL_JPEG_WIDTH
+    override val height = HAL_JPEG_HEIGHT
+
     override fun getPlanes(): Array<ImageProxy.PlaneProxy> = arrayOf(
         object : ImageProxy.PlaneProxy {
-            override fun getRowStride() = 0
-            override fun getPixelStride() = 0
-            override fun getBuffer(): ByteBuffer = ByteBuffer.wrap(bytes)
+            override val rowStride = 0
+            override val pixelStride = 0
+            override val buffer: ByteBuffer get() = ByteBuffer.wrap(bytes)
         }
     )
+
     override fun getImageInfo(): ImageInfo = object : ImageInfo {
         override fun getTagBundle(): TagBundle = TagBundle.emptyBundle()
         override fun getTimestamp() = 0L
         override fun getRotationDegrees() = 0
         override fun populateExifData(exifBuilder: ExifData.Builder) {}
     }
+
     override fun getImage(): Image? = null
 }
