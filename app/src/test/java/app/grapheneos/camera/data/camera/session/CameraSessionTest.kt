@@ -251,30 +251,23 @@ class CameraSessionTest {
     }
 
     @Test
-    fun photoExposure_suppressesFlashUntilCompensationReturnsToZero() {
+    fun photoExposure_keepsTheSelectedFlashMode() {
         runTest {
             val session = boundSession(PHOTO_SETTINGS)
             val imageCapture = mockk<ImageCapture>(relaxed = true)
             session.imageCapture = imageCapture
-            runCurrent()
-            session.setFlashMode(FlashMode.ON)
-            verify { imageCapture.flashMode = ImageCapture.FLASH_MODE_ON }
-            clearMocks(imageCapture)
+            session.setFlashMode(FlashMode.AUTO)
 
             exposure.value = exposure.value?.copy(compensationIndex = 3)
             runCurrent()
-
-            assertEquals(true, session.boundCamera.value?.isExposureCompensated)
-            verify(exactly = 1) { imageCapture.flashMode = ImageCapture.FLASH_MODE_OFF }
-
+            session.setFlashMode(FlashMode.ON)
             exposure.value = exposure.value?.copy(compensationIndex = -3)
             runCurrent()
             exposure.value = exposure.value?.copy(compensationIndex = 0)
             runCurrent()
 
-            assertEquals(false, session.boundCamera.value?.isExposureCompensated)
             verifySequence {
-                imageCapture.flashMode = ImageCapture.FLASH_MODE_OFF
+                imageCapture.flashMode = ImageCapture.FLASH_MODE_AUTO
                 imageCapture.flashMode = ImageCapture.FLASH_MODE_ON
             }
         }
@@ -296,7 +289,6 @@ class CameraSessionTest {
             exposure.value = exposure.value?.copy(compensationIndex = 3)
             runCurrent()
 
-            assertEquals(true, session.boundCamera.value?.isExposureCompensated)
             verify(exactly = 0) { sceneLightControl.setFlashMode(FlashMode.OFF) }
 
             session.setFlashMode(FlashMode.OFF)

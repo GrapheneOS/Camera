@@ -67,8 +67,7 @@ internal data class PreviewOverlaysState(
             content.lensFacing == LensFacing.BACK &&
             content.isPreviewStreaming &&
             content.selfTimerRemaining == null &&
-            !content.isTakingPicture &&
-            !isPreviewHidden(content)
+            !isPreviewReplaced(content)
     }
 
     fun isZoomAvailable(): Boolean {

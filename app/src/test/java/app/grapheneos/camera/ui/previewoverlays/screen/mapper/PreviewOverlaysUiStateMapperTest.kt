@@ -151,11 +151,27 @@ class PreviewOverlaysUiStateMapperTest {
     }
 
     @Test
+    fun switchingLenses_keepsThePreviousStopsUntilTheNewCameraReportsItsZoom() {
+        val back = zoomState()
+        val frontContent = requireNotNull(back.previewContent).copy(lensFacing = LensFacing.FRONT)
+        val switching = back.copy(
+            previewContent = frontContent,
+            zoom = back.zoom.copy(value = requireNotNull(back.zoom.value).copy(zoomRatio = 0.5f)),
+        )
+
+        val zoom = requireNotNull(mapper.map(switching).zoom)
+
+        assertEquals(listOf(0.5f, 1f, 2f), zoom.presets)
+        assertTrue(zoom.isCurrentValueVisible)
+    }
+
+    @Test
     fun frontZoom_usesItsOwnPresetsAndTheEntireCameraRange() {
         val state = zoomState()
         val front = state.copy(
             previewContent = state.previewContent?.copy(lensFacing = LensFacing.FRONT),
             zoom = state.zoom.copy(
+                lensFacing = LensFacing.FRONT,
                 value = state.zoom.value?.copy(
                     minZoomRatio = 1f,
                     maxZoomRatio = 4f,
@@ -265,20 +281,14 @@ class PreviewOverlaysUiStateMapperTest {
     }
 
     @Test
-    fun pressOnANewPoint_showsAFocusingRingInsteadOfTheSelection() {
-        val state = focusState(
-            selection = FocusSelection(
-                requestId = 1,
-                x = 10f,
-                y = 20f,
-                phase = FocusPhase.Locked,
-            ),
-            press = FocusPress.NewPoint(requestId = 2, x = 30f, y = 40f),
-        )
+    fun pressOnANewPoint_waitsForTheTapBeforeShowingAFocusRing() {
+        val press = FocusPress.NewPoint(requestId = 2, x = 30f, y = 40f)
+        val selection = FocusSelection(requestId = 1, x = 10f, y = 20f)
 
+        assertNull(mapper.map(focusState(selection = null, press = press)).focus)
         assertEquals(
-            FocusUiModel(requestId = 2, x = 30f, y = 40f, visible = true),
-            mapper.map(state).focus,
+            mapper.map(focusState(selection = selection)).focus,
+            mapper.map(focusState(selection = selection, press = press)).focus,
         )
     }
 
@@ -533,18 +543,17 @@ class PreviewOverlaysUiStateMapperTest {
             shown.copy(previewContent = content.copy(lensFacing = LensFacing.FRONT)),
             shown.copy(previewContent = content.copy(isTransitionFrameVisible = true)),
             shown.copy(previewContent = content.copy(isCaptureResultVisible = true)),
-            shown.copy(isPreviewFlashVisible = true),
             shown.copy(previewContent = content.copy(isPreviewStreaming = false)),
-            shown.copy(previewContent = content.copy(isTakingPicture = true)),
             shown.copy(previewContent = content.copy(selfTimerRemaining = 3.seconds)),
         )
 
         assertTrue(mapper.mapLevel(shown).visible)
+        assertTrue(mapper.mapLevel(shown.copy(isPreviewFlashVisible = true)).visible)
         hiddenStates.forEach { state -> assertFalse(mapper.mapLevel(state).visible) }
     }
 
     private fun focusState(
-        selection: FocusSelection,
+        selection: FocusSelection?,
         press: FocusPress? = null,
     ): PreviewOverlaysState {
         return PreviewOverlaysState(

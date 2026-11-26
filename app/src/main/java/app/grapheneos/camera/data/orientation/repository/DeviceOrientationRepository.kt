@@ -24,10 +24,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 
 interface DeviceOrientationRepository {
+
+    val orientation: Flow<DeviceOrientation>
 
     val motion: Flow<DeviceMotion>
 
@@ -41,7 +45,20 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
     @ApplicationScope applicationScope: CoroutineScope,
 ) : DeviceOrientationRepository {
 
-    override val motion: Flow<DeviceMotion> = observeMotion()
+    override val orientation: Flow<DeviceOrientation> = observeMotion(
+        samplingPeriod = SensorManager.SENSOR_DELAY_NORMAL,
+    )
+        .map { motion -> motion.orientation }
+        .distinctUntilChanged()
+        .shareIn(
+            scope = applicationScope,
+            started = SharingStarted.WhileSubscribed(replayExpiration = Duration.ZERO),
+            replay = 1,
+        )
+
+    override val motion: Flow<DeviceMotion> = observeMotion(
+        samplingPeriod = SensorManager.SENSOR_DELAY_GAME,
+    )
         .conflate()
         .shareIn(
             scope = applicationScope,
@@ -52,7 +69,7 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
     override val autoRotateEnabled: Flow<Boolean> = observeAutoRotate()
         .flowOn(ioDispatcher)
 
-    private fun observeMotion(): Flow<DeviceMotion> {
+    private fun observeMotion(samplingPeriod: Int): Flow<DeviceMotion> {
         return callbackFlow {
             var gravity: FloatArray? = null
             var orientation = DeviceOrientation.DEGREES_0
@@ -83,7 +100,7 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
             sensorManager.registerListener(
                 listener,
                 sensor,
-                SensorManager.SENSOR_DELAY_GAME,
+                samplingPeriod,
             )
 
             awaitClose {

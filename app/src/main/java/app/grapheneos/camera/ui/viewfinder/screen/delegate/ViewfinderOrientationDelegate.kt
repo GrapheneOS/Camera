@@ -5,8 +5,6 @@ import app.grapheneos.camera.data.orientation.repository.DeviceOrientationReposi
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import javax.inject.Inject
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 interface ViewfinderOrientationDelegate {
@@ -34,20 +32,17 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
 
     override suspend fun trackOrientation() {
         coroutineScope {
-            launch { trackMotion() }
+            launch { trackDeviceOrientation() }
             launch { trackAutoRotate() }
         }
     }
 
-    private suspend fun trackMotion() {
-        deviceOrientationRepository.motion
-            .map { motion -> motion.orientation }
-            .distinctUntilChanged()
-            .collect { orientation ->
-                stateHolder.update { state ->
-                    state.copy(deviceOrientation = orientation)
-                }
+    private suspend fun trackDeviceOrientation() {
+        deviceOrientationRepository.orientation.collect { orientation ->
+            stateHolder.update { state ->
+                state.copy(deviceOrientation = orientation)
             }
+        }
     }
 
     private suspend fun trackAutoRotate() {

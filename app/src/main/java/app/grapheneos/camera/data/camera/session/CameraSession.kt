@@ -64,9 +64,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 internal const val CAMERA_EVENT_BUFFER_CAPACITY = 64
@@ -186,15 +183,6 @@ internal class CameraSessionImpl @Inject constructor(
     private val qrAnalysisExecutor: Executor = qrAnalysisDispatcher.asExecutor()
 
     private var qrAutofocusJob: Job? = null
-
-    init {
-        scope.launch(mainDispatcher) {
-            exposureControl.exposure
-                .map { exposure -> exposure?.isCompensated() == true }
-                .distinctUntilChanged()
-                .collect { applyExposureCompensation() }
-        }
-    }
 
     override fun setPreviewTarget(target: PreviewTarget?) {
         previewTarget = target
@@ -344,7 +332,7 @@ internal class CameraSessionImpl @Inject constructor(
             else -> Restoration.BEFORE_PREVIEW
         }
         attachControls(zoomRestoration)
-        applyExposureCompensation()
+        applyFlashMode()
     }
 
     override fun unbind() {
@@ -763,13 +751,6 @@ internal class CameraSessionImpl @Inject constructor(
         imageCapture?.targetRotation = rotation
         videoCapture?.targetRotation = rotation
         iAnalyzer?.targetRotation = rotation
-    }
-
-    private fun applyExposureCompensation() {
-        val isCompensated = exposureControl.exposure.value?.isCompensated() == true
-
-        _boundCamera.update { camera -> camera?.copy(isExposureCompensated = isCompensated) }
-        applyFlashMode()
     }
 
     private fun applyFlashMode() {

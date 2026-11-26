@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.previewoverlays.screen.model.state
 
 import app.grapheneos.camera.data.camera.model.CameraZoom
+import app.grapheneos.camera.data.core.model.LensFacing
 import app.grapheneos.camera.ui.previewoverlays.screen.model.input.ZoomDirection
 
 internal data class ZoomState(
     val value: CameraZoom? = null,
+    val lensFacing: LensFacing = LensFacing.BACK,
     val isExpanded: Boolean = false,
     val isControlPressed: Boolean = false,
     val isPreviewPinching: Boolean = false,
@@ -35,6 +37,7 @@ internal data class ZoomState(
     fun idle(): ZoomState {
         return ZoomState(
             value = value,
+            lensFacing = lensFacing,
             interactionId = interactionId,
         )
     }

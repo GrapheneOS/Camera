@@ -26,7 +26,6 @@ data class ViewfinderUiState(
     val captureResult: CaptureResultUiModel = CaptureResultUiModel(),
     val iconRotationDegrees: Float = 0f,
     val cancelButtonVisible: Boolean = true,
-    val isTakingPicture: Boolean = false,
     val keepScreenOn: Boolean = false,
     val isSelfIlluminating: Boolean = false,
     val isSettingsPanelAvailable: Boolean = false,

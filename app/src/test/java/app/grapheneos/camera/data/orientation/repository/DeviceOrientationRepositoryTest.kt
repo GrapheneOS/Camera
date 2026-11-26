@@ -302,6 +302,59 @@ class DeviceOrientationRepositoryTest {
     }
 
     @Test
+    fun orientation_reportsOnlyChangesOfTheWayUp() {
+        runTest {
+            val reported = collectOrientation()
+
+            hold(x = 0f, y = GRAVITY)
+            hold(x = GRAVITY * sin(TILT_RADIANS), y = GRAVITY * cos(TILT_RADIANS))
+            hold(x = -GRAVITY, y = 0f)
+
+            assertEquals(
+                listOf(DeviceOrientation.DEGREES_0, DeviceOrientation.DEGREES_90),
+                reported,
+            )
+        }
+    }
+
+    @Test
+    fun orientation_listensAtTheNormalRateAndOutlivesTheMotionListener() {
+        runTest {
+            val repository = repository()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                repository.orientation.collect {}
+            }
+            runCurrent()
+            val orientationListener = listener.captured
+            val motion = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                repository.motion.collect {}
+            }
+            runCurrent()
+            val motionListener = listener.captured
+
+            motion.cancel()
+            runCurrent()
+
+            verify(exactly = 1) {
+                sensorManager.registerListener(
+                    orientationListener,
+                    accelerometer,
+                    SensorManager.SENSOR_DELAY_NORMAL,
+                )
+            }
+            verify(exactly = 1) {
+                sensorManager.registerListener(
+                    motionListener,
+                    accelerometer,
+                    SensorManager.SENSOR_DELAY_GAME,
+                )
+            }
+            verify(exactly = 1) { sensorManager.unregisterListener(motionListener) }
+            verify(exactly = 0) { sensorManager.unregisterListener(orientationListener) }
+        }
+    }
+
+    @Test
     fun autoRotateEnabled_readsTheSystemSetting() {
         runTest {
             Settings.System.putInt(
@@ -318,6 +371,16 @@ class DeviceOrientationRepositoryTest {
         val reported = mutableListOf<DeviceMotion>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             repository().motion.collect { reported += it }
+        }
+
+        runCurrent()
+        return reported
+    }
+
+    private fun TestScope.collectOrientation(): List<DeviceOrientation> {
+        val reported = mutableListOf<DeviceOrientation>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            repository().orientation.collect { reported += it }
         }
 
         runCurrent()

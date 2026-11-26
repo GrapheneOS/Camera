@@ -77,23 +77,12 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun compensatedExposure_limitsOnlyThePhotoFlashOptions() {
-        val camera = PHOTO_CAMERA.copy(isLowLightBoostSupported = true)
-        val modeSettings = ModeSettings(flashMode = FlashMode.ON)
-        val initial = map(
-            camera = camera,
-            modeSettings = modeSettings,
-        )
-        val limited = map(
-            camera = camera.copy(isExposureCompensated = true),
-            modeSettings = modeSettings,
-        )
+    fun photoFlash_offersAutoAndOn() {
+        val flash = requireNotNull(map(camera = PHOTO_CAMERA).flash)
 
-        val expectedFlash = requireNotNull(initial.flash).copy(
-            selected = FlashMode.OFF,
-            unavailable = persistentSetOf(FlashMode.AUTO, FlashMode.ON),
-        )
-        assertEquals(initial.copy(flash = expectedFlash), limited)
+        assertTrue(FlashMode.AUTO in flash.options)
+        assertTrue(FlashMode.ON in flash.options)
+        assertTrue(flash.unavailable.isEmpty())
     }
 
     @Test

@@ -41,7 +41,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             keepScreenOn = keepScreenOn(state),
             isSelfIlluminating = state.selfIlluminates(),
             isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
-            isTakingPicture = state.capture.isTakingPicture,
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
             dialog = state.dialog,
         )

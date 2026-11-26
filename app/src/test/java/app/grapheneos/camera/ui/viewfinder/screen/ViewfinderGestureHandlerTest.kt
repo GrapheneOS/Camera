@@ -63,7 +63,7 @@ class ViewfinderGestureHandlerTest {
     private val downTime = SystemClock.uptimeMillis()
 
     @Test
-    fun touchingThePreview_showsTheRingImmediatelyAndConfirmsOnlyOnRelease() {
+    fun touchingThePreview_reportsThePressAndConfirmsTheTapOnRelease() {
         touch(MotionEvent.ACTION_DOWN)
 
         verify(exactly = 1) { onPressed(50f, 50f) }
@@ -94,7 +94,7 @@ class ViewfinderGestureHandlerTest {
     }
 
     @Test
-    fun draggingThePreview_dismissesTheInitialFocusAndPreventsALock() {
+    fun draggingThePreview_cancelsThePendingTapAndPreventsALock() {
         touch(MotionEvent.ACTION_DOWN)
         touch(action = MotionEvent.ACTION_MOVE, x = 200f)
         waitForLongPress()

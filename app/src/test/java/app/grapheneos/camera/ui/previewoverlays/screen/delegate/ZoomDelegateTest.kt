@@ -607,6 +607,7 @@ class ZoomDelegateTest {
                 )
             }
             assertEquals(3f, stateHolder.state.value.zoom.value?.zoomRatio)
+            assertEquals(LensFacing.FRONT, stateHolder.state.value.zoom.lensFacing)
         }
     }
 
