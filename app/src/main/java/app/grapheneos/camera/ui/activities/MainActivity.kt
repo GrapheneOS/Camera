@@ -1044,6 +1044,19 @@ open class MainActivity : AppCompatActivity(),
                         it
                     }
 
+                settingsIcon.layoutParams =
+                    (settingsIcon.layoutParams as ViewGroup.MarginLayoutParams).let {
+                        it.setMargins(
+                            it.leftMargin,
+                            (16 * resources.displayMetrics.density.toInt()) +
+                                    insets.top,
+                            it.rightMargin,
+                            it.bottomMargin,
+                        )
+
+                        it
+                    }
+
                 isInsetSet = true
             }
 
