@@ -14,7 +14,6 @@ data class BoundCamera(
     val videoQualities: List<VideoQuality>,
     val isLowLightBoostSupported: Boolean = false,
     val highFrameRate: HighFrameRateSupport? = null,
-    val isExposureCompensated: Boolean = false,
 ) {
 
     fun modeSlot(): ModeSlot {

@@ -851,7 +851,6 @@ open class MainActivity : AppCompatActivity() {
             mode = state.mode,
             lensFacing = state.flipCamera.lensFacing,
             isPreviewStreaming = state.preview.isStreaming,
-            isTakingPicture = state.isTakingPicture,
             isTransitionFrameVisible = state.preview.lastFrameVisible,
             isCaptureResultVisible = state.captureResult.visible,
             selfTimerRemaining = state.selfTimer.remaining,

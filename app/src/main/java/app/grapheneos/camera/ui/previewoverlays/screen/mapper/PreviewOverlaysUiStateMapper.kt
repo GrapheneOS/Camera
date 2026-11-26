@@ -6,7 +6,6 @@ import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGrid
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.levelindicator.model.LevelIndicatorMode
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPhase
-import app.grapheneos.camera.ui.previewoverlays.screen.model.state.FocusPress
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.LevelPose
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewControl
 import app.grapheneos.camera.ui.previewoverlays.screen.model.state.PreviewOverlaysState
@@ -88,29 +87,18 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
     }
 
     private fun focus(state: PreviewOverlaysState): FocusUiModel? {
-        val press = state.focus.press as? FocusPress.NewPoint
-        val selection = state.focus.selection
-        return when {
-            press != null -> FocusUiModel(
-                requestId = press.requestId,
-                x = press.x,
-                y = press.y,
-                appearance = FocusIndicatorAppearance.Focusing,
-                visible = state.isPreviewInputAvailable(),
-            )
-            selection != null -> FocusUiModel(
-                requestId = selection.requestId,
-                x = selection.x,
-                y = selection.y,
-                appearance = when (selection.phase) {
-                    FocusPhase.Focusing -> FocusIndicatorAppearance.Focusing
-                    FocusPhase.Focused -> FocusIndicatorAppearance.Focused
-                    FocusPhase.Locked -> FocusIndicatorAppearance.Locked
-                },
-                visible = selection.visible && state.isPreviewInputAvailable(),
-            )
-            else -> null
-        }
+        val selection = state.focus.selection ?: return null
+        return FocusUiModel(
+            requestId = selection.requestId,
+            x = selection.x,
+            y = selection.y,
+            appearance = when (selection.phase) {
+                FocusPhase.Focusing -> FocusIndicatorAppearance.Focusing
+                FocusPhase.Focused -> FocusIndicatorAppearance.Focused
+                FocusPhase.Locked -> FocusIndicatorAppearance.Locked
+            },
+            visible = selection.visible && state.isPreviewInputAvailable(),
+        )
     }
 
     private fun control(state: PreviewOverlaysState): PreviewControlUiModel? {
@@ -129,7 +117,7 @@ internal class PreviewOverlaysUiStateMapperImpl @Inject constructor(
         val range = zoom.minZoomRatio..zoom.maxZoomRatio
         val presets = zoomPresetsMapper.map(
             zoom = zoom,
-            lensFacing = content.lensFacing,
+            lensFacing = state.zoom.lensFacing,
         )
 
         return PreviewControlUiModel.Zoom(

@@ -316,11 +316,13 @@ internal class ZoomDelegateImpl @Inject constructor(
 
     private fun refreshZoom(isNewCamera: Boolean) {
         val zoom = zoomControl.zoom ?: return
+        val lensFacing = zoomControl.lensFacing ?: return
 
         stateHolder.update { state ->
             val updated = state.copy(
                 zoom = state.zoom.copy(
                     value = zoom,
+                    lensFacing = lensFacing,
                     pendingPreset = when {
                         isNewCamera -> null
                         else -> state.zoom.pendingPreset

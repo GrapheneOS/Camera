@@ -64,7 +64,6 @@ class LevelDelegateTest {
         val shown = framing.copy(level = SHOWN_LEVEL)
         val interruptions = listOf(
             shown.copy(previewContent = previewContent.copy(selfTimerRemaining = 3.seconds)),
-            shown.copy(previewContent = previewContent.copy(isTakingPicture = true)),
             shown.copy(previewContent = previewContent.copy(isPreviewStreaming = false)),
             shown.copy(previewContent = previewContent.copy(isTransitionFrameVisible = true)),
             shown.copy(previewContent = previewContent.copy(isCaptureResultVisible = true)),
@@ -72,7 +71,6 @@ class LevelDelegateTest {
             shown.copy(previewContent = previewContent.copy(mode = CameraMode.QR_SCAN)),
             shown.copy(previewContent = previewContent.copy(mode = CameraMode.NIGHT)),
             shown.copy(previewContent = previewContent.copy(lensFacing = LensFacing.FRONT)),
-            shown.copy(isPreviewFlashVisible = true),
             shown.copy(settings = shown.settings.copy(gyroscopeSuggestions = false)),
         )
 
@@ -88,6 +86,7 @@ class LevelDelegateTest {
         val shown = framing.copy(level = SHOWN_LEVEL)
         val updates = listOf(
             shown,
+            shown.copy(isPreviewFlashVisible = true),
             shown.copy(displayRotation = DeviceOrientation.DEGREES_90),
             shown.copy(settings = shown.settings.copy(gridType = GridType.GOLDEN_RATIO)),
         )
@@ -311,7 +310,6 @@ class LevelDelegateTest {
         runTest {
             val interrupted = listOf(
                 previewContent.copy(selfTimerRemaining = 3.seconds),
-                previewContent.copy(isTakingPicture = true),
                 previewContent.copy(isPreviewStreaming = false),
                 previewContent.copy(isTransitionFrameVisible = true),
                 previewContent.copy(isCaptureResultVisible = true),

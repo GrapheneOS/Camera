@@ -255,34 +255,36 @@ class FocusDelegateTest {
     }
 
     @Test
-    fun holdingANewPoint_commitsTheProvisionalRingAsALockedRequest() {
+    fun holdingANewPoint_showsTheRingWhenTheLockIsRequested() {
         runTest {
             trackFocus()
 
             press(x = 10f, y = 20f)
-            val provisional = requireNotNull(ring())
+            assertNull(ring())
             delegate.onAction(FocusAction.PreviewLongPressed)
 
-            assertTrue(provisional.visible)
+            val ring = requireNotNull(ring())
+            assertTrue(ring.visible)
             verify(exactly = 1) {
-                focusControl.focus(lockedRequest(id = provisional.requestId))
+                focusControl.focus(lockedRequest(id = ring.requestId))
             }
-            assertEquals(provisional, ring())
             assertNull(stateHolder.state.value.focus.press)
         }
     }
 
     @Test
-    fun aConfirmedTap_keepsTheProvisionalRingIdentity() {
+    fun aConfirmedTap_showsTheRingForTheRequestedPoint() {
         runTest {
             trackFocus()
 
             press(x = 10f, y = 20f)
-            val provisional = requireNotNull(ring())
+            assertNull(ring())
             delegate.onAction(FocusAction.PreviewTapped)
 
-            assertEquals(provisional, ring())
-            assertEquals(provisional.requestId, selection().requestId)
+            assertEquals(
+                FocusUiModel(requestId = selection().requestId, x = 10f, y = 20f, visible = true),
+                ring(),
+            )
         }
     }
 
@@ -302,7 +304,7 @@ class FocusDelegateTest {
     }
 
     @Test
-    fun dragging_restoresThePreviousRingWithItsLatestPhase() {
+    fun dragging_keepsThePreviousRingWithItsLatestPhase() {
         runTest {
             trackFocus()
             startFocus()

@@ -24,10 +24,6 @@ internal class CameraFlashMapperImpl @Inject constructor() : CameraFlashMapper {
         frameRate: VideoFrameRate,
     ): CameraFlash {
         val unavailableModes = buildSet {
-            if (camera.hasFlashUnit && !camera.isVideoMode && camera.isExposureCompensated) {
-                add(FlashMode.AUTO)
-                add(FlashMode.ON)
-            }
             if (limitsLowLightBoost(camera = camera, frameRate = frameRate)) {
                 add(FlashMode.LOW_LIGHT_BOOST)
             }

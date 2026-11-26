@@ -16,30 +16,12 @@ class CameraFlashMapperTest {
     private val mapper = CameraFlashMapperImpl()
 
     @Test
-    fun compensatedPhotoExposure_disablesAutoAndOn() {
-        val camera = PHOTO_CAMERA.copy(isExposureCompensated = true)
-        val unavailable = setOf(FlashMode.AUTO, FlashMode.ON)
-
-        unavailable.forEach { mode ->
-            val flash = mapper.map(
-                camera = camera,
-                requestedMode = mode,
-                frameRate = VideoFrameRate.FPS_30,
-            )
-
-            assertEquals(mode.name, FlashMode.OFF, flash.selectedMode)
-            assertEquals(mode.name, unavailable, flash.unavailableModes)
-        }
-    }
-
-    @Test
-    fun exposureLimits_doNotDisableVideoLightingOrLowLightBoost() {
+    fun supportedLightingModes_remainSelectable() {
         val cases = listOf(
-            PHOTO_CAMERA.copy(
-                isLowLightBoostSupported = true,
-                isExposureCompensated = true,
-            ) to FlashMode.LOW_LIGHT_BOOST,
-            VIDEO_CAMERA.copy(isExposureCompensated = true) to FlashMode.ON,
+            PHOTO_CAMERA to FlashMode.AUTO,
+            PHOTO_CAMERA to FlashMode.ON,
+            PHOTO_CAMERA.copy(isLowLightBoostSupported = true) to FlashMode.LOW_LIGHT_BOOST,
+            VIDEO_CAMERA to FlashMode.ON,
         )
         cases.forEach { (camera, mode) ->
             val flash = mapper.map(
@@ -49,19 +31,8 @@ class CameraFlashMapperTest {
             )
 
             assertEquals(mode, flash.selectedMode)
+            assertTrue(flash.unavailableModes.isEmpty())
         }
-    }
-
-    @Test
-    fun noExposureCompensation_keepsTheRequestedSupportedMode() {
-        val flash = mapper.map(
-            camera = PHOTO_CAMERA,
-            requestedMode = FlashMode.AUTO,
-            frameRate = VideoFrameRate.FPS_30,
-        )
-
-        assertEquals(FlashMode.AUTO, flash.selectedMode)
-        assertEquals(emptySet<FlashMode>(), flash.unavailableModes)
     }
 
     @Test
